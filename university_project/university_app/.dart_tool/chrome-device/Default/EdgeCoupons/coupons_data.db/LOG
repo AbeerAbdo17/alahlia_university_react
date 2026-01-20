@@ -1,0 +1,36 @@
+2025/12/01-08:32:12.103 1b40 Reusing MANIFEST C:\Users\afrotech\AppData\Local\Temp\flutter_tools.bec96973\flutter_tools_chrome_device.a27301a9\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2025/12/01-08:32:12.106 1b40 Recovering log #42
+2025/12/01-08:32:12.107 1b40 Reusing old log C:\Users\afrotech\AppData\Local\Temp\flutter_tools.bec96973\flutter_tools_chrome_device.a27301a9\Default\EdgeCoupons/coupons_data.db/000042.log 
+2025/12/01-08:32:12.111 1b40 Delete type=0 #3
+2025/12/01-08:32:12.111 1b40 Delete type=0 #4
+2025/12/01-08:32:12.112 1b40 Delete type=0 #7
+2025/12/01-08:32:12.112 1b40 Delete type=2 #8
+2025/12/01-08:32:12.112 1b40 Delete type=0 #10
+2025/12/01-08:32:12.112 1b40 Delete type=2 #11
+2025/12/01-08:32:12.113 1b40 Delete type=0 #13
+2025/12/01-08:32:12.114 1b40 Delete type=2 #14
+2025/12/01-08:32:12.114 1b40 Delete type=0 #16
+2025/12/01-08:32:12.115 1b40 Delete type=2 #17
+2025/12/01-08:32:12.115 1b40 Delete type=0 #19
+2025/12/01-08:32:12.115 1b40 Delete type=2 #21
+2025/12/01-08:32:12.116 1b40 Delete type=0 #23
+2025/12/01-08:32:12.116 1b40 Delete type=2 #24
+2025/12/01-08:32:12.117 1b40 Delete type=0 #26
+2025/12/01-08:32:12.117 1b40 Delete type=2 #27
+2025/12/01-08:32:12.117 1b40 Delete type=0 #29
+2025/12/01-08:32:12.118 1b40 Delete type=2 #30
+2025/12/01-08:32:12.118 1b40 Delete type=0 #32
+2025/12/01-08:32:12.119 1b40 Delete type=0 #36
+2025/12/01-08:32:12.119 1b40 Delete type=0 #39
+2025/12/01-08:32:12.387 505c Level-0 table #46: started
+2025/12/01-08:32:12.394 505c Level-0 table #46: 672704 bytes OK
+2025/12/01-08:32:12.396 505c Delete type=0 #42
+2025/12/01-08:32:12.397 505c Compacting 4@0 + 1@1 files
+2025/12/01-08:32:12.403 505c Generated table #47@0: 4 keys, 672611 bytes
+2025/12/01-08:32:12.403 505c Compacted 4@0 + 1@1 files => 672611 bytes
+2025/12/01-08:32:12.404 505c compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/12/01-08:32:12.405 505c Delete type=2 #34
+2025/12/01-08:32:12.405 505c Delete type=2 #37
+2025/12/01-08:32:12.406 505c Delete type=2 #40
+2025/12/01-08:32:12.406 505c Delete type=2 #43
+2025/12/01-08:32:12.406 505c Delete type=2 #46
