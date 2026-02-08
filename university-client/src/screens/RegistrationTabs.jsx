@@ -5,10 +5,8 @@ import { IoArrowBack } from "react-icons/io5";
 const API_BASE = "http://localhost:5000/api";
 const DEFAULT_REGISTRAR = "المسجل";
 
-// Smart list options للفصل الدراسي
-const TERM_OPTIONS = ["فصل أول", "فصل ثاني"];
+const TERM_OPTIONS = ["الفصل الأول", "الفصل الثاني"];
 
-// ====== UI Styles (Modern) ======
 const ui = {
   page: {
     fontFamily: `"Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", Arial, sans-serif`,
@@ -194,13 +192,21 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
   const [yearOptions, setYearOptions] = useState([]);
   const [levelOptions, setLevelOptions] = useState([]);
   const [termOptions, setTermOptions] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+  const token = sessionStorage.getItem('token');
+  if (!token) {
+    navigate('/login', { replace: true });
+  }
+}, [navigate]);
 
   const fetchAcademicPeriods = async () => {
     try {
       const qs = new URLSearchParams({
-        program_type: programType || "undergraduate",
+        program_type: programType || "bachelor",
       });
-      if ((programType || "undergraduate") === "postgraduate" && (postgraduateProgram || "").trim()) {
+      if ((programType || "bachelor") === "postgraduate" && (postgraduateProgram || "").trim()) {
         qs.set("postgraduate_program", postgraduateProgram.trim());
       }
 
@@ -264,9 +270,9 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
           academic_year: y,
           level_name: l,
           term_name: t,
-          program_type: programType || "undergraduate",
+          program_type: programType || "bachelor",
           postgraduate_program:
-            (programType || "undergraduate") === "postgraduate"
+            (programType || "bachelor") === "postgraduate"
               ? (postgraduateProgram || "").trim() || null
               : null,
         }),
@@ -275,7 +281,6 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل حفظ الفترة");
 
-      // بعد الإضافة: حدّث القائمة
       await fetchAcademicPeriods();
     } catch (e) {
       console.error(e);
@@ -298,6 +303,7 @@ function RegistrationTabs() {
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("promotion");
+  
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -337,26 +343,36 @@ function RegistrationTabs() {
       <main className="library-main">
         <div className="library-container">
           {/* Tabs */}
-          <div style={ui.tabsRow}>
-            <button
-              onClick={() => setActiveTab("promotion")}
-              style={ui.tabBtn(activeTab === "promotion")}
-            >
-              بدء سنة/فصل جديد
-            </button>
+<div style={ui.tabsRow}>
+  <button
+    onClick={() => setActiveTab("promotion")}
+    style={ui.tabBtn(activeTab === "promotion")}
+  >
+    بدء سنة/فصل جديد
+  </button>
 
-            <button
-              onClick={() => setActiveTab("single")}
-              style={ui.tabBtn(activeTab === "single")}
-            >
-              تسجيل طالب
-            </button>
-          </div>
+  <button
+    onClick={() => setActiveTab("single")}
+    style={ui.tabBtn(activeTab === "single")}
+  >
+    تسجيل طالب
+  </button>
 
-          {activeTab === "promotion"
-  ? <PromotionTab showToast={showToast} />
-  : <SingleRegistrationTab showToast={showToast} />
-}
+  <button
+    onClick={() => setActiveTab("failed-courses")}
+    style={ui.tabBtn(activeTab === "failed-courses")}
+  >
+    تسجيل المواد 
+  </button>
+</div>
+
+{activeTab === "promotion" ? (
+  <PromotionTab showToast={showToast} />
+) : activeTab === "single" ? (
+  <SingleRegistrationTab showToast={showToast} />
+) : activeTab === "failed-courses" ? (
+  <FailedCoursesRegistrationTab showToast={showToast} />
+) : null}
 
           {toast && (
   <div className={"toast " + (toast.type === "error" ? "toast-error" : "toast-success")}>
@@ -370,23 +386,40 @@ function RegistrationTabs() {
   );
 }
 
+function usePostgradProgramsSmartList() {
+  const [programs, setPrograms] = useState([]);
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/postgraduate-programs`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+      setPrograms(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setPrograms([]);
+    }
+  };
+
+  return { programs, fetchPrograms };
+}
+
 /* =========================================================
    تاب 1 – بدء سنة/فصل جديد (ترحيل جماعي)
    ========================================================= */
 function PromotionTab({ showToast }) {
   const [postgradProgram, setPostgradProgram] = useState("");
-  const [programType, setProgramType] = useState("undergraduate");
+  const [programType, setProgramType] = useState("bachelor");
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [departmentId, setDepartmentId] = useState("");
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const pgSmart = usePostgradProgramsSmartList();
 
-  //  الفترة الحالية (  اختيارية: سنة + مستوى، والفصل يطلع تلقائي)
   const [fromYear, setFromYear] = useState("");
   const [fromLevel, setFromLevel] = useState("");
   const [fromTerm, setFromTerm] = useState("");
 
-  // الفترة الجديدة
   const [toYear, setToYear] = useState("");
   const [toLevel, setToLevel] = useState("");
   const [termName, setTermName] = useState("");
@@ -394,6 +427,16 @@ function PromotionTab({ showToast }) {
   const [candidates, setCandidates] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [batchTransferring, setBatchTransferring] = useState(false); 
+  const [promotionResults, setPromotionResults] = useState(null);
+
+  useEffect(() => {
+    if (programType === "postgraduate") {
+      pgSmart.fetchPrograms();
+    } else {
+      setPostgradProgram("");
+    }
+  }, [programType]);
 
   const smart = useAcademicPeriodsSmartList({
     programType,
@@ -476,84 +519,41 @@ function PromotionTab({ showToast }) {
   }, [departmentId, programType, postgradProgram, fromYear, fromLevel]);
 
   // =========================
-  // (4) خيارات الفترة الجديدة 
+  // (4) حساب الفترة الجديدة تلقائياً بناءً على الفصل الحالي
   // =========================
-  const [toLevelOptions, setToLevelOptions] = useState([]);
-  const [toTermOptions, setToTermOptions] = useState([]);
-
-  useEffect(() => {
-    const y = (toYear || "").trim();
-    const l = (toLevel || "").trim();
-    const rows = smart.periods;
-
-    const levels = Array.from(
-      new Set(
-        rows
-          .filter((r) => (r.academic_year || "").trim() === y)
-          .map((r) => (r.level_name || "").trim())
-          .filter(Boolean)
-      )
-    );
-    setToLevelOptions(levels);
-
-    const terms = Array.from(
-      new Set(
-        rows
-          .filter(
-            (r) =>
-              (r.academic_year || "").trim() === y &&
-              (r.level_name || "").trim() === l
-          )
-          .map((r) => (r.term_name || "").trim())
-          .filter(Boolean)
-      )
-    );
-    setToTermOptions(terms);
-  }, [toYear, toLevel, smart.periods]);
-
-  useEffect(() => {
-    if (programType !== "postgraduate") setPostgradProgram("");
-  }, [programType]);
-
-  useEffect(() => {
-    // لما نوع البرنامج يتغير: صفّر كل شيء
-    setSelectedFacultyId("");
-    setDepartmentId("");
-    setDepartments([]);
-
-    setFromYear("");
-    setFromLevel("");
-    setFromTerm("");
-
+useEffect(() => {
+  if (!fromTerm || !fromYear || !fromLevel) {
     setToYear("");
     setToLevel("");
     setTermName("");
+    return;
+  }
 
-    setToLevelOptions([]);
-    setToTermOptions([]);
+  const currentOrder = termOrder(fromTerm);
+  // console.log("Debug → الفصل الحالي:", fromTerm, "→ ترتيبه:", currentOrder);
 
-    setCandidates([]);
-    setSelectedIds([]);
-  }, [programType]);
+  if (currentOrder === 1) {
+    setToYear(fromYear);
+    setToLevel(fromLevel);
+    setTermName("الفصل الثاني");
+  } 
+  else if (currentOrder === 2) {
+    const nextYear = getNextAcademicYear(fromYear);
+    const nextLevel = getNextLevel(fromLevel);
 
-  useEffect(() => {
-    if (programType !== "postgraduate") return;
+    setToYear(nextYear);
+    setToLevel(nextLevel);
+    setTermName("الفصل الأول");
 
-    setDepartmentId("");
-    setFromYear("");
-    setFromLevel("");
-    setFromTerm("");
-
+    // console.log("اقتراح انتقال → سنة:", nextYear, "مستوى:", nextLevel, "فصل: الأول");
+  } 
+  else {
+    // console.log("ترتيب فصل غير معروف → مفيش اقتراح تلقائي");
     setToYear("");
     setToLevel("");
     setTermName("");
-
-    setToLevelOptions([]);
-    setToTermOptions([]);
-
-    setCandidates([]);
-    setSelectedIds([]);
-  }, [postgradProgram, programType]);
+  }
+}, [fromTerm, fromYear, fromLevel]);
 
   // =========================
   // (5) جلب الكليات والأقسام
@@ -577,7 +577,7 @@ function PromotionTab({ showToast }) {
   }, [selectedFacultyId]);
 
   // =========================
-  // (6) عرض المرشحين (لازم fromYear + fromLevel)
+  // (6) عرض المرشحين ( fromYear + fromLevel + fromTerm)
   // =========================
   const loadCandidates = () => {
     if (!departmentId) {
@@ -589,8 +589,8 @@ function PromotionTab({ showToast }) {
       return;
     }
 
-    if (!fromYear || !fromLevel) {
-      showToast("اختاري السنة الدراسية الحالية والمستوى أولاً", "error");
+    if (!fromYear || !fromLevel || !fromTerm) {
+      showToast("اختاري السنة الدراسية الحالية والمستوى والفصل أولاً", "error");
       return;
     }
 
@@ -626,7 +626,7 @@ function PromotionTab({ showToast }) {
   };
 
   const resetPromotion = () => {
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgradProgram("");
 
     setSelectedFacultyId("");
@@ -641,12 +641,10 @@ function PromotionTab({ showToast }) {
     setToLevel("");
     setTermName("");
 
-    setToLevelOptions([]);
-    setToTermOptions([]);
-
     setCandidates([]);
     setSelectedIds([]);
     setLoading(false);
+    setBatchTransferring(false);
   };
 
   const toggleStudent = (studentId) => {
@@ -657,64 +655,192 @@ function PromotionTab({ showToast }) {
     );
   };
 
-const startPromotion = () => {
-  if (!toYear || !toLevel) {
-    showToast("اكتب السنة الدراسية الجديدة والمستوى الجديد", "error");
-    return;
-  }
+  // =========================
+  // (7) دالة الترحيل الجماعي الجديدة 
+  // =========================
+  // const startPromotion = async () => {
+  //   if (!toYear || !toLevel || !termName) {
+  //     showToast("الفترة الجديدة ناقصة (السنة أو المستوى أو الفصل)", "error");
+  //     return;
+  //   }
 
-  // ✅ الفصل الجديد مطلوب
-  if (!termName || !termName.trim()) {
-    showToast("الفصل الدراسي الجديد مطلوب", "error");
-    return;
-  }
+  //   if (!selectedIds.length) {
+  //     showToast("لايوجد طلاب مختارين", "error");
+  //     return;
+  //   }
 
-  if (!selectedIds.length) {
-    showToast("ما في طلاب مختارين", "error");
-    return;
-  }
+  //   setBatchTransferring(true);
 
-  const body = {
-    student_ids: selectedIds,
-    to_year: toYear,
-    to_level: toLevel,
+  //   try {
+  //     const currentTermOrder = termOrder(fromTerm); // جديد: تحديد النوع
+  //     let transferType = "";
 
-    // ✅ بدون null
-    term_name: termName.trim(),
+  //     if (currentTermOrder === 1) {
+  //       transferType = "insideYear";
+  //     } else if (currentTermOrder === 2) {
+  //       transferType = "newYear";
+  //     } else {
+  //       throw new Error("الفصل الحالي غير مدعوم للترحيل");
+  //     }
 
-    registrar: DEFAULT_REGISTRAR,
-    program_type: programType,
-    postgraduate_program:
-      programType === "postgraduate" ? (postgradProgram || "").trim() || null : null,
+  //     const body = {
+  //       faculty_id: selectedFacultyId,
+  //       department_id: departmentId,
+  //       academic_year: fromYear,
+  //       level_name: fromLevel,
+  //       term_name: fromTerm,
+  //       program_type: programType,
+  //       postgraduate_program:
+  //         programType === "postgraduate" ? (postgradProgram || "").trim() || null : null,
+  //       transfer_type: transferType,
+  //       new_academic_year: toYear,
+  //       new_level_name: toLevel,
+  //       new_term_name: termName,
+  //       student_ids: selectedIds, // جديد: إرسال الطلاب المختارين فقط
+  //     };
+
+  //     const response = await fetch(`${API_BASE}/batch-transfer-students`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(body),
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       throw new Error(data.error || "فشل في عملية الترحيل الجماعي");
+  //     }
+
+  //     showToast(
+  //       `تم ترحيل ${data.transferred_count || 0} طالب بنجاح`,
+  //       "success"
+  //     );
+
+  //     resetPromotion();
+
+  //   } catch (err) {
+  //     console.error("Batch transfer error:", err);
+  //     showToast("حدث خطأ أثناء الترحيل: " + (err.message || "غير معروف"), "error");
+  //   } finally {
+  //     setBatchTransferring(false);
+  //   }
+  // };
+
+const handleBatchPromote = async () => {
+    if (!toYear || !toLevel || !termName) {
+      showToast("الفترة الجديدة ناقصة (السنة أو المستوى أو الفصل)", "error");
+      return;
+    }
+    if (!selectedIds.length) {
+      showToast("لا يوجد طلاب مختارين", "error");
+      return;
+    }
+    setBatchTransferring(true);
+    try {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+        showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
+        return;
+      }
+
+      console.log("Sending batch promote:", {
+        current_academic_year: fromYear,
+        current_level_name: fromLevel,
+        current_term_name: fromTerm,
+        new_academic_year: toYear,
+        new_level_name: toLevel,
+        new_term_name: termName,
+        program_type: programType,
+        postgraduate_program: programType === "postgraduate" ? postgradProgram || null : null,
+        department_id: departmentId,
+        student_ids: selectedIds
+      });
+
+      const response = await fetch(`${API_BASE}/batch-promote-to-next-level`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          current_academic_year: fromYear,
+          current_level_name: fromLevel,
+          current_term_name: fromTerm,
+          new_academic_year: toYear,
+          new_level_name: toLevel,
+          new_term_name: termName,
+          program_type: programType,
+          postgraduate_program: programType === "postgraduate" ? postgradProgram || null : null,
+          department_id: departmentId,
+          student_ids: selectedIds
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "فشل في عملية الترحيل الجماعي");
+      }
+
+      setPromotionResults(data.data);
+
+      let message = `تم الترحيل: ${data.data.success.length} ناجح`;
+      if (data.data.already_promoted?.length) {
+        message += `, ${data.data.already_promoted.length} تم ترحيلهم سابقًا`;
+      }
+      message += `, ${data.data.failed.length} مرفوض, ${data.data.required_repeat.length} إعادة`;
+
+      showToast(message, "success");
+      resetPromotion();
+    } catch (err) {
+      console.error("Batch promote error:", err);
+      showToast("حدث خطأ أثناء الترحيل: " + (err.message || "غير معروف"), "error");
+    } finally {
+      setBatchTransferring(false);
+    }
   };
 
-  fetch(`${API_BASE}/promotion/start`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "فشل");
-      return data;
-    })
-    .then((data) => {
-      showToast(data.message || "تم بنجاح", "success");
-      resetPromotion();
-    })
-    .catch((err) => {
-      console.error("Error starting promotion", err);
-      showToast(err.message || "حدث خطأ أثناء التنفيذ", "error");
-    });
+const termOrder = (t) => {
+  if (!t) return 0;
+  const term = (t || "").toString().trim();
+  if (term.includes("أول") || term === "الفصل الأول" || term === "فصل أول") return 1;
+  if (term.includes("ثان") || term === "الفصل الثاني" || term === "فصل ثاني") return 2;
+
+  return 0;
+};
+
+const getNextLevel = (currentLevel) => {
+  if (!currentLevel) return "";
+
+  const cleanLevel = (currentLevel || "").trim();
+
+  const levelMap = {
+    "المستوى الأول":   "المستوى الثاني",
+    "المستوى الثاني":  "المستوى الثالث",
+    "المستوى الثالث":  "المستوى الرابع",
+    "المستوى الرابع":  "المستوى الخامس",
+    "المستوى الخامس":  "المستوى السادس",
+    // أضيفي أي صيغ أخرى ممكن تكتبها
+    "مستوى أول":       "المستوى الثاني",
+    "مستوى ثاني":      "المستوى الثالث",
+    "مستوى ثالث":      "المستوى الرابع",
+  };
+
+  return levelMap[cleanLevel] || cleanLevel; 
+};
+
+const getNextAcademicYear = (year) => {
+  if (!year || !year.includes("/")) return year;
+  
+  const [start, end] = year.split("/").map(Number);
+  if (isNaN(start) || isNaN(end)) return year;
+  
+  return `${start + 1}/${end + 1}`;
 };
 
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div>
-      <h2 style={ui.titleH2}>بدء سنة / فصل دراسي جديد ( جماعي)</h2>
+      <h2 style={ui.titleH2}>بدء سنة / فصل دراسي جديد (جماعي)</h2>
 
       <div style={ui.card}>
         <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
@@ -723,11 +849,20 @@ const startPromotion = () => {
           <label>
             <input
               type="radio"
-              value="undergraduate"
-              checked={programType === "undergraduate"}
+              value="diploma"
+              checked={programType === "diploma"}
               onChange={(e) => setProgramType(e.target.value)}
             />
-            بكالوريوس/دبلوم
+            دبلوم
+          </label>
+          <label>
+            <input
+              type="radio"
+              value="bachelor"
+              checked={programType === "bachelor"}
+              onChange={(e) => setProgramType(e.target.value)}
+            />
+            بكالوريوس
           </label>
 
           <label>
@@ -748,11 +883,17 @@ const startPromotion = () => {
 
           <input
             type="text"
+            list="pg_programs_list"
             value={postgradProgram}
             onChange={(e) => setPostgradProgram(e.target.value)}
             placeholder="مثال: ماجستير إدارة أعمال"
             style={ui.input}
           />
+          <datalist id="pg_programs_list">
+            {pgSmart.programs.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
         </div>
       )}
 
@@ -777,8 +918,6 @@ const startPromotion = () => {
                 setToLevel("");
                 setTermName("");
 
-                setToLevelOptions([]);
-                setToTermOptions([]);
                 setCandidates([]);
                 setSelectedIds([]);
               }}
@@ -809,8 +948,6 @@ const startPromotion = () => {
                 setToLevel("");
                 setTermName("");
 
-                setToLevelOptions([]);
-                setToTermOptions([]);
                 setCandidates([]);
                 setSelectedIds([]);
               }}
@@ -825,7 +962,6 @@ const startPromotion = () => {
             </select>
           </div>
 
-          {/*  الحالي: السنة (اختيار) */}
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الحالية</label>
             <input
@@ -837,6 +973,9 @@ const startPromotion = () => {
                 setFromYear(e.target.value);
                 setFromLevel("");
                 setFromTerm("");
+                setToYear("");
+                setToLevel("");
+                setTermName("");
               }}
               style={ui.input}
             />
@@ -847,7 +986,6 @@ const startPromotion = () => {
             </datalist>
           </div>
 
-          {/*  الحالي: المستوى (اختيار حسب السنة) */}
           <div style={ui.field}>
             <label style={ui.label}>المستوى الحالي</label>
             <input
@@ -858,6 +996,9 @@ const startPromotion = () => {
               onChange={(e) => {
                 setFromLevel(e.target.value);
                 setFromTerm("");
+                setToYear("");
+                setToLevel("");
+                setTermName("");
               }}
               style={ui.input}
             />
@@ -868,24 +1009,34 @@ const startPromotion = () => {
             </datalist>
           </div>
 
-          {/*  الفصل الحالي: يطلع تلقائي */}
           <div style={ui.field}>
             <label style={ui.label}>الفصل الحالي (آخر فصل مسجل)</label>
             <input
               type="text"
+              list="promo_from_terms" // إضافة datalist إذا كان لديك خيارات للفصول
+              placeholder="اختار الفصل"
               value={fromTerm}
-              readOnly
-              style={{ ...ui.input, background: "#f8fafc" }}
+              onChange={(e) => {
+                setFromTerm(e.target.value);
+                setToYear("");
+                setToLevel("");
+                setTermName("");
+              }}
+              style={ui.input}
             />
+            <datalist id="promo_from_terms">
+              {TERM_OPTIONS.map((x) => ( // افتراضاً إن TERM_OPTIONS موجودة في الكود
+                <option key={x} value={x} />
+              ))}
+            </datalist>
           </div>
 
-          {/* الجديد */}
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الجديدة</label>
             <input
               type="text"
-              list="promo_to_years"
-              placeholder="مثال: 2025/2026"
+              list="promo_to_years" // إضافة datalist للسنوات
+              placeholder="اختار السنة الجديدة"
               value={toYear}
               onChange={(e) => {
                 setToYear(e.target.value);
@@ -895,7 +1046,7 @@ const startPromotion = () => {
               style={ui.input}
             />
             <datalist id="promo_to_years">
-              {smart.yearOptions.map((x) => (
+              {smart.yearOptions.map((x) => ( // استخدام نفس الخيارات أو خيارات مخصصة
                 <option key={x} value={x} />
               ))}
             </datalist>
@@ -905,8 +1056,8 @@ const startPromotion = () => {
             <label style={ui.label}>المستوى الجديد</label>
             <input
               type="text"
-              list="promo_to_levels"
-              placeholder="مثال: المستوى الثاني"
+              list="promo_to_levels" // إضافة datalist للمستويات
+              placeholder="اختار المستوى الجديد"
               value={toLevel}
               onChange={(e) => {
                 setToLevel(e.target.value);
@@ -915,7 +1066,7 @@ const startPromotion = () => {
               style={ui.input}
             />
             <datalist id="promo_to_levels">
-              {toLevelOptions.map((x) => (
+              {smart.levelOptions.map((x) => ( // افتراضاً إن smart.levelOptions موجودة
                 <option key={x} value={x} />
               ))}
             </datalist>
@@ -925,15 +1076,14 @@ const startPromotion = () => {
             <label style={ui.label}>الفصل الدراسي (الجديد)</label>
             <input
               type="text"
-              list="promo_terms"
-              placeholder="مثال: فصل أول / فصل ثاني"
+              list="promo_terms" // إضافة datalist للفصول
+              placeholder="اختار الفصل الجديد"
               value={termName}
               onChange={(e) => setTermName(e.target.value)}
-              onBlur={() => smart.ensurePeriodSaved(toYear, toLevel, termName)}
               style={ui.input}
             />
             <datalist id="promo_terms">
-              {toTermOptions.map((x) => (
+              {TERM_OPTIONS.map((x) => (
                 <option key={x} value={x} />
               ))}
             </datalist>
@@ -941,7 +1091,7 @@ const startPromotion = () => {
         </div>
 
         <button onClick={loadCandidates} disabled={loading} style={ui.primaryBtn}>
-          {loading ? "جاري التحميل..." : "عرض الطلاب الناجحين"}
+          {loading ? "جاري التحميل..." : "عرض الطلاب"}
         </button>
       </div>
 
@@ -960,6 +1110,7 @@ const startPromotion = () => {
                   <th style={ui.th}>المستوى</th>
                   <th style={ui.th}>الفصل الدراسي</th>
                   <th style={ui.th}>الموقف الأكاديمي</th>
+                  <th style={ui.th}>النجاح</th>
                 </tr>
               </thead>
               <tbody>
@@ -977,6 +1128,7 @@ const startPromotion = () => {
                     <td style={ui.td}>{c.current_year}</td>
                     <td style={ui.td}>{c.current_level}</td>
                     <td style={ui.td}>{c.current_term || "-"}</td>
+                    <td style={ui.td}>{c.academic_status || "غير محدد"}</td>
                     <td style={ui.td}>{c.passed_status}</td>
                   </tr>
                 ))}
@@ -984,15 +1136,66 @@ const startPromotion = () => {
             </table>
           </div>
 
-          <button onClick={startPromotion} style={ui.secondaryBtn}>
-            بدء سنة / فصل جديد
-          </button>
+  <button onClick={handleBatchPromote} disabled={batchTransferring} style={ui.secondaryBtn}>
+  {batchTransferring ? "جاري الترحيل..." : "بدء سنة / فصل جديد"}
+</button>
+
+{promotionResults && (
+  <div style={{ marginTop: 24, padding: 16, background: "#f8f9fa", borderRadius: 12, border: "1px solid #e6e8ee" }}>
+    <h3 style={ui.sectionTitle}>نتيجة الترحيل الجماعي</h3>
+
+    <div style={{ color: "#16a34a", fontWeight: 800, marginBottom: 12 }}>
+      تم ترحيل: {promotionResults.success.length} طالب
+    </div>
+
+{promotionResults.already_promoted?.length > 0 && (
+      <div style={{ marginBottom: 16 }}>
+        <strong style={{ color: "#0891b2" }}>
+          تم ترحيلهم سابقًا ({promotionResults.already_promoted.length}):
+        </strong>
+        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
+          {promotionResults.already_promoted.map((a, idx) => (
+            <li key={idx} style={{ marginBottom: 6, color: "#0891b2" }}>
+              {a.full_name || a.student_id} - {a.reason}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {promotionResults.failed.length > 0 && (
+      <div style={{ marginBottom: 16 }}>
+        <strong style={{ color: "#b91c1c" }}>مرفوضين ({promotionResults.failed.length}):</strong>
+        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
+          {promotionResults.failed.map((f, idx) => (
+            <li key={idx} style={{ marginBottom: 6, color: "#b91c1c" }}>
+              {f.full_name || f.student_id} - {f.reason}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {promotionResults.required_repeat.length > 0 && (
+      <div>
+        <strong style={{ color: "#b45309" }}>مطلوب إعادة ({promotionResults.required_repeat.length}):</strong>
+        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
+          {promotionResults.required_repeat.map((r, idx) => (
+            <li key={idx} style={{ marginBottom: 6, color: "#b45309" }}>
+              {r.full_name || r.student_id} - {r.reason}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+)}
         </div>
       )}
 
       {candidates.length === 0 && !loading && (
         <div style={{ color: "#64748b", fontWeight: 700 }}>
-          لم يتم تحميل أي طلاب بعد. اضغط "عرض الطلاب الناجحين".
+          لم يتم تحميل أي طلاب بعد. اضغط "عرض الطلاب".
         </div>
       )}
     </div>
@@ -1006,30 +1209,28 @@ const startPromotion = () => {
    ========================================================= */
 function SingleRegistrationTab({ showToast }) {
   const [hasSearched, setHasSearched] = useState(false);
-  const [programType, setProgramType] = useState("undergraduate");
+  const [programType, setProgramType] = useState("bachelor");
 
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
 
-  // بحث
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [lastRegistration, setLastRegistration] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const pgSmart = usePostgradProgramsSmartList();
 
 
-  // بيانات الطالب
   const [studentForm, setStudentForm] = useState({
     full_name: "",
     university_id: "",
     phone: "",
   });
 
-  // ✅ بيانات التسجيل (لازم تيجي قبل أي useEffect بيستخدم setForm)
   const [form, setForm] = useState({
     academic_year: "",
     level_name: "",
@@ -1039,20 +1240,33 @@ function SingleRegistrationTab({ showToast }) {
     notes: "",
     postgraduate_program: "",
 
-    // عشان حقول الدراسات العليا اللي بتستخدميها تحت
     prev_degree: "",
     prev_university: "",
     prev_grad_year: "",
     study_type: "",
   });
 
-  // ✅ smart بعد form
+
+  useEffect(() => {
+  if (programType === "postgraduate") {
+    pgSmart.fetchPrograms();
+  } else {
+    setForm((p) => ({
+      ...p,
+      postgraduate_program: "",
+      prev_degree: "",
+      prev_university: "",
+      prev_grad_year: "",
+      study_type: "",
+    }));
+  }
+}, [programType]);
+
   const smart = useAcademicPeriodsSmartList({
     programType,
     postgraduateProgram: form.postgraduate_program,
   });
 
-  // ✅ تحميل الكليات
   useEffect(() => {
     fetch(`${API_BASE}/faculties-list`)
       .then((res) => res.json())
@@ -1060,7 +1274,6 @@ function SingleRegistrationTab({ showToast }) {
       .catch(() => {});
   }, []);
 
-  // ✅ لو ما دراسات عليا صفّري حقولها
   useEffect(() => {
     if (programType !== "postgraduate") {
       setForm((p) => ({
@@ -1074,7 +1287,6 @@ function SingleRegistrationTab({ showToast }) {
     }
   }, [programType]);
 
-  // ✅ الأقسام حسب الكلية
   useEffect(() => {
     if (!selectedFacultyId) {
       setDepartments([]);
@@ -1087,16 +1299,12 @@ function SingleRegistrationTab({ showToast }) {
       .catch(() => {});
   }, [selectedFacultyId]);
 
-  // ✅ smart list: تحميل الفترات
   useEffect(() => {
     if (departmentId) smart.fetchAcademicPeriods();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [departmentId, programType, form.postgraduate_program]);
 
-  // ✅ smart list: إعادة بناء الخيارات
   useEffect(() => {
     smart.rebuildOptions(form.academic_year, form.level_name);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.academic_year, form.level_name, smart.periods]);
 
 
@@ -1153,21 +1361,16 @@ const selectStudent = (studentId) => {
       setSelectedStudent(data.student);
       setLastRegistration(data.lastRegistration || null);
 
-      // ✅ (1) حددي نوع البرنامج من آخر تسجيل
-      const lastProgType = data.lastRegistration?.program_type || "undergraduate";
+      const lastProgType = data.lastRegistration?.program_type || "bachelor";
       setProgramType(lastProgType);
 
-      // ✅ (2) عبّي برنامج الدراسات العليا (لو موجود)
-      // عندك في التسجيل بتخزني postgraduate_program كحقل منفصل
       const lastPGProgram = data.lastRegistration?.postgraduate_program || "";
 
-      // ✅ (3) عبّي بيانات الدراسات العليا من postgraduate_data (لو موجود)
       const pgData = data.lastRegistration?.postgraduate_data || {};
 
       setForm((prev) => ({
         ...prev,
 
-        // حقول التسجيل العادي
         academic_year: data.lastRegistration ? data.lastRegistration.academic_year : "",
         level_name: data.lastRegistration ? data.lastRegistration.level_name : "",
         term_name: data.lastRegistration ? (data.lastRegistration.term_name || "") : "",
@@ -1175,7 +1378,6 @@ const selectStudent = (studentId) => {
         registration_status: data.lastRegistration ? data.lastRegistration.registration_status : "مسجّل",
         notes: "",
 
-        // ✅ حقول الدراسات العليا
         postgraduate_program: lastPGProgram,
         prev_degree: pgData.prev_degree || "",
         prev_university: pgData.prev_university || "",
@@ -1183,22 +1385,18 @@ const selectStudent = (studentId) => {
         study_type: pgData.study_type || "",
       }));
 
-      // بيانات الطالب الأساسية
       setStudentForm({
         full_name: data.student.full_name || "",
         university_id: Number(data.student.university_id) === 0 ? "" : String(data.student.university_id),
         phone: data.student.phone || "",
       });
 
-     // ✅ لازم نحدد الكلية أولاً عشان الأقسام تتحمّل
 if (data.student?.faculty_id) {
   setSelectedFacultyId(String(data.student.faculty_id));
 } else {
-  // لو ما عنده كلية (احتياط)
   setSelectedFacultyId("");
 }
 
-// ✅ بعد تحديد الكلية، خلي القسم يتحدد
 if (data.student?.department_id) {
   setDepartmentId(String(data.student.department_id));
 } else {
@@ -1235,14 +1433,13 @@ const resetStudentForm = () => {
     notes: "",
     postgraduate_program: "",
 
-    // لو عندك حقول الدراسات العليا:
     prev_degree: "",
     prev_university: "",
     prev_grad_year: "",
     study_type: "",
   });
 
-  setProgramType("undergraduate");
+  setProgramType("bachelor");
   setSelectedFacultyId("");
   setDepartmentId("");
 };
@@ -1253,7 +1450,6 @@ const resetStudentForm = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-// حفظ بيانات الطالب
 const saveStudentOnly = async () => {
   if (!studentForm.full_name.trim()) {
     showToast("الاسم الرباعي مطلوب", "error");
@@ -1262,7 +1458,6 @@ const saveStudentOnly = async () => {
   }
 
   try {
-    // لو ما في طالب مختار → دا إدخال طالب جديد فقط
     if (!selectedStudent?.id) {
       const studentBody = {
         full_name: studentForm.full_name,
@@ -1292,7 +1487,6 @@ window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    // لو موجود → تحديث فقط
     const updStudentBody = {
       full_name: studentForm.full_name,
       university_id: (studentForm.university_id || "").trim(),
@@ -1324,127 +1518,292 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 
-  const saveRegistration = async () => {
-    if (!studentForm.full_name.trim()) {
-     showToast("الاسم الرباعي مطلوب", "error");
+//   const saveRegistration = async () => {
+//     if (!studentForm.full_name.trim()) {
+//      showToast("الاسم الرباعي مطلوب", "error");
 
-      return;
-    }
-if (programType === "postgraduate" && !form.postgraduate_program?.trim()) {
-  showToast("اختاري/اكتبي برنامج الدراسات العليا", "error");
-  return;
-}
+//       return;
+//     }
+// if (programType === "postgraduate" && !form.postgraduate_program?.trim()) {
+//   showToast("اختاري/اكتبي برنامج الدراسات العليا", "error");
+//   return;
+// }
 
-    if (!form.academic_year || !form.level_name) {
-     showToast("السنة الدراسية والمستوى مطلوبان", "error");
-      return;
-    }
+//     if (!form.academic_year || !form.level_name) {
+//      showToast("السنة الدراسية والمستوى مطلوبان", "error");
+//       return;
+//     }
 
-    try {
-      let studentId = selectedStudent ? selectedStudent.id : null;
+//     try {
+//       let studentId = selectedStudent ? selectedStudent.id : null;
 
-      // ✅ لو الطالب موجود: حدّث بياناته الأساسية فقط
-if (studentId) {
-  const updStudentBody = {
-    full_name: studentForm.full_name,
-    university_id: (studentForm.university_id || "").trim(),
-    phone: studentForm.phone || null,
-    department_id: departmentId ? Number(departmentId) : null,
-  };
+// if (studentId) {
+//   const updStudentBody = {
+//     full_name: studentForm.full_name,
+//     university_id: (studentForm.university_id || "").trim(),
+//     phone: studentForm.phone || null,
+//     department_id: departmentId ? Number(departmentId) : null,
+//   };
 
-  const resUpd = await fetch(`${API_BASE}/students/${studentId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updStudentBody),
-  });
+//   const resUpd = await fetch(`${API_BASE}/students/${studentId}`, {
+//     method: "PUT",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify(updStudentBody),
+//   });
 
-  const dataUpd = await resUpd.json();
-  if (!resUpd.ok) {
-    showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
+//   const dataUpd = await resUpd.json();
+//   if (!resUpd.ok) {
+//     showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
+//     return;
+//   }
+// }
+
+
+//       if (!studentId) {
+//         const studentBody = {
+//           full_name: studentForm.full_name,
+//           university_id: (studentForm.university_id || "").trim(),
+//           phone: studentForm.phone || null,
+//           receipt_number: null,
+//           department_id: departmentId ? Number(departmentId) : null,
+//           notes: null,
+//           registrar: DEFAULT_REGISTRAR,
+//         };
+
+//         const resStudent = await fetch(`${API_BASE}/students`, {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify(studentBody),
+//         });
+
+//         const dataStudent = await resStudent.json();
+//         if (!resStudent.ok) {
+//           showToast(dataStudent.message || "فشل في إضافة الطالب الجديد", "error");
+//           return;
+//         }
+//         studentId = dataStudent.student_id;
+//       }
+
+// const regBody = {
+//   student_id: studentId,
+//   academic_year: form.academic_year,
+//   level_name: form.level_name,
+//   term_name: form.term_name || null,
+//   academic_status: form.academic_status,
+//   registration_status: form.registration_status,
+//   notes: form.notes || null,
+//   registrar: DEFAULT_REGISTRAR,
+
+//   program_type: programType, 
+//   postgraduate_data:
+//     programType === "postgraduate"
+//       ? {
+//           prev_degree: form.prev_degree,
+//           prev_university: form.prev_university,
+//           prev_grad_year: form.prev_grad_year,
+//           study_type: form.study_type,
+//         }
+//       : null,
+//       postgraduate_program: programType === "postgraduate" ? (form.postgraduate_program || null) : null,
+
+// };
+
+
+//       const resReg = await fetch(`${API_BASE}/registrations`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(regBody),
+//       });
+
+//       const dataReg = await resReg.json();
+//       if (!resReg.ok) {
+//        showToast(dataReg.message || "فشل في حفظ التسجيل", "error");
+//         return;
+//       }
+
+//       showToast(dataReg.message || "تم تسجيل الطالب بنجاح", "success");
+
+//       resetStudentForm();
+//       window.scrollTo({ top: 0, behavior: "smooth" });
+//     } catch (err) {
+//       console.error(err);
+//       showToast("حدث خطأ أثناء حفظ التسجيل", "error");
+
+//     }
+//   };
+
+const saveRegistration = async () => {
+  if (!studentForm.full_name.trim()) {
+    showToast("الاسم الرباعي مطلوب", "error");
     return;
   }
-}
 
+  if (programType === "postgraduate" && !form.postgraduate_program?.trim()) {
+    showToast("اختاري/اكتبي برنامج الدراسات العليا", "error");
+    return;
+  }
 
-      // لو طالب جديد
-      if (!studentId) {
-        const studentBody = {
-          full_name: studentForm.full_name,
-          university_id: (studentForm.university_id || "").trim(),
-          phone: studentForm.phone || null,
-          receipt_number: null,
-          department_id: departmentId ? Number(departmentId) : null,
-          notes: null,
-          registrar: DEFAULT_REGISTRAR,
-        };
+  if (!form.academic_year || !form.level_name) {
+    showToast("السنة الدراسية والمستوى مطلوبان", "error");
+    return;
+  }
 
-        const resStudent = await fetch(`${API_BASE}/students`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(studentBody),
-        });
+  try {
+    // جيب التوكن من localStorage (ده اللي بيحصل بعد اللوجن)
+const token = sessionStorage.getItem("token");
+    if (!token) {
+      showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
+      // لو عايزة توجهيها لصفحة اللوجن مباشرة:
+      // navigate("/login");
+      return;
+    }
 
-        const dataStudent = await resStudent.json();
-        if (!resStudent.ok) {
-          showToast(dataStudent.message || "فشل في إضافة الطالب الجديد", "error");
-          return;
-        }
-        studentId = dataStudent.student_id;
+    let studentId = selectedStudent ? selectedStudent.id : null;
+
+    // 1. تحديث بيانات الطالب إذا موجود
+    if (studentId) {
+      const updStudentBody = {
+        full_name: studentForm.full_name,
+        university_id: (studentForm.university_id || "").trim(),
+        phone: studentForm.phone || null,
+        department_id: departmentId ? Number(departmentId) : null,
+      };
+
+      const resUpd = await fetch(`${API_BASE}/students/${studentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,   // ← مهم جدًا
+        },
+        body: JSON.stringify(updStudentBody),
+      });
+
+      if (!resUpd.ok) {
+        const errData = await resUpd.json();
+        showToast(errData.message || "فشل تحديث بيانات الطالب", "error");
+        return;
+      }
+    }
+
+    // 2. إنشاء طالب جديد إذا مش موجود
+    if (!studentId) {
+      const studentBody = {
+        full_name: studentForm.full_name,
+        university_id: (studentForm.university_id || "").trim(),
+        phone: studentForm.phone || null,
+        receipt_number: null,
+        department_id: departmentId ? Number(departmentId) : null,
+        notes: null,
+        registrar: DEFAULT_REGISTRAR,
+      };
+
+      const resStudent = await fetch(`${API_BASE}/students`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,   // ← مهم هنا كمان
+        },
+        body: JSON.stringify(studentBody),
+      });
+
+      const dataStudent = await resStudent.json();
+
+      if (!resStudent.ok) {
+        showToast(dataStudent.message || "فشل في إضافة الطالب الجديد", "error");
+        return;
       }
 
-const regBody = {
-  student_id: studentId,
-  academic_year: form.academic_year,
-  level_name: form.level_name,
-  term_name: form.term_name || null,
-  academic_status: form.academic_status,
-  registration_status: form.registration_status,
-  notes: form.notes || null,
-  registrar: DEFAULT_REGISTRAR,
+      studentId = dataStudent.student_id;
+    }
 
-  program_type: programType, 
-  postgraduate_data:
-    programType === "postgraduate"
-      ? {
-          prev_degree: form.prev_degree,
-          prev_university: form.prev_university,
-          prev_grad_year: form.prev_grad_year,
-          study_type: form.study_type,
-        }
-      : null,
-      postgraduate_program: programType === "postgraduate" ? (form.postgraduate_program || null) : null,
+    // 3. التحقق من وجود تسجيل سابق مطابق للفترة
+    if (
+      lastRegistration &&
+      lastRegistration.academic_year === form.academic_year &&
+      lastRegistration.level_name === form.level_name &&
+      lastRegistration.term_name === form.term_name
+    ) {
+      // تعديل الموقف الأكاديمي فقط (PUT)
+      const regBody = {
+        academic_status: form.academic_status,
+      };
 
-};
-
-
-      const resReg = await fetch(`${API_BASE}/registrations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,   // ← الحل الرئيسي للـ 401
+        },
         body: JSON.stringify(regBody),
       });
 
       const dataReg = await resReg.json();
+
       if (!resReg.ok) {
-       showToast(dataReg.message || "فشل في حفظ التسجيل", "error");
+        if (resReg.status === 401) {
+          showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
+        } else {
+          showToast(dataReg.message || "فشل في تعديل الموقف الأكاديمي", "error");
+        }
         return;
       }
 
-      showToast(dataReg.message || "تم تسجيل الطالب بنجاح", "success");
+      showToast("تم تعديل الموقف الأكاديمي فقط في السجل الحالي", "success");
+    } 
+    else {
+      // إنشاء تسجيل جديد (POST)
+      const regBody = {
+        student_id: studentId,
+        academic_year: form.academic_year,
+        level_name: form.level_name,
+        term_name: form.term_name || null,
+        academic_status: form.academic_status,
+        registration_status: form.registration_status,
+        notes: form.notes || null,
+        program_type: programType,
+        postgraduate_data:
+          programType === "postgraduate"
+            ? {
+                prev_degree: form.prev_degree,
+                prev_university: form.prev_university,
+                prev_grad_year: form.prev_grad_year,
+                study_type: form.study_type,
+              }
+            : null,
+        postgraduate_program: programType === "postgraduate" ? (form.postgraduate_program || null) : null,
+      };
 
-      resetStudentForm();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      console.error(err);
-      showToast("حدث خطأ أثناء حفظ التسجيل", "error");
+      const resReg = await fetch(`${API_BASE}/registrations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,   // ← مهم جدًا هنا كمان
+        },
+        body: JSON.stringify(regBody),
+      });
 
+      const dataReg = await resReg.json();
+
+      if (!resReg.ok) {
+        showToast(dataReg.message || "فشل في حفظ التسجيل الجديد", "error");
+        return;
+      }
+
+      showToast("تم تسجيل الطالب بنجاح", "success");
     }
-  };
+
+    resetStudentForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    console.error("خطأ في عملية التسجيل:", err);
+    showToast("حدث خطأ غير متوقع أثناء حفظ التسجيل", "error");
+  }
+};
 
   return (
     <div>
       <h2 style={ui.titleH2}>تسجيل طالب (فردي)</h2>
 
-      {/* البحث عن الطالب */}
       <div style={ui.card}>
         <h3 style={ui.sectionTitle}>البحث عن الطالب</h3>
 
@@ -1473,9 +1832,6 @@ const regBody = {
   </div>
 )}
 
-          {/* <button onClick={searchStudents} style={ui.primaryBtn}>
-            بحث
-          </button> */}
         </div>
 
         {searchResults.length > 0 && (
@@ -1526,20 +1882,28 @@ const regBody = {
 
       </div>
 
-      {/* بيانات الطالب الأساسية */}
       <div style={ui.card}>
         <div style={ui.card}>
   <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
 
   <div style={{ display: "flex", gap: 20 }}>
+                        <label>
+            <input
+              type="radio"
+              value="diploma"
+              checked={programType === "diploma"}
+              onChange={(e) => setProgramType(e.target.value)}
+            />
+            دبلوم
+          </label>
     <label>
       <input
         type="radio"
-        value="undergraduate"
-        checked={programType === "undergraduate"}
+        value="bachelor"
+        checked={programType === "bachelor"}
         onChange={(e) => setProgramType(e.target.value)}
       />
-      بكالوريوس/دبلوم
+      بكالوريوس
     </label>
 
     <label>
@@ -1578,7 +1942,7 @@ const regBody = {
               onChange={(e) =>
                 setStudentForm((prev) => ({ ...prev, university_id: e.target.value }))
               }
-              placeholder="يمكن ادخاله لاحقا "
+              placeholder=" مثال: 20260001"
               style={ui.input}
             />
           </div>
@@ -1701,15 +2065,21 @@ const regBody = {
           <option value="بالكورسات">كورسات</option>
         </select>
       </div>
-      <div style={ui.field}>
+<div style={ui.field}>
   <label style={ui.label}>برنامج الدراسات العليا</label>
   <input
     type="text"
+    list="single_pg_programs"
     value={form.postgraduate_program || ""}
     onChange={(e) => setForm((p) => ({ ...p, postgraduate_program: e.target.value }))}
     placeholder="مثال: ماجستير إدارة أعمال"
     style={ui.input}
   />
+  <datalist id="single_pg_programs">
+    {pgSmart.programs.map((p) => (
+      <option key={p} value={p} />
+    ))}
+  </datalist>
 </div>
 
     </div>
@@ -1717,7 +2087,6 @@ const regBody = {
 )}
 </div>
 
-      {/* فورم التسجيل */}
       <div style={ui.card}>
         <h3 style={ui.sectionTitle}>تسجيل جديد لسنة/فصل دراسي</h3>
 
@@ -1832,6 +2201,482 @@ const regBody = {
           حفظ التسجيل
         </button>
       </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   تاب 3 – تسجيل مواد الرسوب / إعادة المواد
+   ========================================================= */
+function FailedCoursesRegistrationTab({ showToast }) {
+  const [programType, setProgramType] = useState("bachelor");
+  const [postgradProgram, setPostgradProgram] = useState("");
+
+  const [faculties, setFaculties] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+
+  const [academicYear, setAcademicYear] = useState("");
+  const [levelName, setLevelName] = useState("");
+  const [termName, setTermName] = useState("");
+
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [failedCourses, setFailedCourses] = useState([]);
+  const [registeredInCurrentPeriod, setRegisteredInCurrentPeriod] = useState([]);
+
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const pgSmart = usePostgradProgramsSmartList();
+  const smart = useAcademicPeriodsSmartList({
+    programType,
+    postgraduateProgram: postgradProgram,
+  });
+
+  // تحميل الكليات
+  useEffect(() => {
+    fetch(`${API_BASE}/faculties-list`)
+      .then((res) => res.json())
+      .then(setFaculties)
+      .catch(() => showToast("خطأ في تحميل الكليات", "error"));
+  }, []);
+
+  // تحميل الأقسام
+  useEffect(() => {
+    if (!selectedFacultyId) {
+      setDepartments([]);
+      setDepartmentId("");
+      return;
+    }
+    fetch(`${API_BASE}/departments/${selectedFacultyId}`)
+      .then((res) => res.json())
+      .then(setDepartments)
+      .catch(() => showToast("خطأ في تحميل الأقسام", "error"));
+  }, [selectedFacultyId]);
+
+  useEffect(() => {
+    if (departmentId || (programType === "postgraduate" && postgradProgram.trim())) {
+      smart.fetchAcademicPeriods();
+    }
+  }, [departmentId, programType, postgradProgram]);
+
+  useEffect(() => {
+    smart.rebuildOptions(academicYear, levelName);
+  }, [academicYear, levelName, smart.periods]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      setSearchLoading(true);
+      fetch(`${API_BASE}/students/search?q=${encodeURIComponent(query.trim())}`)
+        .then(r => r.json())
+        .then(data => setSearchResults(Array.isArray(data) ? data : []))
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearchLoading(false));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const selectStudent = (id) => {
+    fetch(`${API_BASE}/students/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        setSelectedStudent(data.student || null);
+        setPostgradProgram(data.lastRegistration?.postgraduate_program || "");
+        setProgramType(data.lastRegistration?.program_type || "bachelor");
+
+        if (data.student?.faculty_id) setSelectedFacultyId(String(data.student.faculty_id));
+        if (data.student?.department_id) setDepartmentId(String(data.student.department_id));
+
+        loadFailedCourses(id);
+      })
+      .catch(() => showToast("خطأ في جلب بيانات الطالب", "error"));
+  };
+
+  const loadFailedCourses = async (studentId) => {
+    try {
+      const res = await fetch(`${API_BASE}/student-failed-courses?student_id=${studentId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "خطأ");
+      setFailedCourses(Array.isArray(data) ? data : []);
+      setRegisteredInCurrentPeriod([]); 
+    } catch (err) {
+      showToast(err.message || "تعذر جلب مواد الرسوب", "error");
+      setFailedCourses([]);
+    }
+  };
+
+  const resetPeriodForm = () => {
+    setAcademicYear("");
+    setLevelName("");
+    setTermName("");
+    setRegisteredInCurrentPeriod([]);
+  };
+
+  const registerFailedCourse = async (course) => {
+    if (!departmentId || !academicYear || !levelName || !termName) {
+      showToast("املئي السنة والمستوى والفصل أولاً", "error");
+      return;
+    }
+
+    try {
+      const body = {
+        student_id: selectedStudent.id,
+        course_id: course.course_id,
+        academic_year: academicYear,
+        level_name: levelName,
+        term_name: termName,
+        program_type: programType,
+        postgraduate_program: programType === "postgraduate" ? postgradProgram : null,
+        registration_status: "مسجل",
+        notes: "إعادة مادة راسبة"
+      };
+
+      const res = await fetch(`${API_BASE}/register-failed-course`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          showToast(
+            `المادة "${course.course_name}" مسجلة بالفعل في الفترة: ${academicYear} - ${levelName} - ${termName}`,
+            "warning"
+          );
+          setRegisteredInCurrentPeriod(prev => [...new Set([...prev, course.course_id])]);
+        } else {
+          throw new Error(data.error || "فشل التسجيل");
+        }
+        return;
+      }
+
+      showToast("تم تسجيل إعادة المادة بنجاح", "success");
+
+      setRegisteredInCurrentPeriod(prev => [...new Set([...prev, course.course_id])]);
+      setFailedCourses(prev => prev.filter(c => c.course_id !== course.course_id));
+      resetPeriodForm();
+
+    } catch (err) {
+      showToast(err.message || "حدث خطأ أثناء التسجيل", "error");
+    }
+  };
+
+  const isCourseRegisteredInPeriod = (courseId) => {
+    return registeredInCurrentPeriod.includes(courseId);
+  };
+
+  return (
+    <div>
+      <h2 style={ui.titleH2}>تسجيل مواد الرسوب / إعادة المواد</h2>
+
+      {/* نوع البرنامج */}
+      <div style={ui.card}>
+        <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
+        <div style={{ display: "flex", gap: 20 }}>
+                              <label>
+            <input
+              type="radio"
+              value="diploma"
+              checked={programType === "diploma"}
+              onChange={(e) => setProgramType(e.target.value)}
+            />
+            دبلوم
+          </label>
+          <label>
+            <input
+              type="radio"
+              value="bachelor"
+              checked={programType === "bachelor"}
+              onChange={(e) => setProgramType(e.target.value)}
+            />
+            بكالوريوس
+          </label>
+          <label>
+            <input
+              type="radio"
+              value="postgraduate"
+              checked={programType === "postgraduate"}
+              onChange={(e) => setProgramType(e.target.value)}
+            />
+            دراسات عليا
+          </label>
+        </div>
+      </div>
+
+      {/* برنامج الدراسات العليا */}
+      {programType === "postgraduate" && (
+        <div style={ui.card}>
+          <h3 style={ui.sectionTitle}>برنامج الدراسات العليا</h3>
+          <input
+            type="text"
+            list="pg_programs_failed"
+            value={postgradProgram}
+            onChange={(e) => setPostgradProgram(e.target.value)}
+            placeholder="مثال: ماجستير إدارة أعمال"
+            style={ui.input}
+          />
+          <datalist id="pg_programs_failed">
+            {pgSmart.programs.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
+        </div>
+      )}
+
+      {/* الكلية + القسم */}
+      <div style={ui.card}>
+        <div style={ui.grid}>
+          <div style={ui.field}>
+            <label style={ui.label}>الكلية</label>
+            <select
+              value={selectedFacultyId}
+              onChange={(e) => {
+                setSelectedFacultyId(e.target.value);
+                setDepartmentId("");
+              }}
+              style={ui.select}
+            >
+              <option value="">اختر الكلية</option>
+              {faculties.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.faculty_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={ui.field}>
+            <label style={ui.label}>القسم</label>
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              disabled={!selectedFacultyId}
+              style={ui.select}
+            >
+              <option value="">اختر القسم</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.department_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* البحث عن الطالب */}
+      <div style={ui.card}>
+        <h3 style={ui.sectionTitle}>البحث عن الطالب</h3>
+        <input
+          type="text"
+          placeholder="اكتب الاسم أو الرقم الجامعي"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={ui.input}
+        />
+
+        {searchLoading && <div style={{ marginTop: 10, color: "#64748b" }}>جاري البحث...</div>}
+
+        {searchResults.length > 0 && (
+          <div style={{ marginTop: 12, ...ui.tableWrap }}>
+            <table style={ui.table}>
+              <thead>
+                <tr>
+                  <th style={ui.th}>اختيار</th>
+                  <th style={ui.th}>الاسم</th>
+                  <th style={ui.th}>الرقم الجامعي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {searchResults.map((s) => (
+                  <tr key={s.id}>
+                    <td style={ui.td}>
+                      <button
+                        onClick={() => selectStudent(s.id)}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#0a3753",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                        }}
+                      >
+                        اختر
+                      </button>
+                    </td>
+                    <td style={ui.td}>{s.full_name}</td>
+                    <td style={ui.td}>{s.university_id || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* فلاتر الفترة الجديدة - بالطريقة الذكية زي PromotionTab */}
+      {selectedStudent && departmentId && (
+        <>
+          <div style={ui.card}>
+            <h3 style={ui.sectionTitle}>الفترة الدراسية لإعادة المواد</h3>
+            <div style={ui.grid}>
+              {/* السنة الدراسية */}
+              <div style={ui.field}>
+                <label style={ui.label}>السنة الدراسية</label>
+                <input
+                  type="text"
+                  list="re_year_list"
+                  placeholder="مثال: 2025/2026"
+                  value={academicYear}
+                  onChange={(e) => {
+                    setAcademicYear(e.target.value);
+                    setLevelName("");
+                    setTermName("");
+                    setRegisteredInCurrentPeriod([]);
+                  }}
+                  style={ui.input}
+                />
+                <datalist id="re_year_list">
+                  {smart.yearOptions.map((y) => (
+                    <option key={y} value={y} />
+                  ))}
+                </datalist>
+              </div>
+
+              {/* المستوى */}
+              <div style={ui.field}>
+                <label style={ui.label}>المستوى</label>
+                <input
+                  type="text"
+                  list="re_level_list"
+                  placeholder="مثال: المستوى الثاني"
+                  value={levelName}
+                  onChange={(e) => {
+                    setLevelName(e.target.value);
+                    setTermName("");
+                    setRegisteredInCurrentPeriod([]);
+                  }}
+                  style={ui.input}
+                  disabled={!academicYear}
+                />
+                <datalist id="re_level_list">
+                  {smart.levelOptions.map((l) => (
+                    <option key={l} value={l} />
+                  ))}
+                </datalist>
+              </div>
+
+              {/* الفصل */}
+              <div style={ui.field}>
+                <label style={ui.label}>الفصل الدراسي</label>
+                <input
+                  type="text"
+                  list="re_term_list"
+                  placeholder="مثال: فصل أول"
+                  value={termName}
+                  onChange={(e) => {
+                    setTermName(e.target.value);
+                    setRegisteredInCurrentPeriod([]);
+                  }}
+                  onBlur={() => {
+                    if (academicYear && levelName && termName) {
+                      smart.ensurePeriodSaved(academicYear, levelName, termName);
+                    }
+                  }}
+                  style={ui.input}
+                  disabled={!levelName}
+                />
+                <datalist id="re_term_list">
+                  {smart.termOptions.map((t) => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+          </div>
+
+          {/* قائمة المواد الراسبة */}
+          <div style={ui.card}>
+            <h3 style={ui.sectionTitle}>
+              مواد الرسوب للطالب: {selectedStudent?.full_name || "غير محدد"}
+            </h3>
+
+            {failedCourses.length === 0 ? (
+              <p style={{ color: "#64748b", fontWeight: 700 }}>
+                لا توجد مواد  تم الرسوب فيها   لهذا الطالب
+              </p>
+            ) : (
+              <div style={ui.tableWrap}>
+                <table style={ui.table}>
+                  <thead>
+                    <tr>
+                      <th style={ui.th}>اسم المادة</th>
+                      <th style={ui.th}>السنة السابقة</th>
+                      <th style={ui.th}>المستوى السابق</th>
+                      <th style={ui.th}>الفصل السابق</th>
+                      <th style={ui.th}>الدرجة</th>
+                      <th style={ui.th}>إجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {failedCourses.map((c) => {
+                      const isRegistered = isCourseRegisteredInPeriod(c.course_id);
+                      return (
+                        <tr key={c.course_id}>
+                          <td style={ui.td}>{c.course_name}</td>
+                          <td style={ui.td}>{c.academic_year}</td>
+                          <td style={ui.td}>{c.level_name}</td>
+                          <td style={ui.td}>{c.term_name}</td>
+                          <td style={ui.td}>
+                            {c.total_mark ? `${c.total_mark}/100` : "—"} ({c.letter || "غير مدخلة"})
+                          </td>
+                          <td style={ui.td}>
+                            {isRegistered ? (
+                              <span style={{ color: "#16a34a", fontWeight: 800 }}>
+                                تم تسجيلها بالفعل في {academicYear} - {levelName} - {termName}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => registerFailedCourse(c)}
+                                style={{
+                                  padding: "8px 16px",
+                                  background: "#b45309",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  cursor: "pointer",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                سجّل إعادة
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {!departmentId && selectedStudent && (
+        <div style={{ color: "#b91c1c", fontWeight: 700, margin: "20px 0" }}>
+          يرجى اختيار الكلية والقسم أولاً لتحديد الفترة الدراسية الجديدة
+        </div>
+      )}
     </div>
   );
 }

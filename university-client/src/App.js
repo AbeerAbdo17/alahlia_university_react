@@ -11,12 +11,16 @@ import StudentsTermList from "./screens/StudentsTermList";
 import StaffMembers from "./screens/StaffMembers";
 import Dashboard from "./screens/Dashboard";
 import ScheduleAdmin from "./screens/ScheduleAdmin";
+import UsersManagement from "./screens/UsersManagement";
+import Login from "./screens/Login";
+import Register from "./screens/Register";
+import Certificates from "./screens/Certificates";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Dashboard  />} />
+        <Route path="/" element={<Login />} />  
         <Route path="/books" element={<BookListPage />} />
         <Route path="/faculty" element={<FacultyDepartmentAdmin />} />
         <Route path="/RegistrationTabs" element={<RegistrationTabs />} />
@@ -24,8 +28,12 @@ function App() {
         <Route path="/TermResult" element={<TermResult />} />
         <Route path="/StudentsTermList" element={<StudentsTermList />} />
         <Route path="/StaffMembers" element={<StaffMembers />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/schedule" element={<ScheduleAdmin />} />
+        <Route path="/UsersManagement" element={<UsersManagement />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/certificates" element={<Certificates />} />
       </Routes>
     </Router>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { FaBook, FaFilePdf, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import html2pdf from 'html2pdf.js';
 
 function createBookFromJson(json) {
   return {
@@ -20,12 +21,153 @@ function createBookFromJson(json) {
 
 const API_BASE = "http://localhost:5000/api";
 
+const ui = {
+  page: {
+    fontFamily: `"Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", Arial, sans-serif`,
+    fontSize: 16,
+  },
+
+  titleH2: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: "#0a3753",
+    margin: "10px 0 16px",
+  },
+
+  card: {
+    border: "1px solid #e6e8ee",
+    background: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 18,
+    boxShadow: "0 4px 16px rgba(10,55,83,0.06)",
+  },
+
+  sectionTitle: {
+    marginTop: 0,
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#0a3753",
+    marginBottom: 12,
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 14,
+  },
+
+  field: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#334155",
+  },
+
+  hint: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 2,
+  },
+
+  input: {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 10,
+    border: "1px solid #d9dee8",
+    outline: "none",
+    fontSize: 16,
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+    background: "#fff",
+  },
+
+  select: {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 10,
+    border: "1px solid #d9dee8",
+    outline: "none",
+    fontSize: 16,
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+    background: "#fff",
+    cursor: "pointer",
+  },
+
+  textarea: {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 10,
+    border: "1px solid #d9dee8",
+    outline: "none",
+    fontSize: 16,
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+    background: "#fff",
+    resize: "vertical",
+  },
+
+  primaryBtn: {
+    marginTop: 16,
+    padding: "12px 18px",
+    background: "#0a3753",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 800,
+    fontSize: 16,
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+  },
+
+  secondaryBtn: {
+    marginTop: 16,
+    padding: "12px 18px",
+    background: "#0f766e",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 800,
+    fontSize: 16,
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+  },
+
+  tabsRow: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 18,
+    borderBottom: "1px solid #e6e8ee",
+    paddingBottom: 10,
+    flexWrap: "wrap",
+  },
+
+  tabBtn: (active) => ({
+    padding: "10px 16px",
+    borderRadius: 12,
+    border: active ? "1px solid #0a3753" : "1px solid #e6e8ee",
+    background: active ? "rgba(10,55,83,0.08)" : "#fff",
+    cursor: "pointer",
+    fontWeight: 800,
+    fontSize: 15,
+    color: "#0a3753",
+    fontFamily: `"Cairo", "Tajawal", Arial, sans-serif`,
+  }),
+
+};
+
 const BookListPage = () => {
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState("books"); // "books" | "reports"
+
   const [books, setBooks] = useState([]);
-  const [faculties, setFaculties] = useState([]); // [{id, faculty_name}]
-  const [facultyFilter, setFacultyFilter] = useState(null); // faculty_id
+  const [faculties, setFaculties] = useState([]);
+  const [facultyFilter, setFacultyFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -52,7 +194,16 @@ const BookListPage = () => {
   const [borrowLookupLoading, setBorrowLookupLoading] = useState(false);
   const [returnLookupLoading, setReturnLookupLoading] = useState(false);
 
-  // ✅ Toast System
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [booksByCategory, setBooksByCategory] = useState([]);
+  const [borrowedBooks, setBorrowedBooks] = useState([]);
+
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingBooksByCat, setLoadingBooksByCat] = useState(false);
+  const [loadingBorrowed, setLoadingBorrowed] = useState(false);
+
+  // Toast
   const [toast, setToast] = useState({ open: false, type: "success", text: "" });
 
   const showToast = useCallback((text, type = "success") => {
@@ -63,7 +214,6 @@ const BookListPage = () => {
     }, 2500);
   }, []);
 
-  // fetch
   const fetchBooks = async () => {
     try {
       let url = `${API_BASE}/books`;
@@ -72,7 +222,7 @@ const BookListPage = () => {
       if (facultyFilter) params.append("faculty_id", facultyFilter);
       if (searchQuery) params.append("search", searchQuery);
 
-      if (Array.from(params).length > 0) url += `?${params.toString()}`;
+      if (params.toString()) url += `?${params.toString()}`;
 
       const res = await fetch(url);
       if (!res.ok) throw new Error("fetchBooks failed");
@@ -95,84 +245,120 @@ const BookListPage = () => {
     }
   };
 
+  // جلب التصنيفات الفريدة + الكتب المستعارة
+  useEffect(() => {
+    const loadReportsData = async () => {
+      // التصنيفات
+      setLoadingCategories(true);
+      try {
+        const res = await fetch(`${API_BASE}/book-categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(Array.isArray(data) ? data : []);
+        }
+      } catch {}
+      setLoadingCategories(false);
+
+      // الكتب المستعارة 
+      if (activeTab === "reports") {
+        setLoadingBorrowed(true);
+        try {
+          const res = await fetch(`${API_BASE}/borrowed-books-report`);
+          if (res.ok) {
+            const data = await res.json();
+            setBorrowedBooks(Array.isArray(data) ? data : []);
+          }
+        } catch {}
+        setLoadingBorrowed(false);
+      }
+    };
+
+    loadReportsData();
+  }, [activeTab]);
+
+  // جلب الكتب حسب التصنيف المختار
+  useEffect(() => {
+    if (activeTab !== "reports" || !selectedCategory) {
+      setBooksByCategory([]);
+      return;
+    }
+
+    setLoadingBooksByCat(true);
+    fetch(`${API_BASE}/books-by-category?category=${encodeURIComponent(selectedCategory)}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setBooksByCategory(Array.isArray(data) ? data : []))
+      .catch(() => showToast("خطأ في جلب الكتب حسب التصنيف", "error"))
+      .finally(() => setLoadingBooksByCat(false));
+  }, [selectedCategory, activeTab]);
+
   useEffect(() => {
     fetchBooks();
     fetchFaculties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchBooks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facultyFilter, searchQuery]);
 
-  // lookup borrow student name
   useEffect(() => {
     const uni = (borrowValues.student_id || "").trim();
-    if (!showBorrowModal) return;
-
-    if (!uni) {
-      setBorrowValues((prev) => ({ ...prev, name: "" }));
+    if (!showBorrowModal || !uni) {
+      setBorrowValues(prev => ({ ...prev, name: "" }));
       return;
     }
 
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
+      setBorrowLookupLoading(true);
       try {
-        setBorrowLookupLoading(true);
         const res = await fetch(
           `${API_BASE}/library/student-by-uni?university_id=${encodeURIComponent(uni)}`
         );
-
-        if (!res.ok) {
-          setBorrowValues((prev) => ({ ...prev, name: "" }));
-          return;
+        if (res.ok) {
+          const st = await res.json();
+          setBorrowValues(prev => ({ ...prev, name: st.full_name || "" }));
+        } else {
+          setBorrowValues(prev => ({ ...prev, name: "" }));
         }
-
-        const st = await res.json();
-        setBorrowValues((prev) => ({ ...prev, name: st.full_name || "" }));
       } catch {
-        setBorrowValues((prev) => ({ ...prev, name: "" }));
+        setBorrowValues(prev => ({ ...prev, name: "" }));
       } finally {
         setBorrowLookupLoading(false);
       }
-    }, 400);
+    }, 500);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [borrowValues.student_id, showBorrowModal]);
 
-  // lookup return student name
   useEffect(() => {
     const uni = (returnValues.student_id || "").trim();
-    if (!showReturnModal) return;
-
-    if (!uni) {
-      setReturnValues((prev) => ({ ...prev, name: "" }));
+    if (!showReturnModal || !uni) {
+      setReturnValues(prev => ({ ...prev, name: "" }));
       return;
     }
 
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
+      setReturnLookupLoading(true);
       try {
-        setReturnLookupLoading(true);
         const res = await fetch(
           `${API_BASE}/library/student-by-uni?university_id=${encodeURIComponent(uni)}`
         );
-
-        if (!res.ok) {
-          setReturnValues((prev) => ({ ...prev, name: "" }));
-          return;
+        if (res.ok) {
+          const st = await res.json();
+          setReturnValues(prev => ({ ...prev, name: st.full_name || "" }));
+        } else {
+          setReturnValues(prev => ({ ...prev, name: "" }));
         }
-
-        const st = await res.json();
-        setReturnValues((prev) => ({ ...prev, name: st.full_name || "" }));
       } catch {
-        setReturnValues((prev) => ({ ...prev, name: "" }));
+        setReturnValues(prev => ({ ...prev, name: "" }));
       } finally {
         setReturnLookupLoading(false);
       }
-    }, 400);
+    }, 500);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [returnValues.student_id, showReturnModal]);
+
+
 
   const handleDownloadPdf = (url) => {
     if (!url) return;
@@ -187,7 +373,6 @@ const BookListPage = () => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  // add
   const openAddModal = () => {
     setFormValues({
       title: "",
@@ -238,7 +423,6 @@ const BookListPage = () => {
     }
   };
 
-  // edit
   const openEditModal = (book) => {
     setSelectedBook(book);
     setFormValues({
@@ -249,7 +433,6 @@ const BookListPage = () => {
       copies: String(book.copies ?? ""),
       location: book.location,
     });
-
     setPickedFile(null);
     setShowEditModal(true);
   };
@@ -292,7 +475,6 @@ const BookListPage = () => {
     }
   };
 
-  // delete
   const deleteBook = async (book) => {
     const ok = window.confirm("هل أنت متأكد من حذف هذا الكتاب؟");
     if (!ok) return;
@@ -314,7 +496,6 @@ const BookListPage = () => {
     }
   };
 
-  // borrow
   const openBorrowModal = (book) => {
     setSelectedBook(book);
     setBorrowValues({ name: "", student_id: "" });
@@ -353,7 +534,6 @@ const BookListPage = () => {
     }
   };
 
-  // return
   const openReturnModal = (book) => {
     setSelectedBook(book);
     setReturnValues({ name: "", student_id: "" });
@@ -399,10 +579,23 @@ const BookListPage = () => {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        showToast(data?.message || "تم إرجاع الكتاب بنجاح", "success");
-        setShowReturnModal(false);
-        setSelectedBook(null);
-        fetchBooks();
+        const deleteRes = await fetch(`${API_BASE}/borrow/delete`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            book_id: selectedBook.id,
+            student_id: uni,
+          }),
+        });
+
+        if (deleteRes.ok) {
+          showToast(data?.message || "تم إرجاع الكتاب بنجاح", "success");
+          setShowReturnModal(false);
+          setSelectedBook(null);
+          fetchBooks();
+        } else {
+          showToast("فشل حذف سجل الاستعارة", "error");
+        }
       } else {
         showToast(data?.error || "فشل إرجاع الكتاب", "error");
       }
@@ -412,19 +605,169 @@ const BookListPage = () => {
     }
   };
 
+  // طباعة قائمة الكتب حسب التصنيف
+  const printBooksByCategory = () => {
+  if (!selectedCategory) {
+    showToast("يرجى اختيار تصنيف أولاً", "error");
+    return;
+  }
+
+  if (booksByCategory.length === 0) {
+    showToast("لا توجد كتب في هذا التصنيف للطباعة", "error");
+    return;
+  }
+
+  const reportTitle = `كتب التصنيف: ${selectedCategory}`;
+
+  const headerHTML = `
+    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #ccc; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif;">
+      <h1 style="margin: 0; color: #0a3753; font-size: 22px;">
+        جامعة بورتسودان الأهلية - المكتبة
+      </h1>
+      <p style="margin: 12px 0 4px; font-weight: bold; font-size: 16px;">
+        ${reportTitle}
+      </p>
+      <p style="margin: 8px 0; font-size: 14px; color: #4b5563;">
+        تاريخ الطباعة: ${new Date().toLocaleDateString('EG')}
+      </p>
+      <p style="margin: 4px 0; font-size: 13px; color: #6b7280;">
+        عدد الكتب: ${booksByCategory.length}
+      </p>
+    </div>
+  `;
+
+  const tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; font-size: 14px;">
+      <thead>
+        <tr style="background: #6e6e6e; color: white;">
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">#</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">العنوان</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">المؤلف</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">عدد النسخ(الحالية)</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">الموقع</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">الكلية</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${booksByCategory.map((b, idx) => `
+          <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${idx + 1}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${b.title || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${b.author || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${b.copies || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${b.location || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${b.faculty_name || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const fullContent = `<div style="padding: 20px 40px;">${headerHTML}${tableHTML}</div>`;
+
+  const element = document.createElement('div');
+  element.innerHTML = fullContent;
+
+  html2pdf()
+    .from(element)
+    .set({
+      margin: 1,
+      filename: `كتب_تصنيف_${selectedCategory.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+      html2canvas: { scale: 2 }
+    })
+    .save();
+
+  showToast("جاري تجهيز قائمة الكتب للطباعة...", "success");
+};
+
+// طباعة قائمة الكتب المستعارة حالياً
+const printBorrowedBooks = () => {
+  if (borrowedBooks.length === 0) {
+    showToast("لا توجد كتب مستعارة حالياً للطباعة", "error");
+    return;
+  }
+
+  const headerHTML = `
+    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #ccc; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif;">
+      <h1 style="margin: 0; color: #0a3753; font-size: 22px;">
+        جامعة بورتسودان الأهلية - المكتبة
+      </h1>
+      <p style="margin: 12px 0 4px; font-weight: bold; font-size: 16px;">
+        الكتب المستعارة حالياً
+      </p>
+      <p style="margin: 8px 0; font-size: 14px; color: #4b5563;">
+        تاريخ الطباعة: ${new Date().toLocaleDateString('EG')}
+      </p>
+      <p style="margin: 4px 0; font-size: 13px; color: #6b7280;">
+        عدد الكتب المستعارة: ${borrowedBooks.length}
+      </p>
+    </div>
+  `;
+
+  const tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; font-size: 14px;">
+      <thead>
+        <tr style="background: #6e6e6e; color: white;">
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold; width:60px;">#</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">عنوان الكتاب</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">اسم الطالب</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">الرقم الجامعي</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">الكلية</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">القسم</th>
+          <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">تاريخ الاستعارة</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${borrowedBooks.map((item, idx) => `
+          <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${idx + 1}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${item.book_title || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${item.student_name || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${item.student_university_id || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${item.faculty_name || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${item.department_name || '—'}</td>
+            <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">
+              ${item.borrowed_at ? new Date(item.borrowed_at).toLocaleDateString('EG') : '—'}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const fullContent = `<div style="padding: 20px 40px;">${headerHTML}${tableHTML}</div>`;
+
+  const element = document.createElement('div');
+  element.innerHTML = fullContent;
+
+  html2pdf()
+    .from(element)
+    .set({
+      margin: 1,
+      filename: `كتب_مستعارة_${new Date().toISOString().split('T')[0]}.pdf`,
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+      html2canvas: { scale: 2 }
+    })
+    .save();
+
+  showToast("جاري تجهيز قائمة الكتب المستعارة للطباعة...", "success");
+};
+
+
   return (
     <div className="library-layout">
-      {/* ✅ Toast */}
+      {/* Toast */}
       {toast.open && (
         <div className={`toast ${toast.type === "success" ? "toast-success" : "toast-error"}`}>
           {toast.text}
         </div>
       )}
 
-      {/* الهيدر */}
+      {/* Header */}
       <header className="library-header">
         <div className="library-header-title">
-          <span style={{ fontSize: 24 }}></span>
+          <span style={{ fontSize: 24 }}>Books</span>
           <span>المكتبة</span>
         </div>
 
@@ -443,134 +786,338 @@ const BookListPage = () => {
         </button>
       </header>
 
-      {/* المحتوى */}
       <main className="library-main">
         <div className="library-container">
-          {/* شريط الفلاتر والبحث */}
-<div className="toolbar">
-  <div className="faculties-scroll">
-    <div className="chips-wrap">
-      {faculties.map((f) => {
-        const isSelected = facultyFilter === f.id;
-        return (
-          <button
-            key={f.id}
-            className={"chip" + (isSelected ? " chip--selected" : "")}
-            onClick={() => setFacultyFilter((prev) => (prev === f.id ? null : f.id))}
-          >
-            {f.faculty_name}
-          </button>
-        );
-      })}
-    </div>
-  </div>
 
-  <div className="toolbar-right">
-    <div className="search-box">
-      <input
-        type="text"
-        className="search-input"
-        placeholder="بحث عن كتاب (عنوان، مؤلف، كلية...)"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <span className="search-icon"></span>
-    </div>
+          {/* التبويبات */}
+          <div style={ui.tabsRow}>
+            <button
+              style={ui.tabBtn(activeTab === "books")}
+              onClick={() => setActiveTab("books")}
+            >
+المكتبة            </button>
+            <button
+              style={ui.tabBtn(activeTab === "reports")}
+              onClick={() => setActiveTab("reports")}
+            >
+              التقارير
+            </button>
+          </div>
 
-    {/*  زر إضافة كتاب  */}
-    <button className="add-book-btn" onClick={openAddModal} title="إضافة كتاب">
-      <FaPlus />
-      <span className="add-book-text">إضافة كتاب</span>
-    </button>
-  </div>
-</div>
-
-
-          {/* شبكة الكتب */}
-          <div className="book-grid">
-            {books.map((b) => (
-              <div key={b.id} className="book-card">
-                <div>
-                  <div className="book-icon-wrapper">
-                    <span
-                      className="book-icon"
-                      style={{ color: b.isPdf ? "#dc2626" : "#5e5f61d2" }}
-                      onClick={() => {
-                        if (b.isPdf) handleDownloadPdf(b.pdfUrl);
-                      }}
-                      title={b.isPdf ? "تحميل PDF" : ""}
-                    >
-                      {b.isPdf ? <FaFilePdf /> : <FaBook />}
-                    </span>
+          {/* تب قائمة الكتب */}
+          {activeTab === "books" && (
+            <>
+              <div className="toolbar">
+                <div className="faculties-scroll">
+                  <div className="chips-wrap">
+                    {faculties.map((f) => {
+                      const isSelected = facultyFilter === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          className={"chip" + (isSelected ? " chip--selected" : "")}
+                          onClick={() => setFacultyFilter((prev) => (prev === f.id ? null : f.id))}
+                        >
+                          {f.faculty_name}
+                        </button>
+                      );
+                    })}
                   </div>
-
-                  <div className="book-info-title">{b.title}</div>
-                  <div className="book-info-meta">
-                    الكاتب: <strong>{b.author}</strong>
-                  </div>
-                  <div className="book-info-meta">
-                    الكلية: <strong>{b.facultyName || "-"}</strong>
-                  </div>
-
-                  {b.location && (
-                    <div className="book-location">
-                      الموقع: <span>{b.location}</span>
-                    </div>
-                  )}
-
-                  {!b.isPdf && (
-                    <div className="book-availability">
-                      <div className="book-availability-title">في المكتبة</div>
-                      <div>عدد النسخ: {b.copies}</div>
-                    </div>
-                  )}
                 </div>
 
-                {!b.isPdf && (
-                  <div className="actions-main">
-                    {b.copies > 0 ? (
-                      <button className="btn btn-primary" onClick={() => openBorrowModal(b)}>
-                        استعارة
-                      </button>
-                    ) : (
-                      <div
-                        style={{
-                          color: "var(--danger)",
-                          fontSize: 12,
-                          textAlign: "center",
-                        }}
-                      >
-                        لا توجد نسخ متاحة حالياً
-                      </div>
-                    )}
-
-                    <button className="btn btn-muted" onClick={() => openReturnModal(b)}>
-                      إرجاع كتاب
-                    </button>
+                <div className="toolbar-right">
+                  <div className="search-box">
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="بحث عن كتاب (عنوان، مؤلف، كلية...)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <span className="search-icon"></span>
                   </div>
-                )}
 
-                <div className="btn-icon-row">
-                  <button className="icon-btn edit" title="تعديل" onClick={() => openEditModal(b)}>
-                    <FaEdit />
-                  </button>
-
-                  <button className="icon-btn delete" title="حذف" onClick={() => deleteBook(b)}>
-                    <FaTrash />
+                  <button className="add-book-btn" onClick={openAddModal} title="إضافة كتاب">
+                    <FaPlus />
+                    <span className="add-book-text">إضافة كتاب</span>
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* زر إضافة كتاب */}
-          {/* <button className="fab" onClick={openAddModal} title="إضافة كتاب">
-            <FaPlus />
-          </button> */}
+              <div className="book-grid">
+                {books.map((b) => (
+                  <div key={b.id} className="book-card">
+                    <div>
+                      <div className="book-icon-wrapper">
+                        <span
+                          className="book-icon"
+                          style={{ color: b.isPdf ? "#dc2626" : "#5e5f61d2" }}
+                          onClick={() => {
+                            if (b.isPdf) handleDownloadPdf(b.pdfUrl);
+                          }}
+                          title={b.isPdf ? "تحميل PDF" : ""}
+                        >
+                          {b.isPdf ? <FaFilePdf /> : <FaBook />}
+                        </span>
+                      </div>
+
+                      <div className="book-info-title">{b.title}</div>
+                      <div className="book-info-meta">
+                        الكاتب: <strong>{b.author}</strong>
+                      </div>
+                      <div className="book-info-meta">
+                        الكلية: <strong>{b.facultyName || "-"}</strong>
+                      </div>
+
+                      {b.location && (
+                        <div className="book-location">
+                          الموقع: <span>{b.location}</span>
+                        </div>
+                      )}
+
+                      {!b.isPdf && (
+                        <div className="book-availability">
+                          <div className="book-availability-title">في المكتبة</div>
+                          <div>عدد النسخ: {b.copies}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!b.isPdf && (
+                      <div className="actions-main">
+                        {b.copies > 0 ? (
+                          <button className="btn btn-primary" onClick={() => openBorrowModal(b)}>
+                            استعارة
+                          </button>
+                        ) : (
+                          <div
+                            style={{
+                              color: "var(--danger)",
+                              fontSize: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            لا توجد نسخ متاحة حالياً
+                          </div>
+                        )}
+
+                        <button className="btn btn-muted" onClick={() => openReturnModal(b)}>
+                          إرجاع كتاب
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="btn-icon-row">
+                      <button className="icon-btn edit" title="تعديل" onClick={() => openEditModal(b)}>
+                        <FaEdit />
+                      </button>
+{/* 
+                      <button className="icon-btn delete" title="حذف" onClick={() => deleteBook(b)}>
+                        <FaTrash />
+                      </button> */}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* تب التقارير */}
+{activeTab === "reports" && (
+  <div style={{
+    padding: "0 12px",
+    fontSize: "16px",           
+    lineHeight: "1.6"           
+  }}>
+
+    <div style={ui.card}>
+      <h2 style={{
+        ...ui.titleH2,
+        fontSize: "24px",         
+        marginBottom: "24px"
+      }}>
+        الكتب حسب التصنيف
+      </h2>
+
+      <div style={{
+        display: "flex",
+        alignItems: "flex-end",
+        gap: "16px",
+        flexWrap: "wrap",
+        marginBottom: "28px"
+      }}>
+        <div style={{ flex: "1", minWidth: "280px" }}>
+          <label style={{
+            ...ui.label,
+            fontSize: "15px",      
+            marginBottom: "10px"
+          }}>
+            اختر التصنيف
+          </label>
+          {loadingCategories ? (
+            <div style={{ color: "#64748b", padding: "14px", fontSize: "15px" }}>
+              جاري تحميل التصنيفات...
+            </div>
+          ) : (
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                ...ui.select,
+                fontSize: "16px",     
+                padding: "13px 12px"
+              }}
+            >
+              <option value="">— اختر تصنيف —</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <button
+          onClick={printBooksByCategory}
+          disabled={!selectedCategory || booksByCategory.length === 0 || loadingBooksByCat}
+          style={{
+            ...ui.primaryBtn,
+            minWidth: "240px",
+            fontSize: "16px",
+            padding: "13px 24px",
+            marginTop: "0"
+          }}
+        >
+          طباعة الكتب حسب التصنيف
+        </button>
+      </div>
+
+      {loadingBooksByCat ? (
+        <div style={{ color: "#0a3753", fontWeight: 600, padding: "24px 0", fontSize: "16px" }}>
+          جاري جلب الكتب...
+        </div>
+      ) : booksByCategory.length > 0 ? (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "16px"           
+          }}>
+            <thead>
+              <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: "14px 16px", textAlign: "right", fontSize: "15px" }}>العنوان</th>
+                <th style={{ padding: "14px 16px", textAlign: "right", fontSize: "15px" }}>المؤلف</th>
+                <th style={{ padding: "14px 16px", textAlign: "center", fontSize: "15px" }}>عدد النسخ (الحالية)</th>
+                <th style={{ padding: "14px 16px", textAlign: "right", fontSize: "15px" }}>الموقع</th>
+                <th style={{ padding: "14px 16px", textAlign: "right", fontSize: "15px" }}>الكلية</th>
+              </tr>
+            </thead>
+            <tbody>
+              {booksByCategory.map((b, idx) => (
+                <tr key={b.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <td style={{ padding: "14px 16px" }}>{b.title}</td>
+                  <td style={{ padding: "14px 16px" }}>{b.author || "—"}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center" }}>{b.copies}</td>
+                  <td style={{ padding: "14px 16px" }}>{b.location || "—"}</td>
+                  <td style={{ padding: "14px 16px" }}>{b.faculty_name || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : selectedCategory ? (
+        <div style={{ color: "#64748b", padding: "24px 0", textAlign: "center", fontSize: "16px" }}>
+          لا توجد كتب مسجلة في هذا التصنيف حالياً
+        </div>
+      ) : null}
+    </div>
+
+    <div style={{ ...ui.card, marginTop: "40px" }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "24px",
+        flexWrap: "wrap",
+        gap: "20px"
+      }}>
+        <h2 style={{
+          ...ui.titleH2,
+          fontSize: "24px",        
+          margin: 0
+        }}>
+          الكتب المستعارة حالياً
+        </h2>
+
+        <button
+          onClick={printBorrowedBooks}
+          disabled={borrowedBooks.length === 0 || loadingBorrowed}
+          style={{
+            ...ui.primaryBtn,
+            background: "#0a3753",
+            minWidth: "240px",
+            fontSize: "16px",
+            padding: "13px 24px"
+          }}
+        >
+          طباعة الكتب المستعارة
+        </button>
+      </div>
+
+      {loadingBorrowed ? (
+        <div style={{ color: "#0a3753", fontWeight: 600, padding: "24px 0", fontSize: "16px" }}>
+          جاري تحميل التقرير...
+        </div>
+      ) : borrowedBooks.length === 0 ? (
+        <div style={{ color: "#64748b", padding: "24px 0", textAlign: "center", fontSize: "16px" }}>
+          لا توجد كتب مستعارة في الوقت الحالي
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "16px"           
+          }}>
+            <thead>
+              <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: "14px", textAlign: "center", width: "60px", fontSize: "15px" }}>#</th>
+                <th style={{ padding: "14px", textAlign: "right", fontSize: "15px" }}>عنوان الكتاب</th>
+                <th style={{ padding: "14px", textAlign: "right", fontSize: "15px" }}>اسم الطالب</th>
+                <th style={{ padding: "14px", textAlign: "center", fontSize: "15px" }}>الرقم الجامعي</th>
+                <th style={{ padding: "14px", textAlign: "right", fontSize: "15px" }}>الكلية</th>
+                <th style={{ padding: "14px", textAlign: "right", fontSize: "15px" }}>القسم</th>
+                <th style={{ padding: "14px", textAlign: "center", fontSize: "15px" }}>تاريخ الاستعارة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {borrowedBooks.map((item, index) => (
+                <tr key={item.borrow_id || index} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <td style={{ padding: "14px", textAlign: "center" }}>{index + 1}</td>
+                  <td style={{ padding: "14px" }}>{item.book_title}</td>
+                  <td style={{ padding: "14px" }}>{item.student_name}</td>
+                  <td style={{ padding: "14px", textAlign: "center" }}>{item.student_university_id}</td>
+                  <td style={{ padding: "14px" }}>{item.faculty_name}</td>
+                  <td style={{ padding: "14px" }}>{item.department_name}</td>
+                  <td style={{ padding: "14px", textAlign: "center" }}>
+                    {item.borrowed_at
+                      ? new Date(item.borrowed_at).toLocaleDateString("EG")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+
+  </div>
+)}
         </div>
       </main>
 
-      {/* مودال إضافة / تعديل */}
       {(showAddModal || showEditModal) && (
         <Modal
           onClose={() => {
@@ -594,7 +1141,7 @@ const BookListPage = () => {
           />
 
           <TextInput
-            label="الوصف"
+            label="التصنيف"
             value={formValues.description}
             onChange={(v) => handleChangeForm("description", v)}
           />
@@ -663,14 +1210,16 @@ const BookListPage = () => {
               إلغاء
             </button>
 
-            <button className="btn btn-primary" onClick={showAddModal ? submitAddBook : submitEditBook}>
+            <button
+              className="btn btn-primary"
+              onClick={showAddModal ? submitAddBook : submitEditBook}
+            >
               {showAddModal ? "إضافة" : "حفظ"}
             </button>
           </div>
         </Modal>
       )}
 
-      {/* مودال الاستعارة */}
       {showBorrowModal && (
         <Modal onClose={() => setShowBorrowModal(false)}>
           <h2>استعارة كتاب</h2>
@@ -707,7 +1256,6 @@ const BookListPage = () => {
         </Modal>
       )}
 
-      {/* مودال الإرجاع */}
       {showReturnModal && (
         <Modal onClose={() => setShowReturnModal(false)}>
           <h2>إرجاع كتاب</h2>
@@ -747,7 +1295,6 @@ const BookListPage = () => {
   );
 };
 
-// كومبوننتات مساعدة
 const Modal = ({ children, onClose }) => (
   <div className="modal-backdrop" onClick={onClose}>
     <div className="modal" onClick={(e) => e.stopPropagation()}>

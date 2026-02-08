@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
+import html2pdf from 'html2pdf.js';
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -22,11 +23,13 @@ const TermResult = () => {
   const [levelOptions, setLevelOptions] = useState([]);
   const [termOptions, setTermOptions] = useState([]);
 
+  const pgSmart = usePostgradProgramsSmartList();
+
   // ===== Filters
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
 
-  const [programType, setProgramType] = useState("undergraduate"); // undergraduate | postgraduate
+  const [programType, setProgramType] = useState("bachelor"); // undergraduate | postgraduate
   const [postgraduateProgram, setPostgraduateProgram] = useState("");
 
   const [academicYear, setAcademicYear] = useState("");
@@ -36,6 +39,7 @@ const TermResult = () => {
   // ===== Result Data
   const [savedRows, setSavedRows] = useState([]);
   const [skippedRows, setSkippedRows] = useState([]);
+  const [hasSavedResults, setHasSavedResults] = useState(false);
 
   // ===== Loading flags
   const [loadingFaculties, setLoadingFaculties] = useState(false);
@@ -50,11 +54,18 @@ const TermResult = () => {
   const canPickProgramType = !!selectedDepartmentId;
 
   const canPickPostgraduateProgram = programType === "postgraduate";
-  const canProceedAfterProgram = programType === "undergraduate" ? true : !!postgraduateProgram.trim();
+const canProceedAfterProgram =
+    (programType === "bachelor" || programType === "diploma") 
+      ? true 
+      : !!postgraduateProgram.trim();
 
   const canPickYear = canPickProgramType && canProceedAfterProgram;
   const canPickLevel = !!academicYear.trim();
   const canPickTerm = !!levelName.trim();
+  
+  const [detailedGrades, setDetailedGrades] = useState({});
+  const [repeatedCoursesMap, setRepeatedCoursesMap] = useState({});
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   const canComputeTerm =
     selectedFacultyId &&
@@ -64,6 +75,14 @@ const TermResult = () => {
     levelName.trim() &&
     termName.trim();
 
+
+    useEffect(() => {
+    if (programType === "postgraduate") {
+      pgSmart.fetchPrograms();
+    } else {
+      setPostgraduateProgram("");
+    }
+  }, [programType]);
   // =========================
   // Load faculties
   // =========================
@@ -83,6 +102,79 @@ const TermResult = () => {
     };
     fetchFaculties();
   }, []);
+
+  useEffect(() => {
+  if (savedRows.length === 0 || !canComputeTerm) {
+    setRepeatedCoursesMap({});
+    return;
+  }
+
+const fetchRepeated = async () => {
+  const map = {};
+
+  try {
+    for (const student of savedRows) {
+      const sid = student.student_id;
+
+      const params = new URLSearchParams({
+        student_id: sid,
+        academic_year: academicYear.trim(),
+        level_name: levelName.trim(),
+        term_name: termName.trim(),
+        program_type: programType,
+      });
+
+      if (programType === "postgraduate" && postgraduateProgram.trim()) {
+        params.append("postgraduate_program", postgraduateProgram.trim());
+      }
+
+      const url = `${API_BASE}/student-repeated-courses?${params.toString()}`;
+      console.log(`جاري طلب مواد إعادة الطالب ${sid}: ${url}`);
+
+      const res = await fetch(url);
+
+      console.log(`حالة الرد للطالب ${sid}: ${res.status} ${res.statusText}`);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.warn(`فشل جلب مواد إعادة الطالب ${sid} - الرد:`, errorText);
+        map[sid] = [];
+        continue;
+      }
+
+      const data = await res.json();
+      console.log(`البيانات اللي رجعت للطالب ${sid}:`, data);
+
+      map[sid] = Array.isArray(data.repeated) ? data.repeated : [];
+    }
+
+    setRepeatedCoursesMap(map);
+  } catch (err) {
+    console.error("خطأ عام في fetchRepeated:", err);
+  }
+};
+
+  fetchRepeated();
+}, [savedRows, canComputeTerm, academicYear, levelName, termName, programType, postgraduateProgram]);
+
+
+function usePostgradProgramsSmartList() {
+  const [programs, setPrograms] = useState([]);
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/postgraduate-programs`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+      setPrograms(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setPrograms([]);
+    }
+  };
+
+  return { programs, fetchPrograms };
+}
 
   // =========================
   // Load departments
@@ -109,7 +201,7 @@ const TermResult = () => {
   const fetchAcademicPeriods = async (pType, pgProg) => {
     setLoadingPeriods(true);
     try {
-      const pt = (pType || "undergraduate").trim();
+      const pt = (pType || "bachelor").trim();
       const pg = (pgProg || "").trim();
 
       let url = `${API_BASE}/academic-periods?program_type=${encodeURIComponent(pt)}`;
@@ -188,7 +280,7 @@ const TermResult = () => {
     setDepartments([]);
     setSelectedDepartmentId("");
 
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
 
     setAcademicYear("");
@@ -200,7 +292,7 @@ const TermResult = () => {
   };
 
   const resetBelowDepartment = () => {
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
 
     setAcademicYear("");
@@ -226,8 +318,15 @@ const TermResult = () => {
   // =========================
   // Result APIs
   // =========================
-  const computeAndSaveResult = async () => {
+const computeAndSaveResult = async () => {
     if (!canComputeTerm) return showToast("كمّل الاختيارات أولاً", "error");
+
+    if (hasSavedResults) {
+      const confirmed = window.confirm(
+        "النتائج محفوظة بالفعل لهذا الفصل.\n\nهل تريد إعادة الحساب والتجاوز على القديم؟"
+      );
+      if (!confirmed) return;
+    }
 
     setComputingResult(true);
     setSkippedRows([]);
@@ -255,8 +354,9 @@ const TermResult = () => {
 
       setSavedRows(Array.isArray(data.saved) ? data.saved : []);
       setSkippedRows(Array.isArray(data.skipped) ? data.skipped : []);
+      setHasSavedResults(true);   
 
-      showToast(data.message || "تم حساب النتيجة", "success");
+      showToast(data.message || "تم حساب وتخزين النتائج", "success");
     } catch (e) {
       console.error(e);
       showToast(e.message || "مشكلة في حساب النتيجة", "error");
@@ -266,42 +366,42 @@ const TermResult = () => {
   };
 
 const loadSavedResult = async () => {
-  if (!canComputeTerm) return;
+    if (!canComputeTerm) return;
 
-  setLoadingResult(true);
-  setSkippedRows([]);
-  setSavedRows([]);
+    setLoadingResult(true);
+    setSkippedRows([]);
+    setSavedRows([]);
 
-  try {
-    const qs =
-      `faculty_id=${encodeURIComponent(selectedFacultyId)}` +
-      `&department_id=${encodeURIComponent(selectedDepartmentId)}` +
-      `&program_type=${encodeURIComponent(programType)}` +
-      (programType === "postgraduate"
-        ? `&postgraduate_program=${encodeURIComponent(postgraduateProgram.trim())}`
-        : `&postgraduate_program=`) +
-      `&academic_year=${encodeURIComponent(academicYear.trim())}` +
-      `&level_name=${encodeURIComponent(levelName.trim())}` +
-      `&term_name=${encodeURIComponent(termName.trim())}`;
+    try {
+      const qs =
+        `faculty_id=${encodeURIComponent(selectedFacultyId)}` +
+        `&department_id=${encodeURIComponent(selectedDepartmentId)}` +
+        `&program_type=${encodeURIComponent(programType)}` +
+        (programType === "postgraduate"
+          ? `&postgraduate_program=${encodeURIComponent(postgraduateProgram.trim())}`
+          : `&postgraduate_program=`) +
+        `&academic_year=${encodeURIComponent(academicYear.trim())}` +
+        `&level_name=${encodeURIComponent(levelName.trim())}` +
+        `&term_name=${encodeURIComponent(termName.trim())}`;
 
-    const res = await fetch(`${API_BASE}/term-results/list?${qs}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "فشل تحميل النتيجة");
+      const res = await fetch(`${API_BASE}/term-results/list?${qs}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "فشل تحميل النتيجة");
 
-    const rows = Array.isArray(data) ? data : [];
-    setSavedRows(rows);
+      const rows = Array.isArray(data) ? data : [];
+      setSavedRows(rows);
+      setHasSavedResults(rows.length > 0);   
 
-    // ✅ لو ما في نتائج محفوظة -> احسب وخزن تلقائي
-    if (rows.length === 0) {
-      await computeAndSaveResult();
+      // if (rows.length === 0) {
+      //   await computeAndSaveResult();
+      // }
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || "مشكلة في تحميل النتيجة", "error");
+    } finally {
+      setLoadingResult(false);
     }
-  } catch (e) {
-    console.error(e);
-    showToast(e.message || "مشكلة في تحميل النتيجة", "error");
-  } finally {
-    setLoadingResult(false);
-  }
-};
+  };
 
 useEffect(() => {
   if (!canComputeTerm) return;
@@ -310,6 +410,274 @@ useEffect(() => {
   loadSavedResult();
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [canComputeTerm]);
+
+// جلب تفاصيل درجات كل طالب بعد تحميل النتائج
+useEffect(() => {
+  if (savedRows.length === 0 || !canComputeTerm) {
+    setDetailedGrades({});
+    return;
+  }
+
+  const fetchStudentGrades = async () => {
+    setLoadingDetails(true);
+    const gradesMap = {};
+
+    try {
+      for (const student of savedRows) {
+        const sid = student.student_id;
+
+        const params = new URLSearchParams({
+          student_id: sid,
+          academic_year: academicYear.trim(),
+          level_name: levelName.trim(),
+          term_name: termName.trim(),
+          program_type: programType,
+        });
+
+        if (programType === "postgraduate" && postgraduateProgram.trim()) {
+          params.append("postgraduate_program", postgraduateProgram.trim());
+        }
+
+        const response = await fetch(`${API_BASE}/student-term-grades?${params.toString()}`);
+
+        if (!response.ok) {
+          console.warn(`فشل جلب درجات الطالب ${sid} - حالة: ${response.status}`);
+          gradesMap[sid] = [];
+          continue;
+        }
+
+        const data = await response.json();
+        gradesMap[sid] = Array.isArray(data) ? data : [];
+      }
+
+      setDetailedGrades(gradesMap);
+    } catch (err) {
+      console.error("خطأ أثناء جلب تفاصيل الدرجات:", err);
+      showToast("تعذر جلب تفاصيل درجات بعض الطلاب", "error");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  fetchStudentGrades();
+}, [savedRows, canComputeTerm, academicYear, levelName, termName, programType, postgraduateProgram]);
+
+// ========================= طباعه النتيجه==========================
+const printResults = () => {
+  if (savedRows.length === 0) {
+    return showToast("لا توجد نتائج للطباعة بعد", "error");
+  }
+
+  // 1. قائمة الشرف: GPA تراكمي ≥ 3.00
+  const honorStudents = savedRows
+    .filter(r => Number(r.term_gpa || 0) >= 3.00)
+    .sort((a, b) => Number(b.cumulative_gpa || 0) - Number(a.cumulative_gpa || 0));
+
+  const allStudents = [...savedRows].sort((a, b) => Number(b.term_gpa || 0) - Number(a.term_gpa || 0));
+
+  const facultyName = faculties.find(f => f.id === Number(selectedFacultyId))?.faculty_name || "غير محدد";
+  const departmentName = departments.find(d => d.id === Number(selectedDepartmentId))?.department_name || "غير محدد";
+
+  const commonHeader = `
+    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #ccc;">
+      <h1 style="margin: 0; color: #0a3753; font-size: 22px;">
+        جامعة بورتسودان الأهلية
+      </h1>
+      <p style="margin: 8px 0 4px; font-weight: bold; font-size: 16px;">
+        ${facultyName} - ${departmentName}
+      </p>
+      <p style="margin: 4px 0; font-size: 14px;">
+        السنة الدراسية: ${academicYear} | المستوى: ${levelName} | الفصل: ${termName}
+      </p>
+    </div>
+  `;
+
+  // ──────────────── صفحة الشرف (GPA ≥ 3.00) ────────────────
+  let honorPage = '';
+  if (honorStudents.length > 0) {
+    honorPage = `
+      <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 30px; font-size: 14px; break-after: page; page-break-after: always;">
+        ${commonHeader}
+        <h2 style="color: #0a3753; text-align: center; margin: 35px 0 25px; font-size: 18px;">
+          قائمة الشرف
+        </h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; break-inside: avoid; page-break-inside: avoid;">
+          <thead>
+            <tr style="background: #6e6e6e; color: white;">
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">#</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الاسم</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الرقم الجامعي</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA فصلي</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA تراكمي</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">التصنيف</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${honorStudents.map((r, i) => `
+              <tr style="background: ${i % 2 === 0 ? '#f8f9fa' : '#ffffff'}; break-inside: avoid;">
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${i + 1}</td>
+                <td style="padding: 11px; border: 1px solid #ddd;">${r.full_name}</td>
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.university_id}</td>
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.term_gpa || 0).toFixed(2)}</td>
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.cumulative_gpa || 0).toFixed(2)}</td>
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.classification_label || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ──────────────── صفحة نتائج الطلاب العامة ────────────────
+  const mainResultsPage = `
+    <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 30px; font-size: 14px; break-after: page;">
+      ${commonHeader}
+      <h2 style="color: #0a3753; text-align: center; margin: 35px 0 25px; font-size: 18px;">
+        نتائج الطلاب
+      </h2>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px; break-inside: avoid; page-break-inside: avoid;">
+        <thead>
+          <tr style="background: #6e6e6e; color: white;">
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">#</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الاسم</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الرقم الجامعي</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA فصلي</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA تراكمي</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">التصنيف</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allStudents.map((r, i) => `
+            <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#f8f9fa'}; break-inside: avoid;">
+              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${i + 1}</td>
+              <td style="padding: 11px; border: 1px solid #ddd;">${r.full_name}</td>
+              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.university_id}</td>
+              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.term_gpa || 0).toFixed(2)}</td>
+              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.cumulative_gpa || 0).toFixed(2)}</td>
+              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.classification_label || '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // جمع أسماء المواد الفريدة
+  const allCourses = new Set();
+  Object.values(detailedGrades).forEach(grades => {
+    grades.forEach(grade => {
+      if (grade.course_name) allCourses.add(grade.course_name);
+    });
+  });
+  const uniqueCourses = Array.from(allCourses).sort();
+
+  if (uniqueCourses.length === 0) {
+    showToast("لا توجد أسماء مواد متاحة للعرض", "error");
+    return;
+  }
+
+  // ──────────────── صفحة تفاصيل الدرجات مع عمود مواد الإعادة ────────────────
+  const detailsPage = `
+    <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 30px; font-size: 14px;">
+      ${commonHeader}
+      <h2 style="color: #0a3753; text-align: center; margin: 35px 0 25px; font-size: 18px;">
+        تفاصيل درجات المواد
+      </h2>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px; break-inside: auto;">
+        <thead>
+          <tr style="background: #6e6e6e; color: white;">
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">#</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الاسم</th>
+            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الرقم الجامعي</th>
+            ${uniqueCourses.map(courseName => `
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">${courseName}</th>
+            `).join('')}
+
+            ${Object.values(repeatedCoursesMap).some(arr => arr.length > 0) ? `
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px; background: #6e6e6e; color: white;">
+               إزالة الرسوب
+              </th>
+            ` : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${allStudents.map((r, i) => {
+            const studentGrades = detailedGrades[r.student_id] || [];
+            const gradesMap = {};
+            studentGrades.forEach(grade => {
+              if (grade.course_name) {
+                gradesMap[grade.course_name] = grade;
+              }
+            });
+
+            const repeatedData = repeatedCoursesMap[r.student_id] || [];
+            let repeatedDisplay = "—";
+
+            if (repeatedData.length > 0) {
+              repeatedDisplay = repeatedData.map(item => `
+                ${item.course_name}: 
+                <strong>${item.grade_letter || '—'}</strong> 
+                (${item.total_mark ?? '—'}) 
+                <span style="color: ${item.status === 'رسوب' ? '#dc2626' : '#16a34a'}; font-weight: bold;">
+                  ${item.status || '—'}
+                </span>
+              `).join("<br>");
+            }
+
+            return `
+              <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#f8f9fa'}; break-inside: avoid;">
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${i + 1}</td>
+                <td style="padding: 11px; border: 1px solid #ddd;">${r.full_name}</td>
+                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.university_id}</td>
+                ${uniqueCourses.map(courseName => {
+                  const grade = gradesMap[courseName];
+                  return `
+                    <td style="padding: 11px; border: 1px solid #ddd; text-align: center; font-size: 12px;">
+                      ${grade ? `
+                        <strong>${grade.grade_letter || '—'}</strong><br>
+                        (${grade.total_mark ?? '—'})<br>
+                        <span style="color: ${grade.status === 'رسوب' ? '#dc2626' : '#16a34a'}; font-weight: bold;">
+                          ${grade.status || '—'}
+                        </span>
+                      ` : '—'}
+                    </td>
+                  `;
+                }).join('')}
+
+                ${Object.values(repeatedCoursesMap).some(arr => arr.length > 0) ? `
+                  <td style="padding: 11px; border: 1px solid #ddd; text-align: right; font-size: 12px; font-weight: bold; line-height: 1.6;">
+                    ${repeatedDisplay}
+                  </td>
+                ` : ''}
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // تجميع كل الصفحات
+  const fullContent = honorPage + mainResultsPage + detailsPage;
+
+  const element = document.createElement('div');
+  element.innerHTML = fullContent;
+
+  const options = {
+    margin: 0.5,
+    filename: `نتائج_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  html2pdf().from(element).set(options).save();
+
+  showToast("جاري إنشاء ملف PDF...", "success");
+};
 
   return (
     <div className="admission-layout">
@@ -382,12 +750,23 @@ useEffect(() => {
               <div className="input-group" style={{ gridColumn: "1 / -1" }}>
                 <label className="input-label">نوع البرنامج</label>
                 <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+                                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
+                    <input
+                      type="radio"
+                      name="programTypeResult"
+                      value="diploma"
+                      checked={programType === "diploma"}
+                      onChange={(e) => setProgramType(e.target.value)}
+                      disabled={!canPickProgramType}
+                    />
+                    دبلوم
+                  </label>
                   <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
                     <input
                       type="radio"
                       name="programTypeResult"
-                      value="undergraduate"
-                      checked={programType === "undergraduate"}
+                      value="bachelor"
+                      checked={programType === "bachelor"}
                       onChange={(e) => setProgramType(e.target.value)}
                       disabled={!canPickProgramType}
                     />
@@ -408,19 +787,25 @@ useEffect(() => {
                 </div>
               </div>
 
-              {canPickPostgraduateProgram && (
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">اسم برنامج الدراسات العليا</label>
-                  <input
-                    className="input-field"
-                    dir="rtl"
-                    placeholder="مثال: ماجستير إدارة أعمال"
-                    value={postgraduateProgram}
-                    onChange={(e) => setPostgraduateProgram(e.target.value)}
-                    disabled={!canPickProgramType}
-                  />
-                </div>
-              )}
+{programType === "postgraduate" && (
+  <div className="input-group" style={{ gridColumn: "1 / -1" }}>
+    <label className="input-label">اسم برنامج الدراسات العليا</label>
+    <input
+      className="input-field"
+      dir="rtl"
+      list="postgrad_programs_list"
+      placeholder="مثال: ماجستير إدارة أعمال"
+      value={postgraduateProgram}
+      onChange={(e) => setPostgraduateProgram(e.target.value)}
+      disabled={!canPickProgramType}
+    />
+    <datalist id="postgrad_programs_list">
+      {pgSmart.programs.map((prog, idx) => (
+        <option key={idx} value={prog} />
+      ))}
+    </datalist>
+  </div>
+)}
 
               <div className="input-group">
                 <label className="input-label">السنة الدراسية</label>
@@ -506,6 +891,16 @@ useEffect(() => {
                 {computingResult ? "جاري الحساب ..." : "حساب النتيجة"}
               </button>
 
+{savedRows.length > 0 && (
+  <button
+    type="button"
+    className="btn btn-primary"
+    onClick={printResults}
+    disabled={computingResult || loadingResult || loadingDetails}
+  >
+    طباعة النتيجة
+  </button>
+)}
               <div style={{ color: "#6b7280", fontWeight: 800, alignSelf: "center" }}>
                 عدد النتائج: {savedRows.length}
               </div>

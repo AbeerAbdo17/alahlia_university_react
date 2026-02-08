@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoDocumentText } from "react-icons/io5";
+import { IoDocumentText, IoLogOut } from "react-icons/io5"; // ← أضفنا IoLogOut
 
 import {
   FaUsers,
@@ -12,7 +12,9 @@ import {
   FaChartPie,
   FaUserCog,
   FaCalendarAlt,
+  FaGraduationCap ,
 } from "react-icons/fa";
+
 
 import "./Dashboard.css";
 
@@ -25,10 +27,10 @@ const portalLinks = [
   { title: "إدخال الدرجات", icon: <FaClipboardCheck />, path: "/GradeEntry", tone: "indigo" },
   { title: "حساب النتائج", icon: <FaCalculator />, path: "/TermResult", tone: "amber" },
   { title: "قوائم الطلاب", icon: <FaUsers />, path: "/StudentsTermList", tone: "blue" },
-  { title: "أعضاء هيئة التدريس", icon: <FaChalkboardTeacher />, path: "/StaffMembers", tone: "green" },//StaffMembers
+  { title: "أعضاء هيئة التدريس", icon: <FaChalkboardTeacher />, path: "/StaffMembers", tone: "green" },
   { title: "الجداول الدراسية", icon: <FaCalendarAlt />, path: "/schedule", tone: "cyan" },
-  // { title: "لوحة المعلومات", icon: <FaChartPie />, path: "/Dashboard", tone: "pink" },
-  { title: "المستخدمين والصلاحيات", icon: <FaUserCog />, path: "/", tone: "gray" },
+  { title: " الشهادات", icon: <FaGraduationCap  />, path: "/certificates", tone: "pink" },
+  { title: "المستخدمين والصلاحيات", icon: <FaUserCog />, path: "/UsersManagement", tone: "gray" },
 ];
 
 function StatCard({ label, value, icon }) {
@@ -48,6 +50,13 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+
+useEffect(() => {
+  const token = sessionStorage.getItem("token");
+  if (!token) {
+    navigate("/login", { replace: true });
+  }
+}, [navigate]);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -88,25 +97,80 @@ export default function Dashboard() {
     [summary]
   );
 
+  // فلترة الروابط بناءً على الصلاحيات
+const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+const allowedPages = user.allowed_pages || [];
+
+  const visibleLinks = portalLinks.filter(link => 
+    allowedPages.includes(link.title) || user.role === 'admin'
+  );
+
+  // دالة تسجيل الخروج
+const handleLogout = () => {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('user');
+  // showToast('تم تسجيل الخروج بنجاح', 'success'); 
+  setTimeout(() => {
+    navigate('/login');
+  }, 800);
+};
+
   return (
     <div className="admission-layout">
       <header className="library-header">
         <div className="library-header-title">
-                      <h1 style={{ margin: 0, color: "#ffffffff", fontWeight: 1000 }}>
-              جامعة بورتسودان الأهلية
-            </h1>
+          <h1 style={{ margin: 0, color: "#ffffffff", fontWeight: 1000 }}>
+            جامعة بورتسودان الأهلية
+          </h1>
         </div>
+
+        {/* زر تسجيل الخروج */}
+<button
+  onClick={handleLogout}
+  style={{
+    background: 'rgba(255, 255, 255, 0.15)',
+    border: '1px solid rgba(255,255,255,0.3)',
+    borderRadius: '10px',
+    padding: '10px 16px',
+    color: '#fff',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '16px',
+    transition: 'all 0.3s ease',  
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+    e.target.style.borderColor = 'rgba(255,255,255,0.5)';
+    e.target.style.transform = 'scale(1.05)';  
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+    e.target.style.borderColor = 'rgba(255,255,255,0.3)';
+    e.target.style.transform = 'scale(1)';  
+  }}
+>
+  <IoLogOut size={20} />
+  تسجيل الخروج
+</button>
+
       </header>
 
       <main className="library-main">
         <div className="library-container">
           <div style={{ marginBottom: 12 }}>
-        
           </div>
 
           <div className="dash-hero">
             <div className="dash-hero-row">
-              <div className="dash-hero-title">
+                  <div className="dash-hero-title">
+      <span style={{ fontSize: 20, fontWeight: 1000 }}>
+        مرحباً، {user.full_name || user.username}
+      </span>
+    </div>
+               <div className="dash-hero-subtitle" style={{ marginTop: 6 }}>
                 <span style={{ fontSize: 18, fontWeight: 1000 }}>نظرة عامة على النظام</span>
               </div>
 
@@ -141,11 +205,11 @@ export default function Dashboard() {
           <div className="card" style={{ marginTop: 14 }}>
             <h2 className="card-title">أنظمة الكلية</h2>
             <div className="dash-subtitle" style={{ marginBottom: 10 }}>
-          
+              {/* لو عايزة تضيفي وصف هنا */}
             </div>
 
             <div className="dash-links-grid">
-              {portalLinks.map((x) => (
+              {visibleLinks.map((x) => (
                 <div
                   key={x.title}
                   className={`dash-link dash-link--${x.tone}`}

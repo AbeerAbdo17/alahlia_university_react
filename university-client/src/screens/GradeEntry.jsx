@@ -7,7 +7,6 @@ const API_BASE = "http://localhost:5000/api";
 const GradeEntry = () => {
   const navigate = useNavigate();
 
-  // ✅ الصفحة بقت إدخال درجات فقط (مفيش Tabs)
   const [toast, setToast] = useState(null);
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -25,11 +24,13 @@ const GradeEntry = () => {
 
   const [courses, setCourses] = useState([]);
 
+  const pgSmart = usePostgradProgramsSmartList();
+
   // ===== Filters
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
 
-  const [programType, setProgramType] = useState("undergraduate"); // undergraduate | postgraduate
+  const [programType, setProgramType] = useState("bachelor");
   const [postgraduateProgram, setPostgraduateProgram] = useState("");
 
   const [academicYear, setAcademicYear] = useState("");
@@ -41,6 +42,9 @@ const GradeEntry = () => {
   // ===== Grade Entry Data
   const [courseInfo, setCourseInfo] = useState(null);
   const [students, setStudents] = useState([]);
+
+  // ===== NEW: مقياس الدرجات للكلية (للـ preview فوري)
+  const [facultyScale, setFacultyScale] = useState([]);
 
   // ===== Loading flags
   const [loadingFaculties, setLoadingFaculties] = useState(false);
@@ -56,7 +60,9 @@ const GradeEntry = () => {
 
   const canPickPostgraduateProgram = programType === "postgraduate";
   const canProceedAfterProgram =
-    programType === "undergraduate" ? true : !!postgraduateProgram.trim();
+    (programType === "bachelor" || programType === "diploma")
+      ? true
+      : !!postgraduateProgram.trim();
 
   const canPickYear = canPickProgramType && canProceedAfterProgram;
   const canPickLevel = !!academicYear.trim();
@@ -69,6 +75,61 @@ const GradeEntry = () => {
     academicYear.trim() &&
     levelName.trim() &&
     termName.trim();
+
+  // جلب مقياس الدرجات للكلية المختارة (real-time preview)
+useEffect(() => {
+  const fetchFacultyScale = async () => {
+    if (!selectedFacultyId) {
+      setFacultyScale([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/grading-scale/${selectedFacultyId}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.scale)) {
+        console.log("مقياس الكلية جاي من الباك:", JSON.stringify(data.scale, null, 2));
+        setFacultyScale(data.scale);
+      } else {
+        setFacultyScale([]);
+        showToast(data.error || "مشكلة في جلب مقياس الدرجات", "error");
+      }
+    } catch (err) {
+      setFacultyScale([]);
+      showToast("خطأ في جلب مقياس الدرجات", "error");
+    }
+  };
+
+  fetchFacultyScale();
+}, [selectedFacultyId]);
+
+const getLetterAndPointsPreview = (total) => {
+  if (total == null || facultyScale.length === 0) {
+    return { letter: null, points: null };
+  }
+
+  // نفرض إن min و max ممكن يكونوا معكوسين
+  const sortedRules = [...facultyScale].map(rule => {
+    const min = Math.min(Number(rule.min_mark), Number(rule.max_mark));
+    const max = Math.max(Number(rule.min_mark), Number(rule.max_mark));
+    return { ...rule, min_mark: min, max_mark: max };
+  }).sort((a, b) => b.min_mark - a.min_mark);  // تنازلي بعد التصحيح
+
+  console.log("النطاقات بعد التصحيح:", sortedRules);
+
+  for (const rule of sortedRules) {
+    const min = Number(rule.min_mark);
+    const max = Number(rule.max_mark);
+
+    if (total >= min && total <= max) {  // ≤ max عشان نغطي الحد الأعلى
+      console.log(`طابق بعد تصحيح: ${rule.letter} (${min}-${max}) → نقاط ${rule.points}`);
+      return { letter: rule.letter || 'F', points: Number(rule.points) || 0.0 };
+    }
+  }
+
+  console.log("ما طابقش بعد التصحيح → F");
+  return { letter: 'F', points: 0.0 };
+};
 
   // =========================
   // Load faculties
@@ -89,6 +150,32 @@ const GradeEntry = () => {
     };
     fetchFaculties();
   }, []);
+
+  useEffect(() => {
+    if (programType === "postgraduate") {
+      pgSmart.fetchPrograms();
+    } else {
+      setPostgraduateProgram("");
+    }
+  }, [programType]);
+
+  function usePostgradProgramsSmartList() {
+    const [programs, setPrograms] = useState([]);
+
+    const fetchPrograms = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/postgraduate-programs`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+        setPrograms(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        setPrograms([]);
+      }
+    };
+
+    return { programs, fetchPrograms };
+  }
 
   // =========================
   // Load departments
@@ -115,7 +202,7 @@ const GradeEntry = () => {
   const fetchAcademicPeriods = async (pType, pgProg) => {
     setLoadingPeriods(true);
     try {
-      const pt = (pType || "undergraduate").trim();
+      const pt = (pType || "bachelor").trim();
       const pg = (pgProg || "").trim();
 
       let url = `${API_BASE}/academic-periods?program_type=${encodeURIComponent(pt)}`;
@@ -202,33 +289,70 @@ const GradeEntry = () => {
   // =========================
   // Load courses after filters complete
   // =========================
-  const fetchCourses = async () => {
-    if (!canLoadCourses) return;
-    setLoadingCourses(true);
-    try {
-      const qs =
-        `faculty_id=${selectedFacultyId}` +
-        `&department_id=${selectedDepartmentId}` +
-        `&academic_year=${encodeURIComponent(academicYear.trim())}` +
-        `&level_name=${encodeURIComponent(levelName.trim())}` +
-        `&term_name=${encodeURIComponent(termName.trim())}` +
-        `&program_type=${encodeURIComponent(programType)}` +
-        (programType === "postgraduate"
-          ? `&postgraduate_program=${encodeURIComponent(postgraduateProgram.trim())}`
-          : "");
+  // const fetchCourses = async () => {
+  //   if (!canLoadCourses) return;
+  //   setLoadingCourses(true);
+  //   try {
+  //     const qs =
+  //       `faculty_id=${selectedFacultyId}` +
+  //       `&department_id=${selectedDepartmentId}` +
+  //       `&academic_year=${encodeURIComponent(academicYear.trim())}` +
+  //       `&level_name=${encodeURIComponent(levelName.trim())}` +
+  //       `&term_name=${encodeURIComponent(termName.trim())}` +
+  //       `&program_type=${encodeURIComponent(programType)}` +
+  //       (programType === "postgraduate"
+  //         ? `&postgraduate_program=${encodeURIComponent(postgraduateProgram.trim())}`
+  //         : "");
 
-      const res = await fetch(`${API_BASE}/courses?${qs}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "فشل تحميل المواد");
-      setCourses(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setCourses([]);
-      showToast(e.message || "مشكلة في تحميل المواد", "error");
-    } finally {
-      setLoadingCourses(false);
+  //     const res = await fetch(`${API_BASE}/courses?${qs}`);
+  //     const data = await res.json();
+  //     if (!res.ok) throw new Error(data?.error || "فشل تحميل المواد");
+  //     setCourses(Array.isArray(data) ? data : []);
+  //   } catch (e) {
+  //     console.error(e);
+  //     setCourses([]);
+  //     showToast(e.message || "مشكلة في تحميل المواد", "error");
+  //   } finally {
+  //     setLoadingCourses(false);
+  //   }
+  // };
+  const fetchCourses = async () => {
+  if (!canLoadCourses) return;
+
+  setLoadingCourses(true);
+  try {
+    // بناء الـ params بشكل أنظف ومتوافق مع الـ endpoint الجديد
+    const params = new URLSearchParams({
+      faculty_id: selectedFacultyId,
+      department_id: selectedDepartmentId,
+      academic_year: academicYear.trim(),
+      level_name: levelName.trim(),
+      term_name: termName.trim(),
+      program_type: programType,
+    });
+
+    // لو دراسات عليا، أضف البرنامج
+    if (programType === "postgraduate" && postgraduateProgram.trim()) {
+      params.append("postgraduate_program", postgraduateProgram.trim());
     }
-  };
+
+    const res = await fetch(`${API_BASE}/grade-entry-courses?${params.toString()}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "فشل تحميل المواد");
+    }
+
+    // نتأكد إن data array
+    setCourses(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error("خطأ في fetchCourses:", e);
+    showToast(e.message || "مشكلة في تحميل المواد", "error");
+    setCourses([]);
+  } finally {
+    setLoadingCourses(false);
+  }
+};
 
   useEffect(() => {
     setSelectedCourseId("");
@@ -258,54 +382,42 @@ const GradeEntry = () => {
     };
   }, [courseInfo]);
 
-  // =========================
-  // ✅ Local grades calculation
-  // =========================
-  const clampNum = (v, min, max) => {
-    const n = Number(v);
-    if (Number.isNaN(n)) return null;
-    return Math.max(min, Math.min(max, n));
+
+  const clampNum = (v, min, max, fieldName = "") => {
+  const n = Number(v);
+  if (isNaN(n)) return null;
+
+  if (n > max) {
+    showToast(`الحد الأقصى لـ ${fieldName} هو ${max}، تم تعديل القيمة`, "error");
+    return max;
+  }
+  if (n < min) return min;
+
+  return n;
+};
+
+
+const calcStudentRow = (student) => {
+  const cwMax = courseMeta?.cwMax ?? 40;
+  const feMax = courseMeta?.feMax ?? 60;
+  const totalMax = courseMeta?.total ?? cwMax + feMax;
+
+  // ← هنا التعديل المهم
+  const cw = clampNum(student.coursework_mark, 0, cwMax, "أعمال السنة");
+  const fe = clampNum(student.final_exam_mark, 0, feMax, "النهائي");
+  const total = (cw != null && fe != null) ? clampNum(cw + fe, 0, totalMax, "المجموع") : null;
+
+  const { letter, points } = getLetterAndPointsPreview(total);
+
+  return {
+    ...student,
+    coursework_mark: cw ?? "",
+    final_exam_mark: fe ?? "",
+    total_mark: total,
+    letter,
+    points,
   };
-
-  // ⚠️ عدّلي السلم حسب نظامكم
-  const getLetterAndPoints = (total) => {
-    if (total == null) return { letter: null, points: null };
-    if (total >= 80) return { letter: "A", points: 4.0 };
-    if (total >= 70) return { letter: "B", points: 3.0 };
-    if (total >= 60) return { letter: "C", points: 2.0 };
-    if (total >= 50) return { letter: "D", points: 1.0 };
-    return { letter: "F", points: 0.0 };
-  };
-
-  const calcStudentRow = (student) => {
-    const cwMax = courseMeta?.cwMax ?? 40;
-    const feMax = courseMeta?.feMax ?? 60;
-    const totalMax = courseMeta?.total ?? cwMax + feMax;
-
-    const cw =
-      student.coursework_mark === "" || student.coursework_mark == null
-        ? null
-        : clampNum(student.coursework_mark, 0, cwMax);
-
-    const fe =
-      student.final_exam_mark === "" || student.final_exam_mark == null
-        ? null
-        : clampNum(student.final_exam_mark, 0, feMax);
-
-    const total =
-      cw == null || fe == null ? null : clampNum(cw + fe, 0, totalMax);
-
-    const { letter, points } = getLetterAndPoints(total);
-
-    return {
-      ...student,
-      coursework_mark: cw == null ? "" : cw,
-      final_exam_mark: fe == null ? "" : fe,
-      total_mark: total,
-      letter,
-      points,
-    };
-  };
+};
 
   // =========================
   // Fetch students for selected course
@@ -314,9 +426,16 @@ const GradeEntry = () => {
     if (!courseId) return;
     setLoadingStudents(true);
     try {
-      const res = await fetch(
-        `${API_BASE}/grade-entry/students?course_id=${courseId}`
-      );
+     const params = new URLSearchParams({
+  course_id: courseId,
+  academic_year: academicYear.trim(),
+  level_name: levelName.trim(),
+  term_name: termName.trim(),
+  program_type: programType,
+  ...(programType === "postgraduate" && { postgraduate_program: postgraduateProgram || null })
+});
+
+const res = await fetch(`${API_BASE}/grade-entry/students?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل تحميل الطلاب");
 
@@ -347,7 +466,7 @@ const GradeEntry = () => {
     setDepartments([]);
     setSelectedDepartmentId("");
 
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
 
     setAcademicYear("");
@@ -360,7 +479,7 @@ const GradeEntry = () => {
   };
 
   const resetBelowDepartment = () => {
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
 
     setAcademicYear("");
@@ -384,48 +503,151 @@ const GradeEntry = () => {
     if (deptId) fetchAcademicPeriods(programType, postgraduateProgram);
   };
 
-  const onChangeMark = (studentId, field, value) => {
-    setStudents((prev) =>
-      prev.map((s) => {
-        if (s.student_id !== studentId) return s;
-        const updated = { ...s, [field]: value };
-        return calcStudentRow(updated);
-      })
-    );
+// const onChangeMark = (studentId, field, value) => {
+//   setStudents((prev) =>
+//     prev.map((s) => {
+//       if (s.student_id !== studentId) return s;
+
+//       const newData = { ...s, [field]: value ? Number(value) : null };
+
+//       const coursework = Number(newData.coursework_mark || 0);
+//       const final = Number(newData.final_exam_mark || 0);
+//       newData.total_mark = coursework + final;
+
+//       if (newData.total_mark >= 50) {
+//         if (newData.is_repeat) { 
+//           newData.letter = "C*";
+//           newData.points = 2.00;
+//         } else {
+//           const rule = facultyScale.find(
+//             (r) =>
+//               newData.total_mark >= r.min_mark && newData.total_mark <= r.max_mark
+//           );
+//           newData.letter = rule ? rule.letter : "—";
+//           newData.points = rule ? rule.points : "—";
+//         }
+//       } else {
+//         newData.letter = "F";
+//         newData.points = 0;
+//       }
+
+//       return newData;
+//     })
+//   );
+// };
+
+const onChangeMark = (studentId, field, value) => {
+  setStudents((prev) =>
+    prev.map((s) => {
+      if (s.student_id !== studentId) return s;
+
+      let clampedValue = value ? Number(value) : null;
+
+      // ← التعديل المهم هنا: تقييد القيمة قبل ما نحفظها
+      if (field === "coursework_mark") {
+        clampedValue = clampNum(clampedValue, 0, courseMeta.cwMax, "أعمال السنة");
+      } else if (field === "final_exam_mark") {
+        clampedValue = clampNum(clampedValue, 0, courseMeta.feMax, "النهائي");
+      }
+
+      const newData = { ...s, [field]: clampedValue };
+
+      const coursework = Number(newData.coursework_mark || 0);
+      const final = Number(newData.final_exam_mark || 0);
+      newData.total_mark = coursework + final;
+
+      if (s.is_repeat) {
+        if (newData.total_mark >= 50) {
+          newData.letter = "C*";
+          newData.points = 2.00;
+        } else {
+          newData.letter = "F";
+          newData.points = 0.00;
+        }
+      } else {
+        const { letter, points } = getLetterAndPointsPreview(newData.total_mark);
+        newData.letter = letter ?? "—";
+        newData.points = points ?? "—";
+      }
+
+      return newData;
+    })
+  );
+};
+
+// const saveGrades = async () => {
+//   if (savingGrades || !selectedCourseId) return;
+
+//   setSavingGrades(true);
+
+//   const payload = students.map(s => ({
+//     student_id: s.student_id,
+//     coursework_mark: s.coursework_mark ?? null,
+//     final_exam_mark: s.final_exam_mark ?? null,
+//   }));
+
+//   try {
+//     const res = await fetch(`${API_BASE}/save-grades`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ course_id: selectedCourseId, grades: payload }),
+//     });
+
+//     const data = await res.json();
+
+//     if (!res.ok || !data.success) {
+//       throw new Error(data.error || "فشل الحفظ");
+//     }
+
+//     showToast("تم حفظ الدرجات بنجاح!");
+
+//     await fetchStudentsForCourse(selectedCourseId);
+
+//   } catch (err) {
+//     showToast(err.message || "خطأ في الحفظ", "error");
+//   } finally {
+//     setSavingGrades(false);
+//   }
+// };
+
+const saveGrades = async () => {
+  if (savingGrades || !selectedCourseId) return;
+
+  setSavingGrades(true);
+
+  const payload = {
+    course_id: selectedCourseId,
+    grades: students.map(s => ({
+      student_id: s.student_id,
+      coursework_mark: s.coursework_mark ?? null,
+      final_exam_mark: s.final_exam_mark ?? null,
+      is_repeat: s.is_repeat  // تأكيد
+    })),
+    academic_year: academicYear.trim(),
+    level_name: levelName.trim(),
+    term_name: termName.trim(),
+    program_type: programType,
+    postgraduate_program: programType === "postgraduate" ? postgraduateProgram.trim() : null
   };
 
-  const saveGrades = async () => {
-    if (!selectedCourseId) return showToast("اختار المادة أولاً", "error");
+  try {
+    const res = await fetch(`${API_BASE}/save-grades`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-    setSavingGrades(true);
-    try {
-      const payload = {
-        course_id: Number(selectedCourseId),
-        grades: students.map((s) => ({
-          student_id: s.student_id,
-          coursework_mark: s.coursework_mark === "" ? null : Number(s.coursework_mark),
-          final_exam_mark: s.final_exam_mark === "" ? null : Number(s.final_exam_mark),
-        })),
-      };
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "فشل الحفظ");
 
-      const res = await fetch(`${API_BASE}/grade-entry/save`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "فشل حفظ الدرجات");
-
-      showToast(data.message || "تم حفظ الدرجات", "success");
-      await fetchStudentsForCourse(selectedCourseId);
-    } catch (e) {
-      console.error(e);
-      showToast(e.message || "مشكلة في حفظ الدرجات", "error");
-    } finally {
-      setSavingGrades(false);
-    }
-  };
+    showToast("تم حفظ الدرجات بنجاح!");
+    await fetchStudentsForCourse(selectedCourseId);
+  } catch (err) {
+    showToast(err.message || "خطأ في الحفظ", "error");
+  } finally {
+    setSavingGrades(false);
+  }
+};
 
   return (
     <div className="admission-layout">
@@ -509,12 +731,23 @@ const GradeEntry = () => {
                 <label className="input-label">نوع البرنامج</label>
 
                 <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+                                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
+                    <input
+                      type="radio"
+                      name="programTypeGrades"
+                      value="diploma"
+                      checked={programType === "diploma"}
+                      onChange={(e) => setProgramType(e.target.value)}
+                      disabled={!canPickProgramType}
+                    />
+                    دبلوم
+                  </label>
                   <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
                     <input
                       type="radio"
                       name="programTypeGrades"
-                      value="undergraduate"
-                      checked={programType === "undergraduate"}
+                      value="bachelor"
+                      checked={programType === "bachelor"}
                       onChange={(e) => setProgramType(e.target.value)}
                       disabled={!canPickProgramType}
                     />
@@ -536,19 +769,25 @@ const GradeEntry = () => {
               </div>
 
               {/* 4) اسم برنامج الدراسات العليا */}
-              {canPickPostgraduateProgram && (
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">اسم برنامج الدراسات العليا</label>
-                  <input
-                    className="input-field"
-                    dir="rtl"
-                    placeholder="مثال: ماجستير إدارة أعمال"
-                    value={postgraduateProgram}
-                    onChange={(e) => setPostgraduateProgram(e.target.value)}
-                    disabled={!canPickProgramType}
-                  />
-                </div>
-              )}
+            {programType === "postgraduate" && (
+  <div className="input-group" style={{ gridColumn: "1 / -1" }}>
+    <label className="input-label">اسم برنامج الدراسات العليا</label>
+    <input
+      className="input-field"
+      dir="rtl"
+      list="postgrad_programs_list"
+      placeholder="مثال: ماجستير إدارة أعمال"
+      value={postgraduateProgram}
+      onChange={(e) => setPostgraduateProgram(e.target.value)}
+      disabled={!canPickProgramType}
+    />
+    <datalist id="postgrad_programs_list">
+      {pgSmart.programs.map((prog, idx) => (
+        <option key={idx} value={prog} />
+      ))}
+    </datalist>
+  </div>
+)}
 
               {/* 5) السنة */}
               <div className="input-group">
@@ -704,57 +943,58 @@ const GradeEntry = () => {
               ) : students.length === 0 ? (
                 <p>لا توجد بيانات طلاب لهذه المادة/الفصل.</p>
               ) : (
-                <table className="simple-table" style={{ width: "100%" }}>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>الاسم</th>
-                      <th>الرقم الجامعي</th>
-                      <th>أعمال السنة</th>
-                      <th>النهائي</th>
-                      <th>المجموع</th>
-                      <th>التقدير</th>
-                      <th>النقاط</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((s, idx) => (
-                      <tr key={s.student_id}>
-                        <td>{idx + 1}</td>
-                        <td>{s.full_name}</td>
-                        <td>{s.university_id}</td>
-
-                        <td>
-                          <input
-                            className="input-field"
-                            type="number"
-                            value={s.coursework_mark ?? ""}
-                            onChange={(e) =>
-                              onChangeMark(s.student_id, "coursework_mark", e.target.value)
-                            }
-                            placeholder="0"
-                          />
-                        </td>
-
-                        <td>
-                          <input
-                            className="input-field"
-                            type="number"
-                            value={s.final_exam_mark ?? ""}
-                            onChange={(e) =>
-                              onChangeMark(s.student_id, "final_exam_mark", e.target.value)
-                            }
-                            placeholder="0"
-                          />
-                        </td>
-
-                        <td>{s.total_mark ?? "—"}</td>
-                        <td>{s.letter ?? "—"}</td>
-                        <td>{s.points ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+<table className="simple-table" style={{ width: "100%" }}>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>الاسم</th>
+      <th>الرقم الجامعي</th>
+      {/* <th>حالة المادة</th> */}
+      <th>أعمال السنة</th>
+      <th>النهائي</th>
+      <th>المجموع</th>
+      <th>التقدير</th>
+      <th>النقاط</th>
+    </tr>
+  </thead>
+  <tbody>
+    {students.map((s, idx) => (
+      <tr key={s.student_id} style={s.is_repeat ? { backgroundColor: "#fff3e0" } : {}}>  
+        <td>{idx + 1}</td>
+        <td>{s.full_name}</td>
+        <td>{s.university_id}</td>
+        {/* <td style={{ fontWeight: "bold", color: s.is_repeat ? "#e65100" : "#424242" }}> 
+          {s.is_repeat ? "إعادة" : "منتظم"}
+        </td> */}
+        <td>
+          <input
+            className="input-field"
+            type="number"
+            value={s.coursework_mark ?? ""}
+            onChange={(e) =>
+              onChangeMark(s.student_id, "coursework_mark", e.target.value)
+            }
+            placeholder="0"
+          />
+        </td>
+        <td>
+          <input
+            className="input-field"
+            type="number"
+            value={s.final_exam_mark ?? ""}
+            onChange={(e) =>
+              onChangeMark(s.student_id, "final_exam_mark", e.target.value)
+            }
+            placeholder="0"
+          />
+        </td>
+        <td>{s.total_mark ?? "—"}</td>
+        <td>{s.letter ?? "—"}</td>
+        <td>{s.points ?? "—"}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
               )}
             </div>
           </div>

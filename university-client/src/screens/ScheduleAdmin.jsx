@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import html2pdf from 'html2pdf.js';
 
 const API_BASE = "http://localhost:5000/api";
 const DAYS = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
@@ -168,9 +169,9 @@ function RoomRow({ r, idx, onDelete, onSaveEdit, savingId }) {
             >
               تعديل
             </button>
-            <button className="btn btn-danger btn-small" onClick={() => onDelete(r.id)} disabled={busy}>
+            {/* <button className="btn btn-danger btn-small" onClick={() => onDelete(r.id)} disabled={busy}>
               حذف
-            </button>
+            </button> */}
           </>
         ) : (
           <>
@@ -203,6 +204,7 @@ export default function ScheduleAdmin({ showToast, faculties: facultiesProp = []
   const navigate = useNavigate();
   const { show: toast, ToastView } = useLocalToast(showToast);
   const formTopRef = useRef(null);
+  const scheduleRef = useRef(null);
 
   //  Tabs
   const [activeTab, setActiveTab] = useState("schedule"); // schedule | rooms
@@ -222,7 +224,7 @@ export default function ScheduleAdmin({ showToast, faculties: facultiesProp = []
   const [departments, setDepartments] = useState([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
 
-  const [programType, setProgramType] = useState("undergraduate");
+  const [programType, setProgramType] = useState("bachelor");
   const [postgraduateProgram, setPostgraduateProgram] = useState("");
 
   const [periods, setPeriods] = useState([]);
@@ -263,7 +265,10 @@ export default function ScheduleAdmin({ showToast, faculties: facultiesProp = []
   const [savingRoomId, setSavingRoomId] = useState("");
 
   const canPickDepartment = !!selectedFacultyId;
-  const canProceedAfterProgram = programType === "undergraduate" ? true : !!postgraduateProgram.trim();
+const canProceedAfterProgram =
+    (programType === "bachelor" || programType === "diploma") 
+      ? true 
+      : !!postgraduateProgram.trim();
   const canPickYear = !!selectedDepartmentId && canProceedAfterProgram;
   const canPickLevel = !!academicYear.trim();
   const canPickTerm = !!levelName.trim();
@@ -275,6 +280,261 @@ export default function ScheduleAdmin({ showToast, faculties: facultiesProp = []
     academicYear.trim() &&
     levelName.trim() &&
     termName.trim();
+
+    const pgSmart = usePostgradProgramsSmartList();
+
+
+    useEffect(() => {
+    if (programType === "postgraduate") {
+      pgSmart.fetchPrograms();
+    } else {
+      setPostgraduateProgram("");
+    }
+  }, [programType]);
+
+function usePostgradProgramsSmartList() {
+  const [programs, setPrograms] = useState([]);
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/postgraduate-programs`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+      setPrograms(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setPrograms([]);
+    }
+  };
+
+  return { programs, fetchPrograms };
+}
+
+
+const handlePrint = () => {
+  if (!sessions?.length) {
+    toast("لا يوجد محاضرات لعرضها أو طباعتها", "info");
+    return;
+  }
+
+  // جمع الأوقات الفريدة
+  const timeSlotsSet = new Set();
+  sessions.forEach(s => {
+    if (s.start_time && s.end_time) {
+      timeSlotsSet.add(`${s.start_time.slice(0,5)} – ${s.end_time.slice(0,5)}`);
+    }
+  });
+
+  const timeSlots = [...timeSlotsSet].sort((a, b) => {
+    const [aStart] = a.split(' – ');
+    const [bStart] = b.split(' – ');
+    return aStart.localeCompare(bStart);
+  });
+
+const programTypeLabel =
+  programType === "postgraduate"
+    ? `دراسات عليا${postgraduateProgram ? " — " + postgraduateProgram.trim() : ""}`
+    : programType === "diploma"
+      ? "دبلوم"
+      : "بكالوريوس";
+
+
+  const printWindow = window.open("", "", "height=900,width=1200");
+  printWindow.document.write(`
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="utf-8">
+      <title>جدول محاضرات - ${levelName || ''} - ${termName || ''}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        body {
+          font-family: 'Cairo', Tahoma, Arial, sans-serif;
+          margin: 0;
+          padding: 20px 40px;
+          color: #111;
+          background: #fff;
+          line-height: 1.5;
+        }
+
+        .container {
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+
+        .header {
+          text-align: center;
+          margin-bottom: 25px;
+        }
+
+        h1 {
+          font-size: 28px;
+          margin: 0 0 8px 0;
+          color: #0a3753;
+          font-weight: 700;
+        }
+
+        h2 {
+          font-size: 20px;
+          margin: 4px 0 2px 0;
+          color: #333;
+          font-weight: 600;
+        }
+
+        .subtitle {
+          font-size: 16px;
+          color: #555;
+          margin: 6px 0 20px 0;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+          font-size: 15px;
+        }
+
+        th, td {
+          border: 1px solid #444;
+          padding: 12px 10px;
+          text-align: center;
+          vertical-align: middle;
+        }
+
+        th {
+          background-color: #e8f0fe;
+          color: #0a3753;
+          font-weight: 700;
+          font-size: 15px;
+        }
+
+        .day-cell {
+          background-color: #f5f5f5;
+          font-weight: 700;
+          width: 90px;
+          color: #222;
+        }
+
+        .time-header {
+          background-color: #d1e3ff;
+          font-weight: 700;
+          min-width: 120px;
+        }
+
+        .session-cell {
+          background-color: #f9fcff;
+          line-height: 1.6;
+          font-size: 14.5px;
+        }
+
+        .session-cell strong {
+          color: #0d47a1;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .session-cell .instructor {
+          color: #444;
+        }
+
+        .session-cell .room {
+          color: #555;
+          font-size: 13px;
+        }
+
+        .empty {
+          color: #aaa;
+          font-style: italic;
+        }
+
+        .footer {
+          margin-top: 40px;
+          text-align: center;
+          color: #666;
+          font-size: 13px;
+        }
+
+        @media print {
+          body { 
+            margin: 15mm; 
+            font-size: 13px; 
+          }
+          .header { margin-bottom: 20px; }
+          h1 { font-size: 24px; }
+          h2 { font-size: 18px; }
+          table { page-break-inside: avoid; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+
+        <div class="header">
+        <h1>جامعة بورتسودان الأهلية </h1>
+          <h2>       
+            ${faculties.find(f => f.id == selectedFacultyId)?.faculty_name || '—'}  
+            / ${departments.find(d => d.id == selectedDepartmentId)?.department_name || '—'}
+          </h2>
+          <h2>
+  ${programTypeLabel} <br/>
+  ${levelName || '—'} — ${termName || '—'} — ${academicYear || '—'}
+</h2>
+
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th class="day-cell">اليوم</th>
+              ${timeSlots.map(slot => `<th class="time-header">${slot}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+  `);
+
+  DAYS.forEach(day => {
+    printWindow.document.write(`<tr><td class="day-cell">${day}</td>`);
+
+    timeSlots.forEach(slot => {
+      const [slotStart, slotEnd] = slot.split(' – ').map(t => t + ':00');
+
+      const session = sessions.find(s => 
+        s.day_of_week === day &&
+        s.start_time < slotEnd &&
+        s.end_time > slotStart
+      );
+
+      if (session) {
+        printWindow.document.write(`
+          <td class="session-cell">
+            <strong>${session.course_name || '—'}</strong>
+            <div class="instructor">${session.instructor_name || '—'}</div>
+            <div class="room">${session.room_name || '—'}</div>
+          </td>
+        `);
+      } else {
+        printWindow.document.write('<td class="empty">—</td>');
+      }
+    });
+
+    printWindow.document.write('</tr>');
+  });
+
+  printWindow.document.write(`
+          </tbody>
+        </table>
+
+
+      </div>
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  // printWindow.print();
+};
 
   // ---------- fetch faculties local
   useEffect(() => {
@@ -361,7 +621,7 @@ export default function ScheduleAdmin({ showToast, faculties: facultiesProp = []
 
   const fetchAcademicPeriods = async (pType, pgProg) => {
     try {
-      const pt = (pType || "undergraduate").trim();
+      const pt = (pType || "bachelor").trim();
       const pg = (pgProg || "").trim();
 
       let url = `${API_BASE}/academic-periods?program_type=${encodeURIComponent(pt)}`;
@@ -795,12 +1055,23 @@ const saveSession = async () => {
                 <div className="input-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="input-label">نوع البرنامج</label>
                   <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+                                        <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
+                      <input
+                        type="radio"
+                        name="programTypeSchedule"
+                        value="diploma"
+                        checked={programType === "diploma"}
+                        onChange={(e) => setProgramType(e.target.value)}
+                        disabled={!selectedDepartmentId}
+                      />
+                      دبلوم
+                    </label>
                     <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
                       <input
                         type="radio"
                         name="programTypeSchedule"
-                        value="undergraduate"
-                        checked={programType === "undergraduate"}
+                        value="bachelor"
+                        checked={programType === "bachelor"}
                         onChange={(e) => setProgramType(e.target.value)}
                         disabled={!selectedDepartmentId}
                       />
@@ -821,19 +1092,25 @@ const saveSession = async () => {
                   </div>
                 </div>
 
-                {programType === "postgraduate" && (
-                  <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                    <label className="input-label">اسم برنامج الدراسات العليا</label>
-                    <input
-                      className="input-field"
-                      dir="rtl"
-                      placeholder="مثال: ماجستير إدارة أعمال"
-                      value={postgraduateProgram}
-                      onChange={(e) => setPostgraduateProgram(e.target.value)}
-                      disabled={!selectedDepartmentId}
-                    />
-                  </div>
-                )}
+{programType === "postgraduate" && (
+  <div className="input-group" style={{ gridColumn: "1 / -1" }}>
+    <label className="input-label">اسم برنامج الدراسات العليا</label>
+    <input
+      className="input-field"
+      dir="rtl"
+      list="postgrad_programs_list"
+      placeholder="مثال: ماجستير إدارة أعمال"
+      value={postgraduateProgram}
+      onChange={(e) => setPostgraduateProgram(e.target.value)}
+      disabled={!selectedDepartmentId}
+    />
+    <datalist id="postgrad_programs_list">
+      {pgSmart.programs.map((prog, idx) => (
+        <option key={idx} value={prog} />
+      ))}
+    </datalist>
+  </div>
+)}
 
                 <div className="input-group">
                   <label className="input-label">السنة الدراسية</label>
@@ -892,6 +1169,16 @@ const saveSession = async () => {
                   />
                   <datalist id="schedule_terms">{(termOptions || []).map((x) => <option key={x} value={x} />)}</datalist>
                 </div>
+                    <div style={{ marginTop: 20, textAlign: "center" }}>
+      <button
+        className="btn btn-primary"
+        onClick={handlePrint}
+        disabled={!sessions.length || loadingSessions}
+        style={{ padding: "12px 30px", fontSize: "16px" }}
+      >
+        طباعة الجدول
+      </button>
+    </div>
               </div>
             )}
 

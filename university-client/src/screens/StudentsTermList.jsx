@@ -1,21 +1,21 @@
-// StudentsTermList.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
+import html2pdf from 'html2pdf.js';
 
 const API_BASE = "http://localhost:5000/api";
 
 const StudentsTermList = () => {
   const navigate = useNavigate();
 
-  // ===== Toast
+  // Toast
   const [toast, setToast] = useState(null);
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ===== Lists
+  // Lists
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
 
@@ -24,35 +24,35 @@ const StudentsTermList = () => {
   const [levelOptions, setLevelOptions] = useState([]);
   const [termOptions, setTermOptions] = useState([]);
 
-  // ===== Filters
+  // Filters
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
 
-  const [programType, setProgramType] = useState("undergraduate"); // undergraduate | postgraduate
+  const [programType, setProgramType] = useState("bachelor");
   const [postgraduateProgram, setPostgraduateProgram] = useState("");
 
   const [academicYear, setAcademicYear] = useState("");
   const [levelName, setLevelName] = useState("");
   const [termName, setTermName] = useState("");
 
-  // ===== Students Data
+  const [registrationFilter, setRegistrationFilter] = useState("all"); // all | registered | unregistered
+
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
-  // ===== UI helpers
   const [searchText, setSearchText] = useState("");
 
-  // ===== Loading flags
   const [loadingFaculties, setLoadingFaculties] = useState(false);
   const [loadingDeps, setLoadingDeps] = useState(false);
   const [loadingPeriods, setLoadingPeriods] = useState(false);
 
-  // ===== Step logic
   const canPickDepartment = !!selectedFacultyId;
   const canPickProgramType = !!selectedDepartmentId;
-
   const canPickPostgraduateProgram = programType === "postgraduate";
-  const canProceedAfterProgram = programType === "undergraduate" ? true : !!postgraduateProgram.trim();
+  const canProceedAfterProgram =
+    (programType === "bachelor" || programType === "diploma") 
+      ? true 
+      : !!postgraduateProgram.trim();
 
   const canPickYear = canPickProgramType && canProceedAfterProgram;
   const canPickLevel = !!academicYear.trim();
@@ -66,9 +66,17 @@ const StudentsTermList = () => {
     levelName.trim() &&
     termName.trim();
 
-  // =========================
+  const pgSmart = usePostgradProgramsSmartList();
+
+  useEffect(() => {
+    if (programType === "postgraduate") {
+      pgSmart.fetchPrograms();
+    } else {
+      setPostgraduateProgram("");
+    }
+  }, [programType]);
+
   // Load faculties
-  // =========================
   useEffect(() => {
     const fetchFaculties = async () => {
       setLoadingFaculties(true);
@@ -86,9 +94,24 @@ const StudentsTermList = () => {
     fetchFaculties();
   }, []);
 
-  // =========================
-  // Load departments
-  // =========================
+  function usePostgradProgramsSmartList() {
+    const [programs, setPrograms] = useState([]);
+
+    const fetchPrograms = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/postgraduate-programs`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+        setPrograms(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        setPrograms([]);
+      }
+    };
+
+    return { programs, fetchPrograms };
+  }
+
   const fetchDepartmentsByFaculty = async (facultyId) => {
     if (!facultyId) return;
     setLoadingDeps(true);
@@ -105,13 +128,10 @@ const StudentsTermList = () => {
     }
   };
 
-  // =========================
-  // Load academic periods
-  // =========================
   const fetchAcademicPeriods = async (pType, pgProg) => {
     setLoadingPeriods(true);
     try {
-      const pt = (pType || "undergraduate").trim();
+      const pt = (pType || "bachelor").trim();
       const pg = (pgProg || "").trim();
 
       let url = `${API_BASE}/academic-periods?program_type=${encodeURIComponent(pt)}`;
@@ -124,7 +144,7 @@ const StudentsTermList = () => {
       const rows = Array.isArray(data) ? data : [];
       setPeriods(rows);
 
-      const ys = Array.from(new Set(rows.map((r) => (r.academic_year || "").trim()).filter(Boolean)));
+      const ys = Array.from(new Set(rows.map(r => r.academic_year?.trim()).filter(Boolean)));
       setYearOptions(ys);
     } catch (e) {
       console.error(e);
@@ -142,20 +162,15 @@ const StudentsTermList = () => {
     const l = (level || "").trim();
 
     const levels = Array.from(
-      new Set(
-        rows
-          .filter((r) => (r.academic_year || "").trim() === y)
-          .map((r) => (r.level_name || "").trim())
-          .filter(Boolean)
-      )
+      new Set(rows.filter(r => r.academic_year?.trim() === y).map(r => r.level_name?.trim()).filter(Boolean))
     );
     setLevelOptions(levels);
 
     const terms = Array.from(
       new Set(
         rows
-          .filter((r) => (r.academic_year || "").trim() === y && (r.level_name || "").trim() === l)
-          .map((r) => (r.term_name || "").trim())
+          .filter(r => r.academic_year?.trim() === y && r.level_name?.trim() === l)
+          .map(r => r.term_name?.trim())
           .filter(Boolean)
       )
     );
@@ -164,10 +179,8 @@ const StudentsTermList = () => {
 
   useEffect(() => {
     rebuildLevelAndTermOptions(periods, academicYear, levelName);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periods, academicYear, levelName]);
 
-  // تغيّر programType/pgProg → reset + reload periods
   useEffect(() => {
     setAcademicYear("");
     setLevelName("");
@@ -176,39 +189,30 @@ const StudentsTermList = () => {
     setSearchText("");
 
     if (selectedDepartmentId) fetchAcademicPeriods(programType, postgraduateProgram);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [programType, postgraduateProgram]);
+  }, [programType, postgraduateProgram, selectedDepartmentId]);
 
   useEffect(() => {
     if (programType !== "postgraduate") setPostgraduateProgram("");
   }, [programType]);
 
-  // =========================
-  // Reset helpers
-  // =========================
   const resetBelowFaculty = () => {
     setDepartments([]);
     setSelectedDepartmentId("");
-
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
-
     setAcademicYear("");
     setLevelName("");
     setTermName("");
-
     setStudents([]);
     setSearchText("");
   };
 
   const resetBelowDepartment = () => {
-    setProgramType("undergraduate");
+    setProgramType("bachelor");
     setPostgraduateProgram("");
-
     setAcademicYear("");
     setLevelName("");
     setTermName("");
-
     setStudents([]);
     setSearchText("");
   };
@@ -225,9 +229,6 @@ const StudentsTermList = () => {
     if (deptId) fetchAcademicPeriods(programType, postgraduateProgram);
   };
 
-  // =========================
-  // Load students API
-  // =========================
   const loadStudents = async () => {
     if (!canLoadStudents) return showToast("كمّل الاختيارات أولاً", "error");
 
@@ -250,7 +251,7 @@ const StudentsTermList = () => {
       if (!res.ok) throw new Error(data?.error || "فشل تحميل الطلاب");
 
       setStudents(Array.isArray(data) ? data : []);
-      showToast(`تم تحميل ${Array.isArray(data) ? data.length : 0} طالب`, "success");
+      showToast(`تم تحميل ${data.length} طالب`, "success");
     } catch (e) {
       console.error(e);
       showToast(e.message || "مشكلة في تحميل الطلاب", "error");
@@ -259,30 +260,119 @@ const StudentsTermList = () => {
     }
   };
 
-  // تحميل تلقائي عند اكتمال الاختيارات
   useEffect(() => {
-    if (!canLoadStudents) return;
-    loadStudents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (canLoadStudents) loadStudents();
   }, [canLoadStudents]);
 
-  // ===== Filtered list
   const filteredStudents = useMemo(() => {
-    const q = (searchText || "").trim().toLowerCase();
-    if (!q) return students;
+    let result = [...students];
 
-    return students.filter((s) => {
+    // فلترة حسب حالة التسجيل
+    if (registrationFilter === "registered") {
+      result = result.filter(s => 
+        (s.registration_status || "").trim() === "مسجّل" ||
+        (s.registration_status || "").trim() === "مسجل"
+      );
+    } else if (registrationFilter === "unregistered") {
+      result = result.filter(s => {
+        const status = (s.registration_status || "").trim();
+        return status === "غير مسجّل" || 
+               status === "غير مسجل" || 
+               status === "";
+      });
+    }
+
+    // فلترة البحث
+    const q = (searchText || "").trim().toLowerCase();
+    if (!q) return result;
+
+    return result.filter(s => {
       const name = (s.full_name || "").toLowerCase();
       const uni = String(s.university_id || "").toLowerCase();
       return name.includes(q) || uni.includes(q);
     });
-  }, [students, searchText]);
+  }, [students, searchText, registrationFilter]);
+
+  const printTermStudentsList = () => {
+    if (filteredStudents.length === 0) {
+      showToast("لا توجد بيانات للطباعة", "error");
+      return;
+    }
+
+    const facultyName = faculties.find(f => f.id === Number(selectedFacultyId))?.faculty_name || "غير محدد";
+    const departmentName = departments.find(d => d.id === Number(selectedDepartmentId))?.department_name || "غير محدد";
+
+    const filterText = 
+      registrationFilter === "registered" ? "المسجلين فقط" :
+      registrationFilter === "unregistered" ? "غير المسجلين فقط" : 
+      "جميع الطلاب";
+
+    const headerHTML = `
+      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #ccc; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; margin-top: -20px;">
+        <h1 style="margin: 0; color: #0a3753; font-size: 22px;">
+          جامعة بورتسودان الأهلية
+        </h1>
+        <p style="margin: 8px 0 4px; font-weight: bold; font-size: 16px;">
+          ${facultyName} - ${departmentName}
+        </p>
+        <p style="margin: 4px 0; font-size: 14px;">
+          السنة الدراسية: ${academicYear} | المستوى: ${levelName} | الفصل: ${termName}
+        </p>
+        <p style="margin: 12px 0 0; color: #4b5563; font-size: 13px;">
+          قوائم الطلاب - ${filterText}
+        </p>
+      </div>
+    `;
+
+    const tableHTML = `
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; font-size: 14px;">
+        <thead>
+          <tr style="background: #6e6e6e; color: white;">
+            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">#</th>
+            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">الرقم الجامعي</th>
+            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right; font-weight: bold;">اسم الطالب</th>
+            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">الحالة الأكاديمية</th>
+            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center; font-weight: bold;">حالة التسجيل</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredStudents.map((s, idx) => `
+            <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+              <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${idx + 1}</td>
+              <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${s.university_id || '—'}</td>
+              <td style="padding: 10px; border: 1px solid #d1d5db; text-align: right;">${s.full_name || '—'}</td>
+              <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${s.academic_status || '—'}</td>
+              <td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">
+                ${s.registration_status || 'غير مسجل'}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const fullContent = `<div style="padding: 20px 40px;">${headerHTML}${tableHTML}</div>`;
+
+    const element = document.createElement('div');
+    element.innerHTML = fullContent;
+
+    html2pdf()
+      .from(element)
+      .set({
+        margin: 1,
+        filename: `قائمة_طلاب_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.pdf`,
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+        html2canvas: { scale: 2 }
+      })
+      .save();
+
+    showToast("جاري تجهيز القائمة للطباعة...", "success");
+  };
 
   return (
     <div className="admission-layout">
       <header className="library-header">
         <div className="library-header-title">
-          <span style={{ fontSize: 22 }}></span>
           <span> قوائم الطلاب</span>
         </div>
 
@@ -354,14 +444,24 @@ const StudentsTermList = () => {
                     <input
                       type="radio"
                       name="programTypeStudents"
-                      value="undergraduate"
-                      checked={programType === "undergraduate"}
+                      value="diploma"
+                      checked={programType === "diploma"}
+                      onChange={(e) => setProgramType(e.target.value)}
+                      disabled={!canPickProgramType}
+                    />
+                    دبلوم
+                  </label>
+                  <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
+                    <input
+                      type="radio"
+                      name="programTypeStudents"
+                      value="bachelor"
+                      checked={programType === "bachelor"}
                       onChange={(e) => setProgramType(e.target.value)}
                       disabled={!canPickProgramType}
                     />
                     بكالوريوس
                   </label>
-
                   <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
                     <input
                       type="radio"
@@ -376,17 +476,23 @@ const StudentsTermList = () => {
                 </div>
               </div>
 
-              {canPickPostgraduateProgram && (
+              {programType === "postgraduate" && (
                 <div className="input-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="input-label">اسم برنامج الدراسات العليا</label>
                   <input
                     className="input-field"
                     dir="rtl"
+                    list="postgrad_programs_list"
                     placeholder="مثال: ماجستير إدارة أعمال"
                     value={postgraduateProgram}
                     onChange={(e) => setPostgraduateProgram(e.target.value)}
                     disabled={!canPickProgramType}
                   />
+                  <datalist id="postgrad_programs_list">
+                    {pgSmart.programs.map((prog, idx) => (
+                      <option key={idx} value={prog} />
+                    ))}
+                  </datalist>
                 </div>
               )}
 
@@ -463,20 +569,55 @@ const StudentsTermList = () => {
 
           {/* قائمة الطلاب */}
           <div className="card" style={{ marginTop: 14 }}>
-            <h2 className="card-title">قائمة الطلاب المسجلين</h2>
+            <h2 className="card-title">قائمة الطلاب</h2>
 
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={loadStudents}
-                disabled={!canLoadStudents || loadingStudents}
+                onClick={printTermStudentsList}
+                disabled={!canLoadStudents || loadingStudents || filteredStudents.length === 0}
+                style={{ backgroundColor: "#0a3753", borderColor: "#0a3753" }}
               >
-                {loadingStudents ? "جارٍ التحميل..." : "تحديث القائمة"}
+                طباعة القائمة
               </button>
 
               <div style={{ color: "#6b7280", fontWeight: 800 }}>
                 العدد: {filteredStudents.length} / {students.length}
+              </div>
+
+              {/* فلتر حالة التسجيل */}
+              <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="registrationFilter"
+                    checked={registrationFilter === "all"}
+                    onChange={() => setRegistrationFilter("all")}
+                    disabled={loadingStudents || students.length === 0}
+                  />
+                  الكل
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="registrationFilter"
+                    checked={registrationFilter === "registered"}
+                    onChange={() => setRegistrationFilter("registered")}
+                    disabled={loadingStudents || students.length === 0}
+                  />
+                  الطلاب المسجلين 
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="registrationFilter"
+                    checked={registrationFilter === "unregistered"}
+                    onChange={() => setRegistrationFilter("unregistered")}
+                    disabled={loadingStudents || students.length === 0}
+                  />
+                  الطلاب غير المسجلين  
+                </label>
               </div>
 
               <div style={{ flex: 1 }} />
@@ -493,7 +634,7 @@ const StudentsTermList = () => {
             </div>
 
             {students.length === 0 && canLoadStudents && !loadingStudents && (
-              <div style={{ color: "#6b7280", fontWeight: 800 }}>
+              <div style={{ color: "#6b7280", fontWeight: 800, textAlign: "center" }}>
                 لا يوجد طلاب (أو لم يتم تسجيل طلاب لهذا الفصل).
               </div>
             )}
@@ -514,10 +655,12 @@ const StudentsTermList = () => {
                     {filteredStudents.map((s, idx) => (
                       <tr key={s.student_id ?? idx}>
                         <td>{idx + 1}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>{s.university_id || "-"}</td>
-                        <td style={{ fontWeight: 800 }}>{s.full_name || "-"}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>{s.academic_status || "-"}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>{s.registration_status || "-"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{s.university_id || "—"}</td>
+                        <td style={{ fontWeight: 800 }}>{s.full_name || "—"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{s.academic_status || "—"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {s.registration_status || "غير مسجل"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
