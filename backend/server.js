@@ -212,7 +212,7 @@ app.get("/api/borrowed-books-report", async (req, res) => {
         bb.borrowed_at
       FROM borrowed_books bb
       LEFT JOIN books b ON bb.book_id = b.id
-      LEFT JOIN students s ON bb.student_id = s.university_id   -- ← غيرنا هنا من s.id إلى s.university_id
+      LEFT JOIN students s ON bb.student_id = s.university_id 
       LEFT JOIN departments d ON s.department_id = d.id
       LEFT JOIN faculties f ON d.faculty_id = f.id
       WHERE bb.returned_at IS NULL
@@ -7039,7 +7039,8 @@ if (existing.length > 0) {
 await dbp.query(
   `INSERT INTO fees (
     student_id, academic_year, level_name, program_type, postgraduate_program,
-    currency, registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
+    currency,
+    registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
     scholarship_type, scholarship_percentage, scholarship_granted_by,
     payment_start_date, payment_end_date,
     installment_1, installment_1_start, installment_1_end,
@@ -7049,19 +7050,67 @@ await dbp.query(
     installment_5, installment_5_start, installment_5_end,
     installment_6, installment_6_start, installment_6_end,
     registrar, created_at, updated_at
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())`,
+  ) VALUES (
+    ?, ?, ?, ?, ?, 
+    ?,                                      
+    ?, ?, ?, ?, ?, ?, 
+    ?, ?, ?, 
+    ?, ?,
+    ?, ?, ?,
+    ?, ?, ?,
+    ?, ?, ?,
+    ?, ?, ?,
+    ?, ?, ?,
+    ?, ?, ?,
+    ?, NOW(), NOW()
+  )`,
   [
-    student_id, academic_year, level_name, program_type, postgraduate_program,
-    currency || "SDG",
-    registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
-    scholarship_type, scholarship_percentage, scholarship_granted_by,
-    payment_start_date || null, payment_end_date || null,
-    installment_1, installment_1_start, installment_1_end,
-    installment_2, installment_2_start, installment_2_end,
-    installment_3, installment_3_start, installment_3_end,
-    installment_4, installment_4_start, installment_4_end,
-    installment_5, installment_5_start, installment_5_end,
-    installment_6, installment_6_start, installment_6_end,
+    student_id,
+    academic_year,
+    level_name,
+    program_type,
+    postgraduate_program || null,
+
+    currency || "SDG",                      
+
+    Number(registration_fee) || 0,
+    Number(tuition_fee) || 0,
+    Number(late_fee) || 0,
+    Number(freeze_fee) || 0,
+    Number(unfreeze_fee) || 0,
+    Number(repeat_discount) || 50,
+
+    scholarship_type || "لا منحة",
+    Number(scholarship_percentage) || 0,
+    scholarship_granted_by || null,
+
+    payment_start_date || null,
+    payment_end_date || null,
+
+    installment_1 || null,
+    installment_1_start || null,
+    installment_1_end || null,
+
+    installment_2 || null,
+    installment_2_start || null,
+    installment_2_end || null,
+
+    installment_3 || null,
+    installment_3_start || null,
+    installment_3_end || null,
+
+    installment_4 || null,
+    installment_4_start || null,
+    installment_4_end || null,
+
+    installment_5 || null,
+    installment_5_start || null,
+    installment_5_end || null,
+
+    installment_6 || null,
+    installment_6_start || null,
+    installment_6_end || null,
+
     registrar
   ]
 );
@@ -7615,13 +7664,54 @@ app.get("/api/fees-report", async (req, res) => {
   }
 
   try {
-    let result = {};
+    let result = { scope, by_currency: {} };
+
+    // دالة مساعدة لحساب المجاميع حسب العملة
+    const calculateByCurrency = async (query, params) => {
+      const [rows] = await dbp.query(query, params);
+      const grouped = {};
+
+      rows.forEach(r => {
+        const cur = (r.currency || 'SDG').toUpperCase();
+        if (!grouped[cur]) {
+          grouped[cur] = { total_due: 0, total_paid: 0, groups: [] };
+        }
+
+        const due = Number(r.total_due || 0);
+        const paid = Number(r.total_paid || 0);
+
+        grouped[cur].total_due += due;
+        grouped[cur].total_paid += paid;
+
+        grouped[cur].groups.push({
+          name: r.name || r.faculty_name || r.department_name || `${r.university_id || ''} — ${r.full_name || ''}`.trim(),
+          total_due: Number(due.toFixed(2)),
+          total_paid: Number(paid.toFixed(2)),
+          total_unpaid: Number((due - paid).toFixed(2)),
+          percentage: due > 0 ? Number(((paid / due) * 100).toFixed(2)) : 0
+        });
+      });
+
+      // إضافة الإجمالي الكلي لكل عملة
+      Object.keys(grouped).forEach(cur => {
+        const g = grouped[cur];
+        g.grand_total = {
+          total_due: Number(g.total_due.toFixed(2)),
+          total_paid: Number(g.total_paid.toFixed(2)),
+          total_unpaid: Number((g.total_due - g.total_paid).toFixed(2)),
+          percentage: g.total_due > 0 ? Number(((g.total_paid / g.total_due) * 100).toFixed(2)) : 0
+        };
+      });
+
+      return grouped;
+    };
 
     // 1. كل الجامعة
     if (scope === "all") {
-      const [rows] = await dbp.query(`
+      result.by_currency = await calculateByCurrency(`
         SELECT 
-          fac.faculty_name,
+          f.currency,
+          fac.faculty_name AS name,
           SUM(COALESCE(f.installment_1,0) + COALESCE(f.installment_2,0) + COALESCE(f.installment_3,0) +
               COALESCE(f.installment_4,0) + COALESCE(f.installment_5,0) + COALESCE(f.installment_6,0)) AS total_due,
           SUM(
@@ -7637,39 +7727,19 @@ app.get("/api/fees-report", async (req, res) => {
         LEFT JOIN departments d ON COALESCE(f.department_id, st.department_id) = d.id
         LEFT JOIN faculties fac ON d.faculty_id = fac.id
         WHERE f.academic_year = ? AND f.level_name = ?
-        GROUP BY fac.id, fac.faculty_name
-        ORDER BY fac.faculty_name
+        GROUP BY f.currency, fac.id, fac.faculty_name
+        ORDER BY f.currency, fac.faculty_name
       `, [academic_year, level_name]);
 
-      const grand = rows.reduce((acc, r) => ({
-        total_due: acc.total_due + Number(r.total_due || 0),
-        total_paid: acc.total_paid + Number(r.total_paid || 0)
-      }), { total_due: 0, total_paid: 0 });
-
-      result = {
-        scope: "all",
-        type: "faculties",
-        groups: rows.map(r => ({
-          name: r.faculty_name,
-          total_due: Number(Number(r.total_due || 0).toFixed(2)),
-          total_paid: Number(Number(r.total_paid || 0).toFixed(2)),
-          total_unpaid: Number((Number(r.total_due || 0) - Number(r.total_paid || 0)).toFixed(2)),
-          percentage: Number(r.total_due || 0) > 0 ? Number(((Number(r.total_paid || 0) / Number(r.total_due || 0)) * 100).toFixed(2)) : 0
-        })),
-        grand_total: {
-          total_due: Number(grand.total_due.toFixed(2)),
-          total_paid: Number(grand.total_paid.toFixed(2)),
-          total_unpaid: Number((grand.total_due - grand.total_paid).toFixed(2)),
-          percentage: grand.total_due > 0 ? Number(((grand.total_paid / grand.total_due) * 100).toFixed(2)) : 0
-        }
-      };
+      result.type = "faculties";
     }
 
     // 2. كلية معينة
     else if (scope === "faculty" && faculty_id) {
-      const [rows] = await dbp.query(`
+      result.by_currency = await calculateByCurrency(`
         SELECT 
-          d.department_name,
+          f.currency,
+          d.department_name AS name,
           SUM(COALESCE(f.installment_1,0) + COALESCE(f.installment_2,0) + COALESCE(f.installment_3,0) +
               COALESCE(f.installment_4,0) + COALESCE(f.installment_5,0) + COALESCE(f.installment_6,0)) AS total_due,
           SUM(
@@ -7684,39 +7754,18 @@ app.get("/api/fees-report", async (req, res) => {
         LEFT JOIN students st ON f.student_id = st.id
         LEFT JOIN departments d ON COALESCE(f.department_id, st.department_id) = d.id
         WHERE f.academic_year = ? AND f.level_name = ? AND d.faculty_id = ?
-        GROUP BY d.id, d.department_name
+        GROUP BY f.currency, d.id, d.department_name
       `, [academic_year, level_name, faculty_id]);
 
-      const grand = rows.reduce((a, r) => ({
-        total_due: a.total_due + Number(r.total_due || 0),
-        total_paid: a.total_paid + Number(r.total_paid || 0)
-      }), { total_due: 0, total_paid: 0 });
-
-      result = {
-        scope: "faculty",
-        type: "departments",
-        groups: rows.map(r => ({
-          name: r.department_name,
-          total_due: Number(Number(r.total_due || 0).toFixed(2)),
-          total_paid: Number(Number(r.total_paid || 0).toFixed(2)),
-          total_unpaid: Number((Number(r.total_due || 0) - Number(r.total_paid || 0)).toFixed(2)),
-          percentage: Number(r.total_due || 0) > 0 ? Number(((Number(r.total_paid || 0) / Number(r.total_due || 0)) * 100).toFixed(2)) : 0
-        })),
-        grand_total: {
-          total_due: Number(grand.total_due.toFixed(2)),
-          total_paid: Number(grand.total_paid.toFixed(2)),
-          total_unpaid: Number((grand.total_due - grand.total_paid).toFixed(2)),
-          percentage: grand.total_due > 0 ? Number(((grand.total_paid / grand.total_due) * 100).toFixed(2)) : 0
-        }
-      };
+      result.type = "departments";
     }
 
     // 3. قسم معين
     else if (scope === "department" && department_id) {
-      const [rows] = await dbp.query(`
+      result.by_currency = await calculateByCurrency(`
         SELECT 
-          st.full_name,
-          st.university_id,
+          f.currency,
+          CONCAT(st.university_id, ' — ', st.full_name) AS name,
           SUM(COALESCE(f.installment_1,0) + COALESCE(f.installment_2,0) + COALESCE(f.installment_3,0) +
               COALESCE(f.installment_4,0) + COALESCE(f.installment_5,0) + COALESCE(f.installment_6,0)) AS total_due,
           SUM(
@@ -7731,115 +7780,81 @@ app.get("/api/fees-report", async (req, res) => {
         LEFT JOIN students st ON f.student_id = st.id
         WHERE f.academic_year = ? AND f.level_name = ? 
           AND COALESCE(f.department_id, st.department_id) = ?
-        GROUP BY st.id, st.full_name, st.university_id
+        GROUP BY f.currency, st.id, st.full_name, st.university_id
       `, [academic_year, level_name, department_id]);
 
-      const grand = rows.reduce((a, r) => ({
-        total_due: a.total_due + Number(r.total_due || 0),
-        total_paid: a.total_paid + Number(r.total_paid || 0)
-      }), { total_due: 0, total_paid: 0 });
+      result.type = "students";
+    }
 
-      result = {
-        scope: "department",
-        type: "students",
-        groups: rows.map(r => ({
-          name: `${r.university_id} — ${r.full_name}`,
-          total_due: Number(Number(r.total_due || 0).toFixed(2)),
-          total_paid: Number(Number(r.total_paid || 0).toFixed(2)),
-          total_unpaid: Number((Number(r.total_due || 0) - Number(r.total_paid || 0)).toFixed(2)),
-          percentage: Number(r.total_due || 0) > 0 ? Number(((Number(r.total_paid || 0) / Number(r.total_due || 0)) * 100).toFixed(2)) : 0
-        })),
+    // 4. طالب معين
+    else if (scope === "student" && student_id) {
+      const [rows] = await dbp.query(`
+        SELECT 
+          currency,
+          installment_1, installment_1_paid, installment_1_paid_at,
+          installment_2, installment_2_paid, installment_2_paid_at,
+          installment_3, installment_3_paid, installment_3_paid_at,
+          installment_4, installment_4_paid, installment_4_paid_at,
+          installment_5, installment_5_paid, installment_5_paid_at,
+          installment_6, installment_6_paid, installment_6_paid_at
+        FROM fees
+        WHERE student_id = ? 
+          AND academic_year = ? 
+          AND level_name = ?
+        ORDER BY updated_at DESC 
+        LIMIT 1
+      `, [student_id, academic_year, level_name]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "لا توجد بيانات رسوم لهذا الطالب" });
+      }
+
+      const r = rows[0];
+      const cur = (r.currency || 'SDG').toUpperCase();
+
+      let total_due = 0;
+      let total_paid = 0;
+      const installments = [];
+
+      for (let i = 1; i <= 6; i++) {
+        const amount = Number(r[`installment_${i}`] || 0);
+        const paid = r[`installment_${i}_paid`] === 1;
+
+        total_due += amount;
+        if (paid) total_paid += amount;
+
+        if (amount > 0 || paid) {
+          installments.push({
+            installment_no: i,
+            amount: amount.toFixed(2),
+            paid: paid ? 1 : 0,
+            paid_at: r[`installment_${i}_paid_at`] 
+              ? r[`installment_${i}_paid_at`].toISOString().split('T')[0] 
+              : null
+          });
+        }
+      }
+
+      result.by_currency[cur] = {
+        type: "installments",
+        student_details: installments,
         grand_total: {
-          total_due: Number(grand.total_due.toFixed(2)),
-          total_paid: Number(grand.total_paid.toFixed(2)),
-          total_unpaid: Number((grand.total_due - grand.total_paid).toFixed(2)),
-          percentage: grand.total_due > 0 ? Number(((grand.total_paid / grand.total_due) * 100).toFixed(2)) : 0
+          total_due: Number(total_due.toFixed(2)),
+          total_paid: Number(total_paid.toFixed(2)),
+          total_unpaid: Number((total_due - total_paid).toFixed(2)),
+          percentage: total_due > 0 ? Number(((total_paid / total_due) * 100).toFixed(2)) : 0
         }
       };
     }
-
-// 4. طالب معين
-else if (scope === "student" && student_id) {
-  try {
-    const [rows] = await dbp.query(`
-      SELECT 
-        installment_1, installment_1_start, installment_1_end, installment_1_paid, installment_1_paid_at,
-        installment_2, installment_2_start, installment_2_end, installment_2_paid, installment_2_paid_at,
-        installment_3, installment_3_start, installment_3_end, installment_3_paid, installment_3_paid_at,
-        installment_4, installment_4_start, installment_4_end, installment_4_paid, installment_4_paid_at,
-        installment_5, installment_5_start, installment_5_end, installment_5_paid, installment_5_paid_at,
-        installment_6, installment_6_start, installment_6_end, installment_6_paid, installment_6_paid_at
-      FROM fees
-      WHERE student_id = ?
-        AND academic_year = ?
-        AND level_name = ?
-      ORDER BY updated_at DESC
-      LIMIT 1
-    `, [student_id, academic_year, level_name]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "لا توجد بيانات رسوم لهذا الطالب" });
-    }
-
-    const row = rows[0];
-
-    const installments = [];
-    let total_due = 0;
-    let total_paid = 0;
-
-    for (let i = 1; i <= 6; i++) {
-      const amount = Number(row[`installment_${i}`] || 0);
-      const paid = row[`installment_${i}_paid`] === 1;
-
-      total_due += amount;
-
-      if (paid) {
-        total_paid += amount;
-      }
-
-      if (amount > 0 || paid) {
-        installments.push({
-          installment_no: i,
-          amount: amount.toFixed(2),
-          paid: paid ? 1 : 0,
-          paid_at: row[`installment_${i}_paid_at`]
-            ? row[`installment_${i}_paid_at`].toISOString().split('T')[0]
-            : null,
-          start: row[`installment_${i}_start`] || null,
-          end: row[`installment_${i}_end`] || null
-        });
-      }
-    }
-
-    const total_unpaid = total_due - total_paid;
-    const percentage = total_due > 0 ? ((total_paid / total_due) * 100) : 0;
-
-    result = {
-      scope: "student",
-      type: "installments",
-      student_details: installments,
-      grand_total: {
-        total_due: Number(total_due.toFixed(2)),
-        total_paid: Number(total_paid.toFixed(2)),
-        total_unpaid: Number(total_unpaid.toFixed(2)),
-        percentage: Number(percentage.toFixed(2))
-      }
-    };
-  } catch (err) {
-    console.error("[fees-report student error]", err);
-    return res.status(500).json({
-      error: "خطأ في جلب بيانات الطالب",
-      details: err.message,
-      sqlMessage: err.sqlMessage || null
-    });
-  }
-}
 
     res.json({ success: true, ...result });
 
   } catch (err) {
     console.error("[fees-report error]", err);
-    res.status(500).json({ error: "خطأ داخلي في تقرير الرسوم", details: err.message });
+    res.status(500).json({ 
+      error: "خطأ داخلي في تقرير الرسوم", 
+      details: err.message 
+    });
   }
 });
 
