@@ -57,6 +57,60 @@ function buildFileUrl(req, filename) {
   return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 }
 
+async function syncPendingFees() {
+    try {
+        // جلب السجلات غير المزامنة
+        const [pending] = await dbp.query("SELECT * FROM fees WHERE is_synced = 0 LIMIT 50");
+
+        for (const fee of pending) {
+            // 1. جلب بيانات الطالب الأساسية
+            const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [fee.student_id]);
+            if (stu.length === 0) continue;
+
+            // 2. تجهيز الأقساط من السجل
+            const installments = [];
+            for (let i = 1; i <= 6; i++) {
+                if (fee[`installment_${i}`] > 0) {
+                    installments.push({
+                        installment_number: i,
+                        amount: fee[`installment_${i}`],
+                        date: fee[`installment_${i}_start`],
+                        dateEnd: fee[`installment_${i}_end`]
+                    });
+                }
+            }
+
+            // 3. المحاولة مرة أخرى
+            try {
+                const response = await fetch("http://127.0.0.1:30000/api/receive-fees", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
+                    body: JSON.stringify({
+                        university_id: stu[0].university_id,
+                        full_name: stu[0].full_name,
+                        academic_year: fee.academic_year,
+                        level_name: fee.level_name,
+                        currency: fee.currency,
+                        installments
+                    })
+                });
+
+                const resData = await response.json();
+                if (resData.success) {
+                    await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [fee.id]);
+                    console.log(`✅ تمت مزامنة السجل رقم ${fee.id} بنجاح.`);
+                }
+            } catch (err) {
+                console.error(`❌ فشل محاولة مزامنة السجل ${fee.id} مرة أخرى.`);
+            }
+        }
+    } catch (err) {
+        console.error("Cron Job Error:", err);
+    }
+}
+
+// تشغيل الدالة كل 10 دقائق 
+setInterval(syncPendingFees, 10 * 60 * 1000);
 
 function termOrder(t) {
   const x = (t || "").toString().trim();
@@ -6707,6 +6761,33 @@ app.get("/api/student-repeated-courses", async (req, res) => {
 });
 /////الرسوم
 
+// دالة توليد installment_id 
+async function generateNextInstallmentId(count = 1) {
+    const [rows] = await dbp.query(`
+        SELECT MAX(
+            GREATEST(
+                COALESCE(installment_1_id, 0),
+                COALESCE(installment_2_id, 0),
+                COALESCE(installment_3_id, 0),
+                COALESCE(installment_4_id, 0),
+                COALESCE(installment_5_id, 0),
+                COALESCE(installment_6_id, 0)
+            )
+        ) AS max_id 
+        FROM fees
+    `);
+
+    let maxId = rows[0]?.max_id || 0;
+    const ids = [];
+
+    for (let i = 0; i < count; i++) {
+        maxId++;
+        ids.push(maxId);
+    }
+
+    return ids;   
+}
+
 // GET /term-default-fees - جلب الرسوم الافتراضية لفترة معينة (بدون student_id)
 app.get("/api/term-default-fees", async (req, res) => {
   const {
@@ -6790,6 +6871,32 @@ app.post("/api/term-default-fees", async (req, res) => {
   try {
     const registrar = req.user?.username || DEFAULT_REGISTRAR;
 
+    // ====================== توليد أرقام الأقساط فقط لو القسط له قيمة ======================
+let neededInstallments = 0;
+    const amounts = [];
+
+    for (let i = 1; i <= 6; i++) {
+        const amount = req.body[`installment_${i}`];
+        amounts.push(amount);
+        if (amount != null && Number(amount) > 0) neededInstallments++;
+    }
+
+    let installmentIds = [];
+    if (neededInstallments > 0) {
+        installmentIds = await generateNextInstallmentId(neededInstallments);
+    }
+
+    let idIndex = 0;
+    const instIds = {};
+    for (let i = 1; i <= 6; i++) {
+        if (amounts[i-1] != null && Number(amounts[i-1]) > 0) {
+            instIds[`installment_${i}_id`] = installmentIds[idIndex++];
+        } else {
+            instIds[`installment_${i}_id`] = null;
+        }
+    }
+    // ====================================================================================
+
     const [existing] = await dbp.query(
       `SELECT id FROM fees
        WHERE academic_year = ? AND level_name = ?
@@ -6834,36 +6941,127 @@ app.post("/api/term-default-fees", async (req, res) => {
     }
 
     // Insert
-    [result] = await dbp.query(
-`INSERT INTO fees (
-        academic_year, level_name, program_type, postgraduate_program,
-        department_id, student_id,
-        currency, registration_fee, tuition_fee, late_fee,
-        scholarship_type, scholarship_percentage,scholarship_granted_by,
-        payment_start_date, payment_end_date,
-        installment_1, installment_1_start, installment_1_end,
-        installment_2, installment_2_start, installment_2_end,
-        installment_3, installment_3_start, installment_3_end,
-        installment_4, installment_4_start, installment_4_end,
-        installment_5, installment_5_start, installment_5_end,
-        installment_6, installment_6_start, installment_6_end,
-        registrar, created_at, updated_at
-      ) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())`,
-      [
-        academic_year, level_name, program_type, postgraduate_program,
-        department_id,
-        currency, registration_fee, tuition_fee, late_fee,
-        scholarship_type, scholarship_percentage,
-        scholarship_granted_by,
-        payment_start_date || null, payment_end_date || null,
-        installment_1, installment_1_start, installment_1_end,
-        installment_2, installment_2_start, installment_2_end,
-        installment_3, installment_3_start, installment_3_end,
-        installment_4, installment_4_start, installment_4_end,
-        installment_5, installment_5_start, installment_5_end,
-        installment_6, installment_6_start, installment_6_end,
-        registrar
-      ]
+[result] = await dbp.query(`
+        INSERT INTO fees (
+            academic_year, 
+            level_name, 
+            program_type, 
+            postgraduate_program,
+            department_id, 
+            student_id,
+            currency, 
+            registration_fee, 
+            tuition_fee, 
+            late_fee,
+            scholarship_type, 
+            scholarship_percentage,
+            scholarship_granted_by,
+            payment_start_date, 
+            payment_end_date,
+            
+            installment_1, 
+            installment_1_id, 
+            installment_1_start, 
+            installment_1_end,
+            
+            installment_2, 
+            installment_2_id, 
+            installment_2_start, 
+            installment_2_end,
+            
+            installment_3, 
+            installment_3_id, 
+            installment_3_start, 
+            installment_3_end,
+            
+            installment_4, 
+            installment_4_id, 
+            installment_4_start, 
+            installment_4_end,
+            
+            installment_5, 
+            installment_5_id, 
+            installment_5_start, 
+            installment_5_end,
+            
+            installment_6, 
+            installment_6_id, 
+            installment_6_start, 
+            installment_6_end,
+            
+            registrar, 
+            created_at, 
+            updated_at
+        ) VALUES (
+            ?, ?, ?, ?, ?, 
+            NULL,
+            ?, ?, ?, ?,
+            ?, ?, ?,
+            ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, NOW(), NOW()
+        )`,
+        [
+            academic_year, 
+            level_name, 
+            program_type, 
+            postgraduate_program || null,
+            department_id,
+
+            currency || 'SDG',
+            registration_fee, 
+            tuition_fee, 
+            late_fee,
+            scholarship_type || 'لا منحة', 
+            scholarship_percentage || 0,
+            scholarship_granted_by || null,
+
+            payment_start_date || null, 
+            payment_end_date || null,
+
+            // القسط 1
+            amounts[0] || null, 
+            instIds.installment_1_id, 
+            installment_1_start || null, 
+            installment_1_end || null,
+
+            // القسط 2
+            amounts[1] || null, 
+            instIds.installment_2_id, 
+            installment_2_start || null, 
+            installment_2_end || null,
+
+            // القسط 3
+            amounts[2] || null, 
+            instIds.installment_3_id, 
+            installment_3_start || null, 
+            installment_3_end || null,
+
+            // القسط 4
+            amounts[3] || null, 
+            instIds.installment_4_id, 
+            installment_4_start || null, 
+            installment_4_end || null,
+
+            // القسط 5
+            amounts[4] || null, 
+            instIds.installment_5_id, 
+            installment_5_start || null, 
+            installment_5_end || null,
+
+            // القسط 6
+            amounts[5] || null, 
+            instIds.installment_6_id, 
+            installment_6_start || null, 
+            installment_6_end || null,
+
+            registrar
+        ]
     );
 
     res.json({ success: true, message: "تم حفظ الرسوم المبدئية بنجاح" });
@@ -6956,15 +7154,41 @@ app.post("/api/student-fees", async (req, res) => {
       [student_id, academic_year, level_name, program_type, postgraduate_program]
     );
 
+    // توليد أرقام الأقساط
+let neededInstallments = 0;
+    const amounts = [];
+    
+    for (let i = 1; i <= 6; i++) {
+        const amount = req.body[`installment_${i}`];
+        amounts.push(amount);
+        if (amount != null && Number(amount) > 0) neededInstallments++;
+    }
+
+    let installmentIds = [];
+    if (neededInstallments > 0) {
+        installmentIds = await generateNextInstallmentId(neededInstallments);
+    }
+
+    // ربط كل قسط بالـ ID الخاص به
+    let idIndex = 0;
+    const instIds = {};
+    for (let i = 1; i <= 6; i++) {
+        if (amounts[i-1] != null && Number(amounts[i-1]) > 0) {
+            instIds[`installment_${i}_id`] = installmentIds[idIndex++];
+        } else {
+            instIds[`installment_${i}_id`] = null;
+        }
+    }
+
 if (existing.length > 0) {
-  const [oldFees] = await dbp.query(
+const [oldFees] = await dbp.query(
     `SELECT 
-       installment_1, installment_1_paid,
-       installment_2, installment_2_paid,
-       installment_3, installment_3_paid,
-       installment_4, installment_4_paid,
-       installment_5, installment_5_paid,
-       installment_6, installment_6_paid
+       installment_1_id, installment_1, installment_1_paid,
+       installment_2_id, installment_2, installment_2_paid,
+       installment_3_id, installment_3, installment_3_paid,
+       installment_4_id, installment_4, installment_4_paid,
+       installment_5_id, installment_5, installment_5_paid,
+       installment_6_id, installment_6, installment_6_paid
      FROM fees 
      WHERE id = ?`,
     [existing[0].id]
@@ -6975,6 +7199,44 @@ if (existing.length > 0) {
   }
 
   const old = oldFees[0];
+
+  // ====================== توليد IDs جديدة فقط للأقساط الجديدة ======================
+  let newNeeded = 0;
+  const newAmounts = [];
+  const oldAmounts = [];
+
+  for (let i = 1; i <= 6; i++) {
+    const newAmt = req.body[`installment_${i}`];
+    const oldAmt = old[`installment_${i}`];
+    
+    newAmounts.push(newAmt);
+    oldAmounts.push(oldAmt);
+
+    if ((newAmt != null && Number(newAmt) > 0) && !(oldAmt != null && Number(oldAmt) > 0)) {
+      newNeeded++;
+    }
+  }
+
+  let newInstallmentIds = [];
+  if (newNeeded > 0) {
+    newInstallmentIds = await generateNextInstallmentId(newNeeded);
+  }
+
+  let newIdIndex = 0;
+  const updateInstIds = {};
+  for (let i = 1; i <= 6; i++) {
+    const newAmt = newAmounts[i-1];
+    const oldAmt = oldAmounts[i-1];
+
+    if (newAmt == null || Number(newAmt) <= 0) {
+      updateInstIds[`installment_${i}_id`] = null;
+    } else if (oldAmt != null && Number(oldAmt) > 0) {
+      updateInstIds[`installment_${i}_id`] = old[`installment_${i}_id`];
+    } else {
+      updateInstIds[`installment_${i}_id`] = newInstallmentIds[newIdIndex++];
+    }
+  }
+  // =============================================================================
 
   const newInstallments = {
     installment_1, installment_2, installment_3,
@@ -7001,18 +7263,18 @@ if (existing.length > 0) {
   }
 
   // UPDATE
-  await dbp.query(
+await dbp.query(
     `UPDATE fees SET
        currency = ?, registration_fee = ?, tuition_fee = ?, late_fee = ?,
       freeze_fee = ?, unfreeze_fee = ?, repeat_discount = ?,
       scholarship_type = ?, scholarship_percentage = ?, scholarship_granted_by = ?,
       payment_start_date = ?, payment_end_date = ?,
-      installment_1 = ?, installment_1_start = ?, installment_1_end = ?,
-      installment_2 = ?, installment_2_start = ?, installment_2_end = ?,
-      installment_3 = ?, installment_3_start = ?, installment_3_end = ?,
-      installment_4 = ?, installment_4_start = ?, installment_4_end = ?,
-      installment_5 = ?, installment_5_start = ?, installment_5_end = ?,
-      installment_6 = ?, installment_6_start = ?, installment_6_end = ?,
+      installment_1 = ?, installment_1_id = ?, installment_1_start = ?, installment_1_end = ?,
+      installment_2 = ?, installment_2_id = ?, installment_2_start = ?, installment_2_end = ?,
+      installment_3 = ?, installment_3_id = ?, installment_3_start = ?, installment_3_end = ?,
+      installment_4 = ?, installment_4_id = ?, installment_4_start = ?, installment_4_end = ?,
+      installment_5 = ?, installment_5_id = ?, installment_5_start = ?, installment_5_end = ?,
+      installment_6 = ?, installment_6_id = ?, installment_6_start = ?, installment_6_end = ?,
       registrar = ?, updated_at = NOW()
      WHERE id = ?`,
     [
@@ -7022,12 +7284,20 @@ if (existing.length > 0) {
       scholarship_type, scholarship_percentage,
       scholarship_granted_by,
       payment_start_date || null, payment_end_date || null,
-      installment_1, installment_1_start, installment_1_end,
-      installment_2, installment_2_start, installment_2_end,
-      installment_3, installment_3_start, installment_3_end,
-      installment_4, installment_4_start, installment_4_end,
-      installment_5, installment_5_start, installment_5_end,
-      installment_6, installment_6_start, installment_6_end,
+
+      // installment 1
+      newAmounts[0] || null, updateInstIds.installment_1_id, installment_1_start || null, installment_1_end || null,
+      // installment 2
+      newAmounts[1] || null, updateInstIds.installment_2_id, installment_2_start || null, installment_2_end || null,
+      // installment 3
+      newAmounts[2] || null, updateInstIds.installment_3_id, installment_3_start || null, installment_3_end || null,
+      // installment 4
+      newAmounts[3] || null, updateInstIds.installment_4_id, installment_4_start || null, installment_4_end || null,
+      // installment 5
+      newAmounts[4] || null, updateInstIds.installment_5_id, installment_5_start || null, installment_5_end || null,
+      // installment 6
+      newAmounts[5] || null, updateInstIds.installment_6_id, installment_6_start || null, installment_6_end || null,
+
       registrar, existing[0].id
     ]
   );
@@ -7043,12 +7313,12 @@ await dbp.query(
     registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
     scholarship_type, scholarship_percentage, scholarship_granted_by,
     payment_start_date, payment_end_date,
-    installment_1, installment_1_start, installment_1_end,
-    installment_2, installment_2_start, installment_2_end,
-    installment_3, installment_3_start, installment_3_end,
-    installment_4, installment_4_start, installment_4_end,
-    installment_5, installment_5_start, installment_5_end,
-    installment_6, installment_6_start, installment_6_end,
+    installment_1, installment_1_start, installment_1_end, installment_1_id,
+    installment_2, installment_2_start, installment_2_end, installment_2_id,
+    installment_3, installment_3_start, installment_3_end, installment_3_id,
+    installment_4, installment_4_start, installment_4_end, installment_4_id,
+    installment_5, installment_5_start, installment_5_end, installment_5_id,
+    installment_6, installment_6_start, installment_6_end, installment_6_id,
     registrar, created_at, updated_at
   ) VALUES (
     ?, ?, ?, ?, ?, 
@@ -7056,12 +7326,12 @@ await dbp.query(
     ?, ?, ?, ?, ?, ?, 
     ?, ?, ?, 
     ?, ?,
-    ?, ?, ?,
-    ?, ?, ?,
-    ?, ?, ?,
-    ?, ?, ?,
-    ?, ?, ?,
-    ?, ?, ?,
+    ?, ?, ?, ?,
+    ?, ?, ?, ?,
+    ?, ?, ?, ?,
+    ?, ?, ?, ?,
+    ?, ?, ?, ?,
+    ?, ?, ?, ?,
     ?, NOW(), NOW()
   )`,
   [
@@ -7087,29 +7357,41 @@ await dbp.query(
     payment_start_date || null,
     payment_end_date || null,
 
+    // installment 1
     installment_1 || null,
     installment_1_start || null,
     installment_1_end || null,
+    instIds.installment_1_id,     
 
+    // installment 2
     installment_2 || null,
     installment_2_start || null,
     installment_2_end || null,
+    instIds.installment_2_id,
 
+    // installment 3
     installment_3 || null,
     installment_3_start || null,
     installment_3_end || null,
+    instIds.installment_3_id,
 
+    // installment 4
     installment_4 || null,
     installment_4_start || null,
     installment_4_end || null,
+    instIds.installment_4_id,
 
+    // installment 5
     installment_5 || null,
     installment_5_start || null,
     installment_5_end || null,
+    instIds.installment_5_id,
 
+    // installment 6
     installment_6 || null,
     installment_6_start || null,
     installment_6_end || null,
+    instIds.installment_6_id,
 
     registrar
   ]
@@ -7856,6 +8138,86 @@ app.get("/api/fees-report", async (req, res) => {
       details: err.message 
     });
   }
+});
+
+////// اسقبال بيانات الدفع من النظام المالي وتسجيلها في النظام الأكاديمي
+// التحقق من التوكن
+const verifyAcademicToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const VALID_TOKEN = "STUDENT_SYSTEM_TOKEN_2026";
+
+    if (!authHeader || authHeader !== VALID_TOKEN) {
+        console.log(" محاولة دخول غير مصرح بها من:", req.ip);
+        return res.status(403).json({ 
+            success: false, 
+            code: 1002, 
+            msg: "غير مصرح بالدخول: التوكن غير صحيح أو مفقود" 
+        });
+    }
+    next(); 
+};
+ // استقبال حاله الدفع من النظام المالي
+app.post('/api/academic/receive-payment', verifyAcademicToken, async (req, res) => {
+    const { 
+        university_id, academic_year, level_name, installment_number, 
+        amount_paid, payment_date, transaction_id, status, currency, notes 
+    } = req.body;
+
+    const connection = await dbp.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. جلب ID الطالب
+        const [studentRows] = await connection.execute(
+            'SELECT id FROM students WHERE university_id = ?', [university_id]
+        );
+
+        if (studentRows.length === 0) {
+            throw new Error(`الطالب رقم ${university_id} غير موجود`);
+        }
+
+        const realStudentId = studentRows[0].id;
+
+        // 2. تسجيل العملية في جدول payment (سواء كانت نجاح أو إلغاء للتوثيق)
+        const sqlPayment = `
+            INSERT INTO payment (
+                university_id, academic_year, level_name, installment_number, 
+                amount_paid, payment_date, transaction_id, status, currency, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        await connection.execute(sqlPayment, [
+            university_id, academic_year, level_name, installment_number,
+            amount_paid, payment_date, transaction_id, status, currency || 'SDG', notes || null
+        ]);
+
+        // 3. تحديث جدول fees بناءً على الـ status
+        const paidColumn = `installment_${installment_number}_paid`;
+        const dateColumn = `installment_${installment_number}_paid_at`;
+
+        // إذا كانت الحالة 1 (دفع) نضع 1 وتاريخ، وإذا كانت 0 (إلغاء) نضع 0 و NULL
+        const isPaid = (Number(status) === 1) ? 1 : 0;
+        const pDate = (Number(status) === 1) ? payment_date : null;
+
+        const sqlFees = `
+            UPDATE fees 
+            SET ${paidColumn} = ?, ${dateColumn} = ? 
+            WHERE student_id = ? AND academic_year = ? AND level_name = ?`;
+
+        await connection.execute(sqlFees, [isPaid, pDate, realStudentId, academic_year, level_name]);
+
+        await connection.commit();
+        
+        const successMsg = isPaid ? "تم تسجيل الدفع بنجاح" : "تم إلغاء عملية الدفع بنجاح";
+        res.status(200).json({ success: true, msg: successMsg });
+
+    } catch (err) {
+        await connection.rollback();
+        console.error("❌ خطأ:", err.message);
+        res.status(500).json({ success: false, msg: err.message });
+    } finally {
+        connection.release();
+    }
 });
 
 const PORT = process.env.PORT || 5000;

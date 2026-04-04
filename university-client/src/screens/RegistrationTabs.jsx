@@ -3447,7 +3447,6 @@ const resetAllForm = () => {
 
 };
 
-  // حفظ الرسوم + reset بعد الحفظ
 const saveFees = async () => {
   if (!academicYear || !levelName) {
     showToast("يرجى اختيار السنة والمستوى", "error");
@@ -3549,6 +3548,62 @@ const saveFees = async () => {
       selectedStudent ? "تم حفظ/تحديث رسوم الطالب بنجاح" : "تم حفظ الرسوم المبدئية بنجاح",
       "success"
     );
+    
+// ─────────────────────────────────────────────────────────────
+//  إرسال الرسوم للمحاكي (للتجربة)
+// ─────────────────────────────────────────────────────────────
+// if (!selectedStudent) {
+//     console.log("تم حفظ الرسوم العامة بنجاح (لم يتم الإرسال للمحاكي لأنه لا يوجد طالب محدد).");
+//     return;
+// }
+
+// try {
+//   const installmentsList = [];
+//   for (let i = 1; i <= installmentCount; i++) {
+//     if (feesData[`installment_${i}`]) {
+//       installmentsList.push({
+//         installment_number: i,
+//         amount: Number(feesData[`installment_${i}`]), 
+//         date: feesData[`installment_${i}_start`],   
+//         dateEnd: feesData[`installment_${i}_end`]   
+//       });
+//     }
+//   }
+
+// const payload = {
+//     university_id: selectedStudent.university_id || "N/A", 
+//     full_name: selectedStudent.full_name || "",
+//     academic_year: academicYear,
+//     level_name: levelName,
+//     currency: feesData.currency, 
+//     installments: installmentsList 
+//   };
+
+//   const resFinancial = await fetch("http://127.0.0.1:30000/api/receive-fees", {
+//     method: "POST",
+//     mode: "cors",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//       "Authorization": "STUDENT_SYSTEM_TOKEN_2026" 
+//     },
+//     body: JSON.stringify(payload)
+//   });
+
+//   const responseData = await resFinancial.json();
+
+//   if (resFinancial.ok && responseData.success) {
+//     console.log(" رد السيرفر المالي:", responseData.msg); 
+//     // showToast(`تم الحفظ وإرسال المطالبة لـ ${selectedStudent.full_name}`, "success");
+//   } else {
+//     console.error(" خطأ من السيرفر المالي:", responseData.msg);
+//     // showToast(responseData.msg || "فشل الاتصال بالمحاكي", "error");
+//   }
+// } catch (err) {
+//   console.error(" خطأ في الإرسال للمحاكي:", err.message);
+// }
+
+/////
     resetAllForm();
     setSelectedStudent(null);
     setSearchQuery("");
