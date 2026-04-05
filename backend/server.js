@@ -4973,6 +4973,7 @@ app.get('/api/users', async (req, res) => {
         username, 
         full_name, 
         email, 
+        department,
         role, 
         is_active, 
         allowed_pages,
@@ -5043,6 +5044,7 @@ app.put('/api/users/:id', async (req, res) => {
     username, 
     full_name, 
     email, 
+    department,
     role, 
     is_active, 
     allowed_pages, 
@@ -5065,6 +5067,7 @@ app.put('/api/users/:id', async (req, res) => {
     if (username !== undefined)               { updates.push('username = ?');           values.push(username); }
     if (full_name !== undefined)              { updates.push('full_name = ?');          values.push(full_name); }
     if (email !== undefined)                  { updates.push('email = ?');              values.push(email); }
+    if (department !== undefined)             { updates.push('department = ?');         values.push(department); }
     if (role !== undefined)                   { updates.push('role = ?');               values.push(role); }
     if (is_active !== undefined)              { updates.push('is_active = ?');          values.push(is_active ? 1 : 0); }
     if (allowed_pages !== undefined)          { updates.push('allowed_pages = ?');      values.push(JSON.stringify(allowed_pages)); }
@@ -5102,7 +5105,7 @@ app.put('/api/users/:id', async (req, res) => {
 // POST /api/users       إضافة مستخدم جديد
 // ---------------------
 app.post('/api/users', async (req, res) => {
-  const { username, password, full_name, email, role = 'user', allowed_pages = [] , allowed_faculties = [], registration_tab_permissions = {} , allowed_program_types = []} = req.body;
+  const { username, password, full_name, email, role = 'user',department, allowed_pages = [] , allowed_faculties = [], registration_tab_permissions = {} , allowed_program_types = []} = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبين' });
@@ -5113,14 +5116,15 @@ app.post('/api/users', async (req, res) => {
 
 const [result] = await dbp.query(`
       INSERT INTO users 
-        (username, password_hash, full_name, email, role, 
+        (username, password_hash, full_name, email,department, role, 
          allowed_pages, allowed_faculties, registration_tab_permissions, allowed_program_types)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       username, 
       hash, 
       full_name || null, 
       email || null, 
+      department || null,
       role, 
       JSON.stringify(allowed_pages), 
       JSON.stringify(allowed_faculties), 
@@ -5133,6 +5137,7 @@ const [result] = await dbp.query(`
       username,
       full_name,
       email,
+      department,
       role,
       allowed_pages,
       allowed_faculties,

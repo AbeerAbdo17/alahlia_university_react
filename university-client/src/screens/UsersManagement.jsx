@@ -24,6 +24,29 @@ const registrationTabsList = [
   { key: "fees",            label: "الرسوم" },
 ];
 
+const universityDepartments = [
+  "مدير الجامعة",
+  "شؤون الطلاب",
+  "الاعلام والعلاقات العامه",
+  "الدراسات العليا والبحث العلمى",
+  "أمانة الشؤون العلمية",
+  "الوكيل (إدارة مالية)",
+  "الوكيل (إدارة إدارية)",
+  "المكتبة",
+  "عمداء الكليات",
+  "الدراسات المستمرة",
+  "الجودة والتطوير",
+  "المشتريات والمخازن",
+  "الحسابات والصرافة",
+  "إدارة الموارد البشرية",
+  "إدارة الخدمات",
+  "الامتحانات والشهادات",
+  "إدارة المتابعة",
+  "الكهرباء والصيانة",
+  "الحرس والخفراء",
+  "العقودات والمتعاقدين"
+];
+
 const ui = {
   page: {
     fontFamily: `"Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", Arial, sans-serif`,
@@ -474,6 +497,21 @@ const handleEdit = (user) => {
                   style={ui.input}
                 />
               </div>
+
+<div style={ui.field}>
+  <label style={ui.label}>القسم / الإدارة التابع لها</label>
+  <select
+    value={newUserForm.department || ""}
+    onChange={e => setNewUserForm({ ...newUserForm, department: e.target.value })}
+    style={ui.select}
+  >
+    <option value="">-- اختر القسم --</option>
+    {universityDepartments.map((dept, index) => (
+      <option key={index} value={dept}>{dept}</option>
+    ))}
+  </select>
+</div>
+
               <div style={ui.field}>
                 <label style={ui.label}>الدور / وصف المستخدم</label>
                 <select
@@ -483,8 +521,8 @@ const handleEdit = (user) => {
                 >
                   <option value="user">مستخدم عادي</option>
                   <option value="admin">إداري</option>
-                  <option value="registrar">مسجل</option>
-                  <option value="instructor">مدرس</option>
+                  {/* <option value="registrar">مسجل</option> */}
+                  {/* <option value="instructor">مدرس</option> */}
                 </select>
               </div>
             </div>
@@ -652,6 +690,7 @@ const handleEdit = (user) => {
                   <tr>
                     <th style={ui.th}>اسم المستخدم</th>
                     <th style={ui.th}>الاسم الكامل</th>
+                    <th style={ui.th}>القسم</th>
                     <th style={ui.th}>الدور</th>
                     <th style={ui.th}>الصفحات المسموحة</th>
                     <th style={ui.th}>الكليات المسموحة</th>
@@ -663,6 +702,7 @@ const handleEdit = (user) => {
                     <tr key={u.id}>
                       <td style={ui.td}>{u.username}</td>
                       <td style={ui.td}>{u.full_name || '—'}</td>
+                      <td style={ui.td}>{u.department || 'غير محدد'}</td>
                       <td style={ui.td}>{u.role}</td>
                       <td style={ui.td}>
                         {(u.allowed_pages || []).length === 0 ? 'كل الصفحات' : u.allowed_pages.join(' • ')}
@@ -758,12 +798,25 @@ const handleEdit = (user) => {
                   />
                 </div>
                 <div style={ui.field}>
+  <label style={ui.label}>القسم / الإدارة</label>
+  <select
+    value={form.department || ""}
+    onChange={e => setForm({ ...form, department: e.target.value })}
+    style={ui.select}
+  >
+    <option value="">-- اختر القسم --</option>
+    {universityDepartments.map((dept, index) => (
+      <option key={index} value={dept}>{dept}</option>
+    ))}
+  </select>
+</div>
+                <div style={ui.field}>
                   <label style={ui.label}>الدور / الوصف</label>
                   <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={ui.select}>
                     <option value="user">مستخدم عادي</option>
                     <option value="admin">إداري</option>
-                    <option value="registrar">مسجل</option>
-                    <option value="instructor">مدرس</option>
+                    {/* <option value="registrar">مسجل</option> */}
+                    {/* <option value="instructor">مدرس</option> */}
                   </select>
                 </div>
               </div>
