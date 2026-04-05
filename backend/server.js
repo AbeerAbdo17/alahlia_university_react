@@ -4977,7 +4977,8 @@ app.get('/api/users', async (req, res) => {
         is_active, 
         allowed_pages,
         allowed_faculties,
-        registration_tab_permissions
+        registration_tab_permissions,
+        allowed_program_types
       FROM users
       ORDER BY username
     `);
@@ -4986,6 +4987,8 @@ app.get('/api/users', async (req, res) => {
       let allowedPages = [];
       let allowedFaculties = [];
       let registrationTabPermissions = {};
+      let allowedProgramTypes = [];
+      
 
       try {
         if (user.allowed_pages) allowedPages = JSON.parse(user.allowed_pages);
@@ -5007,10 +5010,19 @@ app.get('/api/users', async (req, res) => {
         console.warn(`Invalid registration_tab_permissions JSON for user ${user.id}:`, e);
       }
 
+      try {
+        if (user.allowed_program_types) {
+          allowedProgramTypes = JSON.parse(user.allowed_program_types);
+        }
+      } catch (e) {
+        console.warn(`Invalid allowed_program_types JSON for user ${user.id}:`, e);
+      }
+
       return {
         ...user,
         allowed_pages: allowedPages,
         allowed_faculties: allowedFaculties,
+        allowed_program_types: allowedProgramTypes,
         registration_tab_permissions: registrationTabPermissions
       };
     });
@@ -5021,8 +5033,9 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ error: 'خطأ في جلب المستخدمين' });
   }
 });
+
 // ---------------------
-// PUT /api/users/:id    تعديل الصفحات المسموحة   
+// PUT /api/users/:id    تعديل المستخدم
 // ---------------------
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
@@ -5034,7 +5047,8 @@ app.put('/api/users/:id', async (req, res) => {
     is_active, 
     allowed_pages, 
     allowed_faculties = [], 
-    registration_tab_permissions = {} 
+    registration_tab_permissions = {}, 
+    allowed_program_types = [] 
   } = req.body;
 
   try {
@@ -5044,17 +5058,24 @@ app.put('/api/users/:id', async (req, res) => {
     if (role === 'admin') {
       allowed_pages = [];                        
       allowed_faculties = [];                      
-      registration_tab_permissions = {};            
+      registration_tab_permissions = {};     
+      allowed_program_types = [];       
     }
 
-    if (username !== undefined)     { updates.push('username = ?');     values.push(username); }
-    if (full_name !== undefined)    { updates.push('full_name = ?');    values.push(full_name); }
-    if (email !== undefined)        { updates.push('email = ?');        values.push(email); }
-    if (role !== undefined)         { updates.push('role = ?');         values.push(role); }
-    if (is_active !== undefined)    { updates.push('is_active = ?');    values.push(is_active ? 1 : 0); }
-    if (allowed_pages !== undefined){ updates.push('allowed_pages = ?'); values.push(JSON.stringify(allowed_pages)); }
-    if (allowed_faculties !== undefined){ updates.push('allowed_faculties = ?'); values.push(JSON.stringify(allowed_faculties)); }
-    if (registration_tab_permissions !== undefined) { updates.push('registration_tab_permissions = ?'); values.push(JSON.stringify(registration_tab_permissions));
+    if (username !== undefined)               { updates.push('username = ?');           values.push(username); }
+    if (full_name !== undefined)              { updates.push('full_name = ?');          values.push(full_name); }
+    if (email !== undefined)                  { updates.push('email = ?');              values.push(email); }
+    if (role !== undefined)                   { updates.push('role = ?');               values.push(role); }
+    if (is_active !== undefined)              { updates.push('is_active = ?');          values.push(is_active ? 1 : 0); }
+    if (allowed_pages !== undefined)          { updates.push('allowed_pages = ?');      values.push(JSON.stringify(allowed_pages)); }
+    if (allowed_faculties !== undefined)      { updates.push('allowed_faculties = ?');  values.push(JSON.stringify(allowed_faculties)); }
+    if (registration_tab_permissions !== undefined) { 
+      updates.push('registration_tab_permissions = ?'); 
+      values.push(JSON.stringify(registration_tab_permissions)); 
+    }
+    if (allowed_program_types !== undefined) { 
+      updates.push('allowed_program_types = ?'); 
+      values.push(JSON.stringify(allowed_program_types)); 
     }
 
     if (updates.length === 0) {
@@ -5070,7 +5091,7 @@ app.put('/api/users/:id', async (req, res) => {
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
 
-    res.json({ message: 'تم الحفظ' });
+    res.json({ message: 'تم الحفظ بنجاح' });
   } catch (err) {
     console.error("PUT /api/users/:id error:", err);
     res.status(500).json({ error: 'خطأ أثناء الحفظ' });
@@ -5081,7 +5102,7 @@ app.put('/api/users/:id', async (req, res) => {
 // POST /api/users       إضافة مستخدم جديد
 // ---------------------
 app.post('/api/users', async (req, res) => {
-  const { username, password, full_name, email, role = 'user', allowed_pages = [] , allowed_faculties = [], registration_tab_permissions = {} } = req.body;
+  const { username, password, full_name, email, role = 'user', allowed_pages = [] , allowed_faculties = [], registration_tab_permissions = {} , allowed_program_types = []} = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبين' });
@@ -5090,11 +5111,22 @@ app.post('/api/users', async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
 
-    const [result] = await dbp.query(   
-      `INSERT INTO users (username, password_hash, full_name, email, role, allowed_pages, allowed_faculties, registration_tab_permissions)
-       VALUES (?, ?, ?, ?, ?, ?, ? , ?)`,
-      [username, hash, full_name || null, email || null, role, JSON.stringify(allowed_pages), JSON.stringify(allowed_faculties), JSON.stringify(registration_tab_permissions)]
-    );
+const [result] = await dbp.query(`
+      INSERT INTO users 
+        (username, password_hash, full_name, email, role, 
+         allowed_pages, allowed_faculties, registration_tab_permissions, allowed_program_types)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      username, 
+      hash, 
+      full_name || null, 
+      email || null, 
+      role, 
+      JSON.stringify(allowed_pages), 
+      JSON.stringify(allowed_faculties), 
+      JSON.stringify(registration_tab_permissions), 
+      JSON.stringify(allowed_program_types)
+    ]);
 
     res.status(201).json({
       id: result.insertId,             
@@ -5104,7 +5136,8 @@ app.post('/api/users', async (req, res) => {
       role,
       allowed_pages,
       allowed_faculties,
-      registration_tab_permissions
+      registration_tab_permissions,
+      allowed_program_types,
     });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
@@ -5150,7 +5183,7 @@ app.post("/api/login", async (req, res) => {
   try {
     // جلب بيانات المستخدم
     const [rows] = await dbp.query(
-      `SELECT id, username, full_name, email, role, password_hash, allowed_pages, allowed_faculties, registration_tab_permissions
+      `SELECT id, username, full_name, email, role, password_hash, allowed_pages, allowed_faculties, registration_tab_permissions, allowed_program_types
        FROM users
        WHERE username = ?`,
       [username]
@@ -5205,6 +5238,15 @@ try {
     } catch (e) {
       console.error("خطأ في تحليل registration_tab_permissions:", e);
     }
+    let allowed_program_types = {};
+    try {
+      allowed_program_types = user.allowed_program_types && user.allowed_program_types.trim() !== ''
+        ? JSON.parse(user.allowed_program_types)
+        : {};
+    } catch (e) {
+      console.error("خطأ في تحليل allowed_program_types:", e);
+    }
+
 
     //   ( allowed_pages)
     res.json({
@@ -5216,7 +5258,8 @@ try {
       role: user.role,
       allowed_pages,
       allowed_faculties,
-      registration_tab_permissions
+      registration_tab_permissions,
+      allowed_program_types
     });
 
   } catch (err) {

@@ -205,6 +205,25 @@ const getAllowedFaculties = () => {
     return [];
   }
 };
+const getAllowedProgramTypes = () => {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    
+    // Admin → كل الأنواع
+    if (user.role === 'admin') {
+      return ["diploma", "bachelor", "postgraduate"];
+    }
+
+    const allowed = Array.isArray(user.allowed_program_types) 
+      ? user.allowed_program_types 
+      : ["bachelor"];   
+
+    return allowed;
+  } catch (e) {
+    console.warn("مشكلة في قراءة allowed_program_types", e);
+    return ["bachelor"];   
+  }
+};
 const ACADEMIC_STATUS_OPTIONS = [
   "نظامي",
   "إعاده",
@@ -911,40 +930,24 @@ const getNextAcademicYear = (year) => {
     <div>
       <h2 style={ui.titleH2}>بدء سنة / فصل دراسي جديد (جماعي)</h2>
 
-      <div style={ui.card}>
-        <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
-
-        <div style={{ display: "flex", gap: 20 }}>
-          <label>
-            <input
-              type="radio"
-              value="diploma"
-              checked={programType === "diploma"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            دبلوم
-          </label>
-          <label>
-            <input
-              type="radio"
-              value="bachelor"
-              checked={programType === "bachelor"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            بكالوريوس
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              value="postgraduate"
-              checked={programType === "postgraduate"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            دراسات عليا
-          </label>
-        </div>
-      </div>
+<div style={ui.card}>
+  <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
+  <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+    {getAllowedProgramTypes().map(type => (
+      <label key={type} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <input
+          type="radio"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
+  </div>
+</div>
 
       {programType === "postgraduate" && (
         <div style={ui.card}>
@@ -1879,38 +1882,22 @@ const token = sessionStorage.getItem("token");
       </div>
 
       <div style={ui.card}>
-        <div style={ui.card}>
+<div style={ui.card}>
   <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
-
-  <div style={{ display: "flex", gap: 20 }}>
-                        <label>
-            <input
-              type="radio"
-              value="diploma"
-              checked={programType === "diploma"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            دبلوم
-          </label>
-    <label>
-      <input
-        type="radio"
-        value="bachelor"
-        checked={programType === "bachelor"}
-        onChange={(e) => setProgramType(e.target.value)}
-      />
-      بكالوريوس
-    </label>
-
-    <label>
-      <input
-        type="radio"
-        value="postgraduate"
-        checked={programType === "postgraduate"}
-        onChange={(e) => setProgramType(e.target.value)}
-      />
-      دراسات عليا
-    </label>
+  <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+    {getAllowedProgramTypes().map(type => (
+      <label key={type} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <input
+          type="radio"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
   </div>
 </div>
 
@@ -2438,38 +2425,24 @@ useEffect(() => {
       <h2 style={ui.titleH2}>تسجيل مواد الرسوب / إعادة المواد</h2>
 
       {/* نوع البرنامج */}
-      <div style={ui.card}>
-        <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
-        <div style={{ display: "flex", gap: 20 }}>
-                              <label>
-            <input
-              type="radio"
-              value="diploma"
-              checked={programType === "diploma"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            دبلوم
-          </label>
-          <label>
-            <input
-              type="radio"
-              value="bachelor"
-              checked={programType === "bachelor"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            بكالوريوس
-          </label>
-          <label>
-            <input
-              type="radio"
-              value="postgraduate"
-              checked={programType === "postgraduate"}
-              onChange={(e) => setProgramType(e.target.value)}
-            />
-            دراسات عليا
-          </label>
-        </div>
-      </div>
+<div style={ui.card}>
+  <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
+  <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+    {getAllowedProgramTypes().map(type => (
+      <label key={type} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <input
+          type="radio"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
+  </div>
+</div>
 
       {/* برنامج الدراسات العليا */}
       {programType === "postgraduate" && (
@@ -3854,14 +3827,24 @@ const printFeesReport = async () => {
       </div>
 
       {/* نوع البرنامج */}
-      <div style={ui.card}>
-        <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
-        <div style={{ display: "flex", gap: 20 }}>
-          <label><input type="radio" value="diploma" checked={programType === "diploma"} onChange={e => setProgramType(e.target.value)} /> دبلوم</label>
-          <label><input type="radio" value="bachelor" checked={programType === "bachelor"} onChange={e => setProgramType(e.target.value)} /> بكالوريوس</label>
-          <label><input type="radio" value="postgraduate" checked={programType === "postgraduate"} onChange={e => setProgramType(e.target.value)} /> دراسات عليا</label>
-        </div>
-      </div>
+<div style={ui.card}>
+  <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
+  <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+    {getAllowedProgramTypes().map(type => (
+      <label key={type} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <input
+          type="radio"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
+  </div>
+</div>
 
       {programType === "postgraduate" && (
         <div style={ui.card}>

@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 05, 2026 at 08:17 AM
+-- Generation Time: Apr 05, 2026 at 10:54 AM
 -- Server version: 5.5.27
 -- PHP Version: 5.4.7
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `academic_periods` (
   KEY `idx_ap_year_prog_pg` (`academic_year`,`program_type`,`postgraduate_program`),
   KEY `idx_ap_year_level_prog` (`academic_year`,`level_name`,`program_type`),
   KEY `idx_academic_periods_year_level_term` (`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=287 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=289 ;
 
 --
 -- Dumping data for table `academic_periods`
@@ -341,7 +341,8 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (283, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-01 08:10:12'),
 (284, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-01 08:10:12'),
 (285, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-04 13:16:44'),
-(286, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-04 13:16:44');
+(286, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-04 13:16:44'),
+(287, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', '2026-04-05 07:58:48');
 
 -- --------------------------------------------------------
 
@@ -1150,7 +1151,7 @@ CREATE TABLE IF NOT EXISTS `students` (
   KEY `idx_std_dept_name` (`department_id`,`full_name`),
   KEY `idx_std_univ_dept` (`university_id`,`department_id`),
   KEY `idx_students_dept_status` (`department_id`,`academic_status`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=100 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=101 ;
 
 --
 -- Dumping data for table `students`
@@ -1254,7 +1255,8 @@ INSERT INTO `students` (`id`, `full_name`, `nationality`, `gender`, `status`, `u
 (96, 'برعي ابراهيم', 'مصري', 'male', '', '2600002', '0900080000', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:19:45'),
 (97, 'مهند بكري', 'مصري', 'male', '', '2600003', '0114800089', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:47:52'),
 (98, 'أمنة خالد', 'سوداني', 'female', '', '2026/00001', '0905060850', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 08:10:12'),
-(99, 'خنساء احمد', 'سوداني', 'female', '', '2026/260005', '0900055200', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-04 13:16:44');
+(99, 'خنساء احمد', 'سوداني', 'female', '', '2026/260005', '0900055200', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-04 13:16:44'),
+(100, 'خالد محمد خالد', 'سوداني', 'male', '', '2025/250001', '0900000010', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-05 07:58:48');
 
 -- --------------------------------------------------------
 
@@ -1303,7 +1305,7 @@ CREATE TABLE IF NOT EXISTS `student_registrations` (
   KEY `idx_reg_std_yr_lvl` (`student_id`,`academic_year`,`level_name`),
   KEY `idx_reg_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
   KEY `idx_registrations_student_year_level_term` (`student_id`,`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=280 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=281 ;
 
 --
 -- Dumping data for table `student_registrations`
@@ -1527,7 +1529,8 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (276, 96, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 07:19:45', NULL, 'bachelor', NULL, NULL, 0),
 (277, 97, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 07:47:52', NULL, 'bachelor', NULL, NULL, 0),
 (278, 98, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 08:10:12', NULL, 'bachelor', NULL, NULL, 0),
-(279, 99, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-04 13:16:44', NULL, 'bachelor', NULL, NULL, 0);
+(279, 99, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-04 13:16:44', NULL, 'bachelor', NULL, NULL, 0),
+(280, 100, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'xxyy', '2026-04-05 07:58:48', NULL, 'postgraduate', '{"prev_degree":"بكالوريوس","prev_university":"الاهليه","prev_grad_year":"2024","study_type":"بالبحث"}', 'ماجستير ادارة الاعمال', 0);
 
 -- --------------------------------------------------------
 
@@ -1787,6 +1790,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `role` varchar(50) DEFAULT 'user',
   `is_active` tinyint(1) DEFAULT '1',
   `allowed_pages` text,
+  `allowed_program_types` text,
   `allowed_faculties` text,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -1795,23 +1799,24 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   KEY `idx_users_username` (`username`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=16 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=17 ;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `role`, `is_active`, `allowed_pages`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
-(3, 'ahdi', '$2b$10$yX4rDI01wHzOyviHBF13MeQssEMxZcLtkIM/pr/CSPg4CXwvKL9gO', 'ahdi mohamed', '', 'registrar', 1, '["الشهادات","القبول والتسجيل"]', '[3,6]', '2026-01-15 10:53:16', '0000-00-00 00:00:00', NULL, '{}'),
-(4, 'ahmed', '$2b$10$jkTtj5fJ0tTHPnCBAJeSCu8V4fsczSPPxVGiO6kx79650aWS6gfLG', 'ahmed adel', '', 'instructor', 1, '["إعدادات النظام الأكاديمي","إدخال الدرجات","حساب النتائج","قوائم الطلاب"]', '[2]', '2026-01-15 10:53:52', '0000-00-00 00:00:00', NULL, '{}'),
-(5, 'منعم', '$2b$10$CY7u8awvnU30oYFzPPAHse/HxYXEEodE3N8swvztD7MIh73vN0mo.', '', '', 'user', 1, '["القبول والتسجيل","المكتبة"]', '[1,4]', '2026-02-05 13:25:11', '0000-00-00 00:00:00', NULL, '{}'),
-(7, 'عبدالله ', '$2b$10$99k8e/EDi.g9CtxWoza10umQk60RXDMNi5viCG/gQqkhvdvgPyiHi', NULL, NULL, 'user', 1, '["المكتبة","القبول والتسجيل","إعدادات النظام الأكاديمي"]', '[3]', '2026-03-02 09:11:29', '0000-00-00 00:00:00', NULL, '{}'),
-(9, 'kian', '$2b$10$Bl660NaJXSv5FbVHQ8Lv4eOtVj4A0TG33Ec2wS23glIXU2E0WgZRi', '', '', 'admin', 1, '[]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
-(10, 'abeer', '$2b$10$M59U4RLntDpsC/AQM/oqdeTPwgg8O1L1B7Po.t317DujKUz8Hymo2', '', '', 'user', 1, '["القبول والتسجيل","إدخال الدرجات"]', '[2,1]', '2026-03-04 08:28:11', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
-(11, 'mohmed', '$2b$10$5bKj.QMKtP6JpXQczCvAT.ViyJhq8UxchrCpAoxDGYT63GwHdbf7G', '', '', 'registrar', 1, '["القبول والتسجيل"]', '[3]', '2026-03-04 08:33:15', '0000-00-00 00:00:00', NULL, '{"single":false,"fees":false,"promotion":true,"failed-courses":true}'),
-(12, 'علي', '$2b$10$zqAaycPtPxY5.OY08MUckO9k4aheksI53XsvK9FvXqETljf8pauwK', '', '', 'admin', 1, '[]', '[]', '2026-03-05 10:56:00', '0000-00-00 00:00:00', NULL, '{}'),
-(13, 'سهى', '$2b$10$LgXoJoulNBhFypfVyGq6e./4zYu74YTO6N8FZxwSqhd8TMOo0WSb.', NULL, NULL, 'user', 1, '["القبول والتسجيل"]', '[3]', '2026-03-08 12:07:02', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
-(15, 'ابراهيم محمد ', '$2b$10$2uZcFFEJFXhdP.xRUE.DreQCAskkl9slcZzr4S1esJwJ23S6Ov6o.', NULL, NULL, 'user', 1, '["المكتبة"]', '[3]', '2026-03-08 12:15:35', '0000-00-00 00:00:00', NULL, '{}');
+INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `role`, `is_active`, `allowed_pages`, `allowed_program_types`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
+(3, 'ahdi', '$2b$10$yX4rDI01wHzOyviHBF13MeQssEMxZcLtkIM/pr/CSPg4CXwvKL9gO', 'ahdi mohamed', '', 'registrar', 1, '["الشهادات","القبول والتسجيل"]', '["bachelor", "diploma", "postgraduate"]', '[3,6]', '2026-01-15 10:53:16', '0000-00-00 00:00:00', NULL, '{}'),
+(4, 'ahmed', '$2b$10$jkTtj5fJ0tTHPnCBAJeSCu8V4fsczSPPxVGiO6kx79650aWS6gfLG', 'ahmed adel', '', 'instructor', 1, '["إعدادات النظام الأكاديمي","إدخال الدرجات","حساب النتائج","قوائم الطلاب"]', '["bachelor", "diploma", "postgraduate"]', '[2]', '2026-01-15 10:53:52', '0000-00-00 00:00:00', NULL, '{}'),
+(5, 'منعم', '$2b$10$CY7u8awvnU30oYFzPPAHse/HxYXEEodE3N8swvztD7MIh73vN0mo.', '', '', 'user', 1, '["القبول والتسجيل","المكتبة"]', '["diploma"]', '[1,4]', '2026-02-05 13:25:11', '0000-00-00 00:00:00', NULL, '{"promotion":false,"single":true,"fees":true}'),
+(7, 'عبدالله ', '$2b$10$99k8e/EDi.g9CtxWoza10umQk60RXDMNi5viCG/gQqkhvdvgPyiHi', NULL, NULL, 'user', 1, '["المكتبة","القبول والتسجيل","إعدادات النظام الأكاديمي"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-02 09:11:29', '0000-00-00 00:00:00', NULL, '{}'),
+(9, 'kian', '$2b$10$Bl660NaJXSv5FbVHQ8Lv4eOtVj4A0TG33Ec2wS23glIXU2E0WgZRi', '', '', 'admin', 1, '[]', '["bachelor", "diploma", "postgraduate"]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
+(10, 'abeer', '$2b$10$M59U4RLntDpsC/AQM/oqdeTPwgg8O1L1B7Po.t317DujKUz8Hymo2', '', '', 'user', 1, '["القبول والتسجيل","إدخال الدرجات"]', '["bachelor", "diploma", "postgraduate"]', '[2,1]', '2026-03-04 08:28:11', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
+(11, 'mohmed', '$2b$10$5bKj.QMKtP6JpXQczCvAT.ViyJhq8UxchrCpAoxDGYT63GwHdbf7G', '', '', 'registrar', 1, '["القبول والتسجيل"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-04 08:33:15', '0000-00-00 00:00:00', NULL, '{"single":false,"fees":false,"promotion":true,"failed-courses":true}'),
+(12, 'علي', '$2b$10$zqAaycPtPxY5.OY08MUckO9k4aheksI53XsvK9FvXqETljf8pauwK', '', '', 'admin', 1, '[]', '["bachelor", "diploma", "postgraduate"]', '[]', '2026-03-05 10:56:00', '0000-00-00 00:00:00', NULL, '{}'),
+(13, 'سهى', '$2b$10$LgXoJoulNBhFypfVyGq6e./4zYu74YTO6N8FZxwSqhd8TMOo0WSb.', '', '', 'user', 1, '["القبول والتسجيل"]', '["bachelor"]', '[3]', '2026-03-08 12:07:02', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
+(15, 'ابراهيم محمد ', '$2b$10$2uZcFFEJFXhdP.xRUE.DreQCAskkl9slcZzr4S1esJwJ23S6Ov6o.', NULL, NULL, 'user', 1, '["المكتبة"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-08 12:15:35', '0000-00-00 00:00:00', NULL, '{}'),
+(16, 'xxyy', '$2b$10$D7f68vNCFsXlOmfDj.4O2uroazCtZ0NjwktExqjH1DZOQVeLXAQ3u', '', '', 'user', 1, '["القبول والتسجيل","إعدادات النظام الأكاديمي","إدخال الدرجات","حساب النتائج","قوائم الطلاب","الجداول الدراسية","الشهادات"]', '["postgraduate"]', '[3]', '2026-04-05 07:22:45', '0000-00-00 00:00:00', NULL, '{"promotion":true,"single":true,"failed-courses":true,"fees":true}');
 
 --
 -- Constraints for dumped tables

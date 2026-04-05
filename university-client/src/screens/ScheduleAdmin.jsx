@@ -40,6 +40,26 @@ const getAllowedFaculties = () => {
   }
 };
 
+// ====================== صلاحيات نوع البرنامج ======================
+const getAllowedProgramTypes = () => {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    
+    if (user.role === 'admin') {
+      return ["diploma", "bachelor", "postgraduate"];
+    }
+
+    const allowed = Array.isArray(user.allowed_program_types) 
+      ? user.allowed_program_types 
+      : ["bachelor"];  
+
+    return allowed;
+  } catch (e) {
+    console.warn("مشكلة في قراءة allowed_program_types", e);
+    return ["bachelor"];
+  }
+};
+
 function useLocalToast(externalShowToast) {
   const [toast, setToast] = useState({ open: false, type: "success", msg: "" });
   const timerRef = useRef(null);
@@ -1109,45 +1129,38 @@ const saveSession = async () => {
                   </select>
                 </div>
 
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">نوع البرنامج</label>
-                  <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
-                                        <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-                      <input
-                        type="radio"
-                        name="programTypeSchedule"
-                        value="diploma"
-                        checked={programType === "diploma"}
-                        onChange={(e) => setProgramType(e.target.value)}
-                        disabled={!selectedDepartmentId}
-                      />
-                      دبلوم
-                    </label>
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-                      <input
-                        type="radio"
-                        name="programTypeSchedule"
-                        value="bachelor"
-                        checked={programType === "bachelor"}
-                        onChange={(e) => setProgramType(e.target.value)}
-                        disabled={!selectedDepartmentId}
-                      />
-                      بكالوريوس
-                    </label>
+{/* نوع البرنامج - حسب الصلاحيات */}
+<div className="input-group" style={{ gridColumn: "1 / -1" }}>
+  <label className="input-label">نوع البرنامج</label>
 
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-                      <input
-                        type="radio"
-                        name="programTypeSchedule"
-                        value="postgraduate"
-                        checked={programType === "postgraduate"}
-                        onChange={(e) => setProgramType(e.target.value)}
-                        disabled={!selectedDepartmentId}
-                      />
-                      دراسات عليا
-                    </label>
-                  </div>
-                </div>
+  <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+    {getAllowedProgramTypes().map((type) => (
+      <label 
+        key={type}
+        style={{ 
+          display: "flex", 
+          gap: 8, 
+          alignItems: "center", 
+          fontWeight: 700,
+          opacity: !selectedDepartmentId ? 0.6 : 1,
+          cursor: !selectedDepartmentId ? "not-allowed" : "pointer"
+        }}
+      >
+        <input
+          type="radio"
+          name="programTypeSchedule"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+          disabled={!selectedDepartmentId}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
+  </div>
+</div>
 
 {programType === "postgraduate" && (
   <div className="input-group" style={{ gridColumn: "1 / -1" }}>

@@ -141,6 +141,7 @@ sessionStorage.setItem('user', JSON.stringify({
   allowed_pages: data.allowed_pages || [],
   allowed_faculties: data.allowed_faculties || [],
   registration_tab_permissions: data.registration_tab_permissions || {},
+  allowed_program_types: data.allowed_program_types || []
   
 }));
 

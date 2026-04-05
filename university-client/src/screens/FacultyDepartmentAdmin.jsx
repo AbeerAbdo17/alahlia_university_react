@@ -15,6 +15,25 @@ const getAllowedFaculties = () => {
   }
 };
 
+const getAllowedProgramTypes = () => {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    
+    if (user.role === 'admin') {
+      return ["diploma", "bachelor", "postgraduate"];
+    }
+
+    const allowed = Array.isArray(user.allowed_program_types) 
+      ? user.allowed_program_types 
+      : ["bachelor"];   // default آمن
+
+    return allowed;
+  } catch (e) {
+    console.warn("مشكلة في قراءة allowed_program_types", e);
+    return ["bachelor"];
+  }
+};
+
 /* =========================
     Tab: Grade Rules Admin (Per Faculty)
    ========================= */
@@ -932,40 +951,31 @@ const onSelectDepartment = (deptId) => {
   <label className="input-label">نوع البرنامج</label>
 
   <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-        <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-      <input
-        type="radio"
-        name="programTypeCourses"
-        value="diploma"
-        checked={programType === "diploma"}
-        onChange={(e) => setProgramType(e.target.value)}
-        disabled={!canPickProgramType}
-      />
-      دبلوم
-    </label>
-    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-      <input
-        type="radio"
-        name="programTypeCourses"
-        value="bachelor"
-        checked={programType === "bachelor"}
-        onChange={(e) => setProgramType(e.target.value)}
-        disabled={!canPickProgramType}
-      />
-      بكالوريوس
-    </label>
-
-    <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700 }}>
-      <input
-        type="radio"
-        name="programTypeCourses"
-        value="postgraduate"
-        checked={programType === "postgraduate"}
-        onChange={(e) => setProgramType(e.target.value)}
-        disabled={!canPickProgramType}
-      />
-      دراسات عليا
-    </label>
+    {getAllowedProgramTypes().map((type) => (
+      <label 
+        key={type}
+        style={{ 
+          display: "flex", 
+          gap: 8, 
+          alignItems: "center", 
+          fontWeight: 700,
+          opacity: !canPickProgramType ? 0.6 : 1,
+          cursor: !canPickProgramType ? "not-allowed" : "pointer"
+        }}
+      >
+        <input
+          type="radio"
+          name="programTypeCourses"
+          value={type}
+          checked={programType === type}
+          onChange={(e) => setProgramType(e.target.value)}
+          disabled={!canPickProgramType}
+        />
+        {type === "diploma" && "دبلوم"}
+        {type === "bachelor" && "بكالوريوس"}
+        {type === "postgraduate" && "دراسات عليا"}
+      </label>
+    ))}
   </div>
 </div>
 

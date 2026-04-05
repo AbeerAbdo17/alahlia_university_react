@@ -195,8 +195,26 @@ const getAuthHeaders = () => {
 export default function UsersManagement() {
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
-  const [form, setForm] = useState({ username: '', full_name: '', email: '', role: 'user', allowed_pages: [], allowed_faculties: [], registration_tab_permissions: {} });
-  const [newUserForm, setNewUserForm] = useState({ username: '', password: '', role: 'user', allowed_pages: [], allowed_faculties: [], registration_tab_permissions: {} });
+const [form, setForm] = useState({ 
+  username: '', 
+  full_name: '', 
+  email: '', 
+  role: 'user', 
+  allowed_pages: [], 
+  allowed_faculties: [], 
+  allowed_program_types: ["bachelor"],   
+  registration_tab_permissions: {} 
+});
+
+const [newUserForm, setNewUserForm] = useState({ 
+  username: '', 
+  password: '', 
+  role: 'user', 
+  allowed_pages: [], 
+  allowed_faculties: [], 
+  allowed_program_types: ["bachelor"],  
+  registration_tab_permissions: {} 
+});
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
   const [hoverBtn, setHoverBtn] = useState(null);
@@ -280,18 +298,19 @@ export default function UsersManagement() {
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setForm({
-      username: user.username,
-      full_name: user.full_name || '',
-      email: user.email || '',
-      role: user.role,
-      allowed_pages: user.allowed_pages || [],
-      allowed_faculties: user.allowed_faculties || [],
-      registration_tab_permissions: user.registration_tab_permissions || {},
-    });
-  };
+const handleEdit = (user) => {
+  setEditingUser(user);
+  setForm({
+    username: user.username,
+    full_name: user.full_name || '',
+    email: user.email || '',
+    role: user.role,
+    allowed_pages: user.allowed_pages || [],
+    allowed_faculties: user.allowed_faculties || [],
+    allowed_program_types: user.allowed_program_types || ["bachelor"],   
+    registration_tab_permissions: user.registration_tab_permissions || {},
+  });
+};
 
   const handleSaveEdit = async () => {
     try {
@@ -350,7 +369,7 @@ export default function UsersManagement() {
         throw new Error(errData.error || 'فشل الإضافة');
       }
 
-      setNewUserForm({ username: '', password: '', role: 'user', allowed_pages: [], allowed_faculties: [] });
+    setNewUserForm({ username: '',  password: '',  role: 'user', allowed_pages: [], allowed_faculties: [], allowed_program_types: ["bachelor"], registration_tab_permissions: {} });
       fetchUsers();
       showToast('تم إضافة المستخدم', 'success');
     } catch (err) {
@@ -367,6 +386,16 @@ export default function UsersManagement() {
         : [...prev.allowed_pages, pageTitle]
     }));
   };
+
+  const toggleProgramType = (type, isNew = false) => {
+  const setter = isNew ? setNewUserForm : setForm;
+  setter(prev => ({
+    ...prev,
+    allowed_program_types: prev.allowed_program_types.includes(type)
+      ? prev.allowed_program_types.filter(t => t !== type)
+      : [...prev.allowed_program_types, type]
+  }));
+};
 
   const handleDelete = async (id) => {
     if (!window.confirm('متأكد من حذف المستخدم؟')) return;
@@ -554,6 +583,35 @@ export default function UsersManagement() {
     </div>
   </div>
 )}
+
+{/* ──── صلاحيات نوع البرنامج ──── */}
+{!isAdminModeNew && (
+  <div style={{ margin: '1.5rem 0' }}>
+    <strong>أنواع البرامج المسموح بها:</strong><br />
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={newUserForm.allowed_program_types.includes("diploma")}
+        onChange={() => toggleProgramType("diploma", true)}
+      /> دبلوم
+    </label>
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={newUserForm.allowed_program_types.includes("bachelor")}
+        onChange={() => toggleProgramType("bachelor", true)}
+      /> بكالوريوس
+    </label>
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={newUserForm.allowed_program_types.includes("postgraduate")}
+        onChange={() => toggleProgramType("postgraduate", true)}
+      /> دراسات عليا
+    </label>
+  </div>
+)}
+
             <button
               onClick={handleAddUser}
               onMouseEnter={() => setHoverBtn("add")}
@@ -803,6 +861,35 @@ export default function UsersManagement() {
     </div>
   </div>
 )}
+
+{/* ──── صلاحيات نوع البرنامج (في التعديل) ──── */}
+{!isAdminModeEdit && (
+  <div style={{ margin: '1.5rem 0' }}>
+    <strong>أنواع البرامج المسموح بها:</strong><br />
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={form.allowed_program_types.includes("diploma")}
+        onChange={() => toggleProgramType("diploma")}
+      /> دبلوم
+    </label>
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={form.allowed_program_types.includes("bachelor")}
+        onChange={() => toggleProgramType("bachelor")}
+      /> بكالوريوس
+    </label>
+    <label style={{ display: 'inline-block', margin: '0.4rem 1.2rem' }}>
+      <input
+        type="checkbox"
+        checked={form.allowed_program_types.includes("postgraduate")}
+        onChange={() => toggleProgramType("postgraduate")}
+      /> دراسات عليا
+    </label>
+  </div>
+)}
+
 
               <div style={ui.btnRow}>
                 <button
