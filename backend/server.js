@@ -57,60 +57,60 @@ function buildFileUrl(req, filename) {
   return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 }
 
-async function syncPendingFees() {
-    try {
-        // جلب السجلات غير المزامنة
-        const [pending] = await dbp.query("SELECT * FROM fees WHERE is_synced = 0 LIMIT 50");
+// async function syncPendingFees() {
+//     try {
+//         // جلب السجلات غير المزامنة
+//         const [pending] = await dbp.query("SELECT * FROM fees WHERE is_synced = 0 LIMIT 50");
 
-        for (const fee of pending) {
-            // 1. جلب بيانات الطالب الأساسية
-            const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [fee.student_id]);
-            if (stu.length === 0) continue;
+//         for (const fee of pending) {
+//             // 1. جلب بيانات الطالب الأساسية
+//             const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [fee.student_id]);
+//             if (stu.length === 0) continue;
 
-            // 2. تجهيز الأقساط من السجل
-            const installments = [];
-            for (let i = 1; i <= 6; i++) {
-                if (fee[`installment_${i}`] > 0) {
-                    installments.push({
-                        installment_number: i,
-                        amount: fee[`installment_${i}`],
-                        date: fee[`installment_${i}_start`],
-                        dateEnd: fee[`installment_${i}_end`]
-                    });
-                }
-            }
+//             // 2. تجهيز الأقساط من السجل
+//             const installments = [];
+//             for (let i = 1; i <= 6; i++) {
+//                 if (fee[`installment_${i}`] > 0) {
+//                     installments.push({
+//                         installment_number: i,
+//                         amount: fee[`installment_${i}`],
+//                         date: fee[`installment_${i}_start`],
+//                         dateEnd: fee[`installment_${i}_end`]
+//                     });
+//                 }
+//             }
 
-            // 3. المحاولة مرة أخرى
-            try {
-                const response = await fetch("http://127.0.0.1:30000/api/receive-fees", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
-                    body: JSON.stringify({
-                        university_id: stu[0].university_id,
-                        full_name: stu[0].full_name,
-                        academic_year: fee.academic_year,
-                        level_name: fee.level_name,
-                        currency: fee.currency,
-                        installments
-                    })
-                });
+//             // 3. المحاولة مرة أخرى
+//             try {
+//                 const response = await fetch("http://127.0.0.1:30000/api/receive-fees", {
+//                     method: "POST",
+//                     headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
+//                     body: JSON.stringify({
+//                         university_id: stu[0].university_id,
+//                         full_name: stu[0].full_name,
+//                         academic_year: fee.academic_year,
+//                         level_name: fee.level_name,
+//                         currency: fee.currency,
+//                         installments
+//                     })
+//                 });
 
-                const resData = await response.json();
-                if (resData.success) {
-                    await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [fee.id]);
-                    console.log(`✅ تمت مزامنة السجل رقم ${fee.id} بنجاح.`);
-                }
-            } catch (err) {
-                console.error(`❌ فشل محاولة مزامنة السجل ${fee.id} مرة أخرى.`);
-            }
-        }
-    } catch (err) {
-        console.error("Cron Job Error:", err);
-    }
-}
+//                 const resData = await response.json();
+//                 if (resData.success) {
+//                     await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [fee.id]);
+//                     console.log(`✅ تمت مزامنة السجل رقم ${fee.id} بنجاح.`);
+//                 }
+//             } catch (err) {
+//                 console.error(`❌ فشل محاولة مزامنة السجل ${fee.id} مرة أخرى.`);
+//             }
+//         }
+//     } catch (err) {
+//         console.error("Cron Job Error:", err);
+//     }
+// }
 
 // تشغيل الدالة كل 10 دقائق 
-setInterval(syncPendingFees, 10 * 60 * 1000);
+// setInterval(syncPendingFees, 10 * 60 * 1000);
 
 function termOrder(t) {
   const x = (t || "").toString().trim();
