@@ -1997,15 +1997,18 @@ const saveRegistration = async () => {
 
           <div style={ui.field}>
             <label style={ui.label}>الرقم الجامعي</label>
-            <input
-              type="text"
-              value={studentForm.university_id}
-              onChange={(e) =>
-                setStudentForm((prev) => ({ ...prev, university_id: e.target.value }))
-              }
-              placeholder=" مثال: 20260001"
-              style={ui.input}
-            />
+<input
+  type="text"
+  value={studentForm.university_id}
+  onChange={(e) => {
+    const val = e.target.value;
+    if (/^[0-9/]*$/.test(val)) {
+      setStudentForm(prev => ({ ...prev, university_id: val }));
+    }
+  }}
+  placeholder=" مثال: 2020001/25"
+  style={ui.input}
+/>
           </div>
 
          <div style={ui.field}>
