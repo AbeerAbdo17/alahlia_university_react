@@ -28,6 +28,15 @@ const SCHOLARSHIP_OPTIONS = [
   { type: "أخرى", percentage: null },
 ];
 
+const ALLOWED_LEVELS = [
+  "المستوى الأول",
+  "المستوى الثاني",
+  "المستوى الثالث",
+  "المستوى الرابع",
+  "المستوى الخامس",
+  "المستوى السادس"
+];
+
 const ui = {
   page: {
     fontFamily: `"Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", Arial, sans-serif`,
@@ -195,6 +204,13 @@ const ui = {
   },
 };
 
+const isValidYearFormat = (year) => /^\d{4}\/\d{4}$/.test(year);
+
+const handleYearInput = (value, setter) => {
+  const filtered = value.replace(/[^\d/]/g, ''); 
+  setter(filtered);
+};
+
 const getAllowedFaculties = () => {
   try {
     const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -209,7 +225,6 @@ const getAllowedProgramTypes = () => {
   try {
     const user = JSON.parse(sessionStorage.getItem('user') || '{}');
     
-    // Admin → كل الأنواع
     if (user.role === 'admin') {
       return ["diploma", "bachelor", "postgraduate"];
     }
@@ -225,13 +240,15 @@ const getAllowedProgramTypes = () => {
   }
 };
 const ACADEMIC_STATUS_OPTIONS = [
-  "نظامي",
+  "منتظم",
   "إعاده",
-  "محوّل",
+  " محوّل داخلي",
+  "محول خارجي",
   "مجمّد",
   "منسحب",
   "تجسير",
   "فصل",
+  "حملة درجات علمية",
 ];
 
 const REGISTRATION_STATUS_OPTIONS = [" مسجّل", " غير مسجّل"];
@@ -342,6 +359,22 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
   };
 }
 
+function useNationalitySmartList() {
+  const [nationalities, setNationalities] = useState([]);
+
+  const fetchNationalities = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/students/nationalities`); // سنحتاج لإنشاء هذا المسار في الخلفية
+      const data = await res.json();
+      setNationalities(data);
+    } catch (err) {
+      console.error("Error fetching nationalities", err);
+    }
+  };
+
+  return { nationalities, fetchNationalities };
+}
+
 
 function RegistrationTabs() {
   const [toast, setToast] = useState(null);
@@ -350,7 +383,6 @@ function RegistrationTabs() {
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const regTabsPerm = user?.registration_tab_permissions || {};
 
-    // ──── state جديدة لتبويب الرسوم ────
   const [searchQuery, setSearchQuery] = useState("");
   const [studentSuggestions, setStudentSuggestions] = useState([]);
   const [selectedFeesStudent, setSelectedFeesStudent] = useState(null);
@@ -377,9 +409,8 @@ function RegistrationTabs() {
     payment_end_date: "",
   });
   const [loadingFees, setLoadingFees] = useState(false);
-  const [isDefaultFeesMode, setIsDefaultFeesMode] = useState(true); // true = رسوم مبدئية بدون طالب
+  const [isDefaultFeesMode, setIsDefaultFeesMode] = useState(true); 
 
-  // ──── فلاتر تبويب الرسوم (نفس طريقة PromotionTab) ────
   const [feesProgramType, setFeesProgramType] = useState("bachelor");
   const [feesPostgradProgram, setFeesPostgradProgram] = useState("");
   const [feesFacultyId, setFeesFacultyId] = useState("");
@@ -388,20 +419,16 @@ function RegistrationTabs() {
   const [feesLevelName, setFeesLevelName] = useState("");
   const [feesTermName, setFeesTermName] = useState("");
 
-  // الكليات والأقسام لتبويب الرسوم
   const [feesFaculties, setFeesFaculties] = useState([]);
   const [feesDepartments, setFeesDepartments] = useState([]);
 
-  // عدد الأقساط المختار
   const [installmentCount, setInstallmentCount] = useState(0);
 
-  // periods الذكية لتبويب الرسوم
   const feesSmart = useAcademicPeriodsSmartList({
     programType: feesProgramType,
     postgraduateProgram: feesPostgradProgram,
   });
 
-  // تحميل الكليات مرة واحدة
   useEffect(() => {
     fetch(`${API_BASE}/faculties-list`)
       .then(res => res.json())
@@ -409,7 +436,6 @@ function RegistrationTabs() {
       .catch(() => showToast("خطأ في تحميل الكليات", "error"));
   }, []);
 
-  // تحميل الأقسام عند اختيار كلية
   useEffect(() => {
     if (!feesFacultyId) {
       setFeesDepartments([]);
@@ -422,14 +448,12 @@ function RegistrationTabs() {
       .catch(() => showToast("خطأ في تحميل الأقسام", "error"));
   }, [feesFacultyId]);
 
-  // تحميل الفترات الدراسية
   useEffect(() => {
     if (feesDepartmentId || (feesProgramType === "postgraduate" && feesPostgradProgram.trim())) {
       feesSmart.fetchAcademicPeriods();
     }
   }, [feesDepartmentId, feesProgramType, feesPostgradProgram, feesSmart]);
 
-  // إعادة بناء خيارات المستوى والفصل
   useEffect(() => {
     feesSmart.rebuildOptions(feesAcademicYear, feesLevelName);
   }, [feesAcademicYear, feesLevelName, feesSmart.periods]);
@@ -809,7 +833,7 @@ useEffect(() => {
   };
 
   // =========================
-  // (7) دالة الترحيل الجماعي الجديدة 
+  // (7) دالة الترحيل الجماعي  
   // =========================
 
 
@@ -878,7 +902,7 @@ const handleBatchPromote = async () => {
       message += `, ${data.data.failed.length} مرفوض, ${data.data.required_repeat.length} إعادة`;
 
       showToast(message, "success");
-      resetPromotion();
+      // resetPromotion();
     } catch (err) {
       console.error("Batch promote error:", err);
       showToast("حدث خطأ أثناء الترحيل: " + (err.message || "غير معروف"), "error");
@@ -1039,10 +1063,11 @@ const getNextAcademicYear = (year) => {
             <input
               type="text"
               list="promo_from_years"
-              placeholder="اختار السنة"
+              placeholder="مثلاً: 2023/2024"
               value={fromYear}
               onChange={(e) => {
-                setFromYear(e.target.value);
+                const val = e.target.value.replace(/[^\d/]/g, "");
+                setFromYear(val);
                 setFromLevel("");
                 setFromTerm("");
                 setToYear("");
@@ -1063,7 +1088,7 @@ const getNextAcademicYear = (year) => {
             <input
               type="text"
               list="promo_from_levels"
-              placeholder="اختار المستوى"
+              placeholder="اختر المستوى"
               value={fromLevel}
               onChange={(e) => {
                 setFromLevel(e.target.value);
@@ -1083,10 +1108,7 @@ const getNextAcademicYear = (year) => {
 
           <div style={ui.field}>
             <label style={ui.label}>الفصل الحالي (آخر فصل مسجل)</label>
-            <input
-              type="text"
-              list="promo_from_terms" 
-              placeholder="اختار الفصل"
+            <select
               value={fromTerm}
               onChange={(e) => {
                 setFromTerm(e.target.value);
@@ -1094,24 +1116,25 @@ const getNextAcademicYear = (year) => {
                 setToLevel("");
                 setTermName("");
               }}
-              style={ui.input}
-            />
-            <datalist id="promo_from_terms">
-              {TERM_OPTIONS.map((x) => ( 
-                <option key={x} value={x} />
+              style={ui.select}
+            >
+              <option value="">اختر الفصل</option>
+              {TERM_OPTIONS.map((x) => (
+                <option key={x} value={x}>{x}</option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الجديدة</label>
             <input
               type="text"
-              list="promo_to_years" 
-              placeholder="اختار السنة الجديدة"
+              list="promo_to_years"
+              placeholder="2024/2025"
               value={toYear}
               onChange={(e) => {
-                setToYear(e.target.value);
+                const val = e.target.value.replace(/[^\d/]/g, "");
+                setToYear(val);
                 setToLevel("");
                 setTermName("");
               }}
@@ -1128,8 +1151,8 @@ const getNextAcademicYear = (year) => {
             <label style={ui.label}>المستوى الجديد</label>
             <input
               type="text"
-              list="promo_to_levels" 
-              placeholder="اختار المستوى الجديد"
+              list="promo_to_levels"
+              placeholder="اختر المستوى الجديد"
               value={toLevel}
               onChange={(e) => {
                 setToLevel(e.target.value);
@@ -1138,7 +1161,7 @@ const getNextAcademicYear = (year) => {
               style={ui.input}
             />
             <datalist id="promo_to_levels">
-              {smart.levelOptions.map((x) => ( 
+              {smart.levelOptions.map((x) => (
                 <option key={x} value={x} />
               ))}
             </datalist>
@@ -1146,19 +1169,16 @@ const getNextAcademicYear = (year) => {
 
           <div style={ui.field}>
             <label style={ui.label}>الفصل الدراسي (الجديد)</label>
-            <input
-              type="text"
-              list="promo_terms"
-              placeholder="اختار الفصل الجديد"
+            <select
               value={termName}
               onChange={(e) => setTermName(e.target.value)}
-              style={ui.input}
-            />
-            <datalist id="promo_terms">
+              style={ui.select}
+            >
+              <option value="">اختر الفصل الجديد</option>
               {TERM_OPTIONS.map((x) => (
-                <option key={x} value={x} />
+                <option key={x} value={x}>{x}</option>
               ))}
-            </datalist>
+            </select>
           </div>
         </div>
 
@@ -1212,54 +1232,64 @@ const getNextAcademicYear = (year) => {
   {batchTransferring ? "جاري الترحيل..." : "بدء سنة / فصل جديد"}
 </button>
 
-{promotionResults && (
-  <div style={{ marginTop: 24, padding: 16, background: "#f8f9fa", borderRadius: 12, border: "1px solid #e6e8ee" }}>
-    <h3 style={ui.sectionTitle}>نتيجة الترحيل الجماعي</h3>
 
-    <div style={{ color: "#16a34a", fontWeight: 800, marginBottom: 12 }}>
-      تم ترحيل: {promotionResults.success.length} طالب
+{promotionResults && (
+  <div style={{ marginTop: 24, padding: 20, background: "#fff", borderRadius: 12, border: "2px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}>
+    <h3 style={{ ...ui.sectionTitle, color: "#1e293b", borderBottom: "2px solid #f1f5f9", pb: 10 }}>ملخص عملية الترحيل</h3>
+
+    <div style={{ display: "grid", gap: "15px", marginTop: "15px" }}>
+      
+      {promotionResults.success.length > 0 && (
+        <div style={{ padding: "10px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+          <strong style={{ color: "#16a34a" }}> تم ترحيلهم بنجاح ({promotionResults.success.length})</strong>
+        </div>
+      )}
+
+      {promotionResults.failed.length > 0 && (
+        <div style={{ padding: "10px", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fecaca" }}>
+          <strong style={{ color: "#b91c1c" }}> طلاب لم يتم ترحيلهم ({promotionResults.failed.length}):</strong>
+          <ul style={{ paddingRight: "25px", marginTop: "10px", listStyleType: "disc" }}>
+            {promotionResults.failed.map((f, idx) => (
+              <li key={idx} style={{ marginBottom: "8px", color: "#451a03" }}>
+                <span style={{ fontWeight: "bold" }}>{f.full_name}</span>: 
+                <span style={{ color: "#b91c1c", marginRight: "5px" }}>{f.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {promotionResults.required_repeat.length > 0 && (
+        <div style={{ padding: "10px", background: "#fffbeb", borderRadius: "8px", border: "1px solid #fef3c7" }}>
+          <strong style={{ color: "#d97706" }}> طلاب تقرر لهم الإعادة ({promotionResults.required_repeat.length}):</strong>
+          <ul style={{ paddingRight: "25px", marginTop: "10px" }}>
+            {promotionResults.required_repeat.map((r, idx) => (
+              <li key={idx} style={{ color: "#92400e" }}>{r.full_name} - {r.reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
 
-{promotionResults.already_promoted?.length > 0 && (
-      <div style={{ marginBottom: 16 }}>
-        <strong style={{ color: "#0891b2" }}>
-          تم ترحيلهم سابقًا ({promotionResults.already_promoted.length}):
-        </strong>
-        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
-          {promotionResults.already_promoted.map((a, idx) => (
-            <li key={idx} style={{ marginBottom: 6, color: "#0891b2" }}>
-              {a.full_name || a.student_id} - {a.reason}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {promotionResults.failed.length > 0 && (
-      <div style={{ marginBottom: 16 }}>
-        <strong style={{ color: "#b91c1c" }}>مرفوضين ({promotionResults.failed.length}):</strong>
-        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
-          {promotionResults.failed.map((f, idx) => (
-            <li key={idx} style={{ marginBottom: 6, color: "#b91c1c" }}>
-              {f.full_name || f.student_id} - {f.reason}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {promotionResults.required_repeat.length > 0 && (
-      <div>
-        <strong style={{ color: "#b45309" }}>مطلوب إعادة ({promotionResults.required_repeat.length}):</strong>
-        <ul style={{ paddingRight: 20, marginTop: 8, listStyleType: "disc" }}>
-          {promotionResults.required_repeat.map((r, idx) => (
-            <li key={idx} style={{ marginBottom: 6, color: "#b45309" }}>
-              {r.full_name || r.student_id} - {r.reason}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
+    <button 
+      onClick={() => {
+        setPromotionResults(null); 
+        resetPromotion();          
+      }} 
+      style={{ 
+        marginTop: "20px", 
+        width: "100%", 
+        padding: "12px", 
+        background: "#00274c", 
+        color: "white", 
+        borderRadius: "8px", 
+        cursor: "pointer",
+        fontWeight: "bold",
+        border: "none"
+      }}
+    >
+      تم 
+    </button>
   </div>
 )}
         </div>
@@ -1306,6 +1336,10 @@ useEffect(() => {
 }, [navigate, showToast]);
 
   const [studentForm, setStudentForm] = useState({
+    firstName: "",
+    secondName: "",
+    thirdName: "",
+    fourthName: "",
     full_name: "",
     university_id: "",
     phone: "",
@@ -1329,6 +1363,18 @@ useEffect(() => {
     study_type: "",
   });
 
+
+const isAlpha = (text) => /^[a-zA-Z\u0600-\u06FF\s]*$/.test(text);
+
+const getFullName = (f) => {
+  return `${f.firstName} ${f.secondName} ${f.thirdName} ${f.fourthName}`.trim();
+};
+
+const natSmart = useNationalitySmartList();
+
+useEffect(() => {
+  natSmart.fetchNationalities();
+}, []);
 
   useEffect(() => {
   if (programType === "postgraduate") {
@@ -1491,6 +1537,10 @@ const selectStudent = (studentId) => {
       }));
 
       setStudentForm({
+        firstName: data.student.first_name || "",
+        secondName: data.student.second_name || "",
+        thirdName: data.student.third_name || "",
+        fourthName: data.student.fourth_name || "",
         full_name: data.student.full_name || "",
         university_id: Number(data.student.university_id) === 0 ? "" : String(data.student.university_id),
         phone: data.student.phone || "",
@@ -1527,6 +1577,10 @@ const resetStudentForm = () => {
   setHasSearched(false);
 
   setStudentForm({
+    firstName: "",
+    secondName: "",
+    thirdName: "",
+    fourthName: "",
     full_name: "",
     university_id: "",
     phone: "",
@@ -1559,44 +1613,35 @@ const resetStudentForm = () => {
   };
 
 const saveStudentOnly = async () => {
-  if (!studentForm.full_name.trim()) {
-    showToast("الاسم الرباعي مطلوب", "error");
+  // 1. التحقق من وجود الأسماء الأربعة وعدم احتوائها على أرقام أو رموز
+  const nameFields = ['firstName', 'secondName', 'thirdName', 'fourthName'];
+  const isAllNamesValid = nameFields.every(field => 
+    studentForm[field] && studentForm[field].trim() !== "" && isAlpha(studentForm[field])
+  );
 
+  if (!isAllNamesValid) {
+    showToast("يرجى إدخال الاسم الرباعي بشكل صحيح (حروف فقط وبدون ترك حقول فارغة)", "error");
     return;
   }
 
+  // 2. التحقق من رقم الهاتف (يجب أن يكون 10 أرقام بالضبط)
+  const phoneRegex = /^\d{10}$/;
+  if (studentForm.phone && !phoneRegex.test(studentForm.phone)) {
+    showToast("رقم الهاتف يجب أن يتكون من 10 أرقام فقط", "error");
+    return;
+  }
+
+  // 3. تجميع الاسم الكامل لاستخدامه في قاعدة البيانات
+  const fullNameValue = getFullName(studentForm);
+
   try {
-    if (!selectedStudent?.id) {
-      const studentBody = {
-        full_name: studentForm.full_name,
-        university_id: (studentForm.university_id || "").trim(),
-        phone: studentForm.phone || null,
-        receipt_number: null,
-        department_id: departmentId ? Number(departmentId) : null,
-        notes: null,
-        registrar: DEFAULT_REGISTRAR,
-      };
-
-      const res = await fetch(`${API_BASE}/students`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(studentBody),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.message || "فشل إضافة الطالب", "error");
-        return;
-      }
-
-      showToast("تم حفظ بيانات الطالب", "success");
-     resetStudentForm();
-window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    const updStudentBody = {
-      full_name: studentForm.full_name,
+    // تجهيز البيانات المشتركة (سواء للإضافة أو التحديث)
+    const studentData = {
+      first_name: studentForm.firstName.trim(),
+      second_name: studentForm.secondName.trim(),
+      third_name: studentForm.thirdName.trim(),
+      fourth_name: studentForm.fourthName.trim(),
+      full_name: fullNameValue,
       university_id: (studentForm.university_id || "").trim(),
       phone: studentForm.phone || null,
       nationality: studentForm.nationality?.trim() || null,
@@ -1605,33 +1650,68 @@ window.scrollTo({ top: 0, behavior: "smooth" });
       department_id: departmentId ? Number(departmentId) : null,
     };
 
-    const resUpd = await fetch(`${API_BASE}/students/${selectedStudent.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updStudentBody),
-    });
+    // حالة الإضافة (POST)
+    if (!selectedStudent?.id) {
+      const res = await fetch(`${API_BASE}/students`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...studentData,
+          receipt_number: null,
+          notes: null,
+          registrar: DEFAULT_REGISTRAR,
+        }),
+      });
 
-    const dataUpd = await resUpd.json();
-    if (!resUpd.ok) {
-      showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
-      return;
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "فشل إضافة الطالب", "error");
+        return;
+      }
+
+      showToast("تم إضافة وحفظ بيانات الطالب بنجاح", "success");
+    } 
+    // حالة التحديث (PUT)
+    else {
+      const resUpd = await fetch(`${API_BASE}/students/${selectedStudent.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(studentData),
+      });
+
+      const dataUpd = await resUpd.json();
+      if (!resUpd.ok) {
+        showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
+        return;
+      }
+
+      showToast("تم تحديث بيانات الطالب بنجاح", "success");
     }
 
-    showToast("تم تحديث بيانات الطالب", "success");
-
+    // إعادة ضبط النموذج والرجوع للأعلى
     resetStudentForm();
-window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
   } catch (e) {
     console.error(e);
-   showToast("حدث خطأ أثناء تعديل بيانات الطالب", "error");
-
+    showToast("حدث خطأ غير متوقع أثناء معالجة البيانات", "error");
   }
 };
 
-
 const saveRegistration = async () => {
-  if (!studentForm.full_name.trim()) {
-    showToast("الاسم الرباعي مطلوب", "error");
+  // 1. تجميع الاسم الكامل والتحقق من الحقول الأربعة
+  const fullNameValue = getFullName(studentForm);
+  const isNameComplete = studentForm.firstName && studentForm.secondName && 
+                         studentForm.thirdName && studentForm.fourthName;
+
+  if (!isNameComplete) {
+    showToast("الاسم الرباعي مطلوب كاملاً (4 حقول)", "error");
+    return;
+  }
+
+  // 2. التحقق من صحة رقم الهاتف (10 أرقام)
+  if (studentForm.phone && studentForm.phone.length !== 10) {
+    showToast("رقم الهاتف يجب أن يكون 10 أرقام", "error");
     return;
   }
 
@@ -1644,9 +1724,13 @@ const saveRegistration = async () => {
     showToast("السنة الدراسية والمستوى مطلوبان", "error");
     return;
   }
+  if (!ALLOWED_LEVELS.includes(form.level_name.trim())) {
+    showToast("يرجى اختيار مستوى صحيح من القائمة (المستوى الأول - المستوى السادس)", "error");
+    return;
+  }
 
   try {
-const token = sessionStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
       navigate("/login");
@@ -1655,22 +1739,27 @@ const token = sessionStorage.getItem("token");
 
     let studentId = selectedStudent ? selectedStudent.id : null;
 
-    // 1. تحديث بيانات الطالب إذا موجود
-    if (studentId) {
-      const updStudentBody = {
-        full_name: studentForm.full_name,
-        university_id: (studentForm.university_id || "").trim(),
-        phone: studentForm.phone || null,
-        department_id: departmentId ? Number(departmentId) : null,
-      };
+    // تجهيز بيانات الطالب المشتركة للحقول الجديدة
+    const studentDataPayload = {
+      first_name: studentForm.firstName.trim(),
+      second_name: studentForm.secondName.trim(),
+      third_name: studentForm.thirdName.trim(),
+      fourth_name: studentForm.fourthName.trim(),
+      full_name: fullNameValue,
+      university_id: (studentForm.university_id || "").trim(),
+      phone: studentForm.phone || null,
+      department_id: departmentId ? Number(departmentId) : null,
+    };
 
+    // 1. تحديث بيانات الطالب إذا كان موجوداً مسبقاً
+    if (studentId) {
       const resUpd = await fetch(`${API_BASE}/students/${studentId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,  
         },
-        body: JSON.stringify(updStudentBody),
+        body: JSON.stringify(studentDataPayload),
       });
 
       if (!resUpd.ok) {
@@ -1680,28 +1769,23 @@ const token = sessionStorage.getItem("token");
       }
     }
 
-    // 2. إنشاء طالب جديد إذا م موجود
+    // 2. إنشاء طالب جديد إذا لم يكن موجوداً
     if (!studentId) {
-      const studentBody = {
-        full_name: studentForm.full_name,
-        university_id: (studentForm.university_id || "").trim(),
-        phone: studentForm.phone || null,
-        nationality: studentForm.nationality?.trim() || null,     
-        gender: studentForm.gender || null,                       
-        status: studentForm.status || "نشط",                     
-        receipt_number: null,
-        department_id: departmentId ? Number(departmentId) : null,
-        notes: null,
-        registrar: DEFAULT_REGISTRAR,
-      };
-
       const resStudent = await fetch(`${API_BASE}/students`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,  
         },
-        body: JSON.stringify(studentBody),
+        body: JSON.stringify({
+          ...studentDataPayload,
+          nationality: studentForm.nationality?.trim() || null,     
+          gender: studentForm.gender || null,                       
+          status: studentForm.status || "نشط",                     
+          receipt_number: null,
+          notes: null,
+          registrar: DEFAULT_REGISTRAR,
+        }),
       });
 
       const dataStudent = await resStudent.json();
@@ -1714,43 +1798,31 @@ const token = sessionStorage.getItem("token");
       studentId = dataStudent.student_id;
     }
 
-    // 3. التحقق من وجود تسجيل سابق مطابق للفترة
+    // 3. منطق التسجيل (الأكاديمي) كما هو مع استخدام الـ studentId الصحيح
     if (
       lastRegistration &&
       lastRegistration.academic_year === form.academic_year &&
       lastRegistration.level_name === form.level_name &&
       lastRegistration.term_name === form.term_name
     ) {
-      // تعديل الموقف الأكاديمي فقط (PUT)
-      const regBody = {
-        academic_status: form.academic_status,
-      };
-
+      // تعديل الموقف الأكاديمي فقط
       const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,  
         },
-        body: JSON.stringify(regBody),
+        body: JSON.stringify({ academic_status: form.academic_status }),
       });
 
-      const dataReg = await resReg.json();
-
       if (!resReg.ok) {
-        if (resReg.status === 401) {
-          showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
-          navigate("/login");
-        } else {
-          showToast(dataReg.message || "فشل في تعديل الموقف الأكاديمي", "error");
-        }
+        showToast("فشل في تعديل الموقف الأكاديمي", "error");
         return;
       }
-
       showToast("تم تعديل الموقف الأكاديمي", "success");
     } 
     else {
-      // إنشاء تسجيل جديد (POST)
+      // إنشاء تسجيل جديد
       const regBody = {
         student_id: studentId,
         academic_year: form.academic_year,
@@ -1760,15 +1832,12 @@ const token = sessionStorage.getItem("token");
         registration_status: form.registration_status,
         notes: form.notes || null,
         program_type: programType,
-        postgraduate_data:
-          programType === "postgraduate"
-            ? {
-                prev_degree: form.prev_degree,
-                prev_university: form.prev_university,
-                prev_grad_year: form.prev_grad_year,
-                study_type: form.study_type,
-              }
-            : null,
+        postgraduate_data: programType === "postgraduate" ? {
+          prev_degree: form.prev_degree,
+          prev_university: form.prev_university,
+          prev_grad_year: form.prev_grad_year,
+          study_type: form.study_type,
+        } : null,
         postgraduate_program: programType === "postgraduate" ? (form.postgraduate_program || null) : null,
       };
 
@@ -1781,9 +1850,8 @@ const token = sessionStorage.getItem("token");
         body: JSON.stringify(regBody),
       });
 
-      const dataReg = await resReg.json();
-
       if (!resReg.ok) {
+        const dataReg = await resReg.json();
         showToast(dataReg.message || "فشل في حفظ التسجيل الجديد", "error");
         return;
       }
@@ -1795,7 +1863,7 @@ const token = sessionStorage.getItem("token");
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     console.error("خطأ في عملية التسجيل:", err);
-    showToast("حدث خطأ غير متوقع أثناء حفظ التسجيل", "error");
+    showToast("حدث خطأ غير متوقع", "error");
   }
 };
 
@@ -1904,18 +1972,28 @@ const token = sessionStorage.getItem("token");
         <h3 style={ui.sectionTitle}>بيانات الطالب الأساسية</h3>
 
         <div style={ui.grid}>
-          <div style={ui.field}>
-            <label style={ui.label}>الاسم الرباعي</label>
-            <input
-              type="text"
-              value={studentForm.full_name}
-              onChange={(e) =>
-                setStudentForm((prev) => ({ ...prev, full_name: e.target.value }))
+          {[
+            { label: "الاسم الأول", key: "firstName" },
+            { label: "الاسم الثاني", key: "secondName" },
+            { label: "الاسم الثالث", key: "thirdName" },
+            { label: "الاسم الرابع", key: "fourthName" }
+          ].map((item) => (
+            <div style={ui.field} key={item.key}>
+              <label style={ui.label}>{item.label}</label>
+              <input
+                type="text"
+                value={studentForm[item.key]}
+                onChange={(e) => {
+                const val = e.target.value;
+                if (isAlpha(val) || val === "") { 
+                setStudentForm(prev => ({ ...prev, [item.key]: val }));
               }
-              placeholder="اكتب الاسم الرباعي"
-              style={ui.input}
-            />
-          </div>
+             }}
+                placeholder={item.label}
+                style={ui.input}
+              />
+            </div>
+          ))}
 
           <div style={ui.field}>
             <label style={ui.label}>الرقم الجامعي</label>
@@ -1930,15 +2008,17 @@ const token = sessionStorage.getItem("token");
             />
           </div>
 
-          <div style={ui.field}>
-            <label style={ui.label}>رقم الهاتف</label>
+         <div style={ui.field}>
+            <label style={ui.label}>رقم الهاتف </label>
             <input
               type="text"
+              maxLength={10}
               value={studentForm.phone}
-              onChange={(e) =>
-                setStudentForm((prev) => ({ ...prev, phone: e.target.value }))
-              }
-              placeholder="مثال: 09xxxxxxxx"
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, ""); 
+                setStudentForm(prev => ({ ...prev, phone: val }));
+              }}
+              placeholder="مثال: 0912345678 (10 أرقام)"
               style={ui.input}
             />
           </div>
@@ -1947,13 +2027,23 @@ const token = sessionStorage.getItem("token");
   <label style={ui.label}>الجنسية</label>
   <input
     type="text"
+    list="nationality_list"
+    maxLength={10}
     value={studentForm.nationality || ""}
-    onChange={e =>
-      setStudentForm(prev => ({ ...prev, nationality: e.target.value.trim() }))
-    }
-    placeholder="مثال: سوداني، مصري، يمني ..."
+    onChange={(e) => {
+      const val = e.target.value;
+      if ((isAlpha(val) || val === "") && val.length <= 10) {
+        setStudentForm(prev => ({ ...prev, nationality: val }));
+      }
+    }}
+    placeholder="مثال: سوداني"
     style={ui.input}
   />
+  <datalist id="nationality_list">
+    {natSmart.nationalities.map((nat, index) => (
+      <option key={index} value={nat} />
+    ))}
+  </datalist>
 </div>
 
 <div style={ui.field}>
@@ -2116,65 +2206,59 @@ const token = sessionStorage.getItem("token");
         <h3 style={ui.sectionTitle}>تسجيل جديد لسنة/فصل دراسي</h3>
 
         <div style={ui.grid}>
-          <div style={ui.field}>
+<div style={ui.field}>
             <label style={ui.label}>السنة الدراسية</label>
-<input
-  type="text"
-  name="academic_year"
-  list="single_years"
-  placeholder="مثال: 2025/2026"
-  value={form.academic_year}
-  onChange={(e) => {
-    setForm((p) => ({ ...p, academic_year: e.target.value, level_name: "", term_name: "" }));
-  }}
-  style={ui.input}
-/>
-<datalist id="single_years">
-  {smart.yearOptions.map((x) => <option key={x} value={x} />)}
-</datalist>
-
+            <input
+              type="text"
+              name="academic_year"
+              list="single_years"
+              placeholder="مثال: 2025/2026"
+              value={form.academic_year}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^\d/]/g, "");
+                setForm((p) => ({ ...p, academic_year: val, level_name: "", term_name: "" }));
+              }}
+              style={ui.input}
+            />
+            <datalist id="single_years">
+              {smart.yearOptions.map((x) => <option key={x} value={x} />)}
+            </datalist>
           </div>
 
-          <div style={ui.field}>
-            <label style={ui.label}>المستوى الدراسي</label>
-<input
-  type="text"
-  name="level_name"
-  list="single_levels"
-  placeholder="مثال: المستوى الثاني"
-  value={form.level_name}
-  onChange={(e) => {
-    setForm((p) => ({ ...p, level_name: e.target.value, term_name: "" }));
-  }}
-  style={ui.input}
-/>
-<datalist id="single_levels">
-  {smart.levelOptions.map((x) => <option key={x} value={x} />)}
-</datalist>
-
-          </div>
+<div style={ui.field}>
+  <label style={ui.label}>المستوى الدراسي</label>
+  <input
+    type="text"
+    name="level_name"
+    list="single_levels" 
+    placeholder="مثال: المستوى الثاني"
+    value={form.level_name}
+    onChange={(e) => {
+      setForm((p) => ({ ...p, level_name: e.target.value, term_name: "" }));
+    }}
+    style={ui.input}
+  />
+  <datalist id="single_levels">
+    {ALLOWED_LEVELS.map((lvl) => (
+      <option key={lvl} value={lvl} />
+    ))}
+  </datalist>
+</div>
 
           <div style={ui.field}>
             <label style={ui.label}>الفصل الدراسي</label>
-<input
-  type="text"
-  name="term_name"
-  list="single_terms"
-  placeholder="مثال:الفصل الأول/الفصل الثاني"
-  value={form.term_name}
-  onChange={(e) => setForm((p) => ({ ...p, term_name: e.target.value }))}
-  onBlur={() => smart.ensurePeriodSaved(form.academic_year, form.level_name, form.term_name)}
-  style={ui.input}
-/>
-<datalist id="single_terms">
-  {smart.termOptions.map((x) => <option key={x} value={x} />)}
-</datalist>
-
-            <datalist id="termOptionsSingle">
+            <select
+              name="term_name"
+              value={form.term_name}
+              onChange={(e) => setForm((p) => ({ ...p, term_name: e.target.value }))}
+              onBlur={() => smart.ensurePeriodSaved(form.academic_year, form.level_name, form.term_name)}
+              style={ui.select}
+            >
+              <option value="">-- اختر الفصل --</option>
               {TERM_OPTIONS.map((t) => (
-                <option key={t} value={t} />
+                <option key={t} value={t}>{t}</option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div style={ui.field}>
@@ -2260,6 +2344,8 @@ function FailedCoursesRegistrationTab({ showToast }) {
     postgraduateProgram: postgradProgram,
   });
 
+  
+  
   // تحميل الكليات
 useEffect(() => {
   fetch(`${API_BASE}/faculties-list`)
@@ -2370,6 +2456,16 @@ useEffect(() => {
       showToast("املئي السنة والمستوى والفصل أولاً", "error");
       return;
     }
+    const yearRegex = /^\d{4}\/\d{4}$/; 
+  if (!yearRegex.test(academicYear.trim())) {
+    showToast("صيغة السنة الدراسية غير صحيحة، مثال: 2025/2026", "error");
+    return;
+  }
+
+  if (!ALLOWED_LEVELS.includes(levelName.trim())) {
+    showToast("يرجى اختيار مستوى صحيح من القائمة (المستوى الأول - السادس)", "error");
+    return;
+  }
 
     try {
       const body = {
@@ -2556,85 +2652,77 @@ useEffect(() => {
         )}
       </div>
 
-      {/* فلاتر الفترة الجديدة - بالطريقة الذكية زي PromotionTab */}
       {selectedStudent && departmentId && (
         <>
           <div style={ui.card}>
             <h3 style={ui.sectionTitle}>الفترة الدراسية لإعادة المواد</h3>
-            <div style={ui.grid}>
-              {/* السنة الدراسية */}
-              <div style={ui.field}>
-                <label style={ui.label}>السنة الدراسية</label>
-                <input
-                  type="text"
-                  list="re_year_list"
-                  placeholder="مثال: 2025/2026"
-                  value={academicYear}
-                  onChange={(e) => {
-                    setAcademicYear(e.target.value);
-                    setLevelName("");
-                    setTermName("");
-                    setRegisteredInCurrentPeriod([]);
-                  }}
-                  style={ui.input}
-                />
-                <datalist id="re_year_list">
-                  {smart.yearOptions.map((y) => (
-                    <option key={y} value={y} />
-                  ))}
-                </datalist>
-              </div>
+<div style={ui.grid}>
+  <div style={ui.field}>
+    <label style={ui.label}>السنة الدراسية</label>
+    <input
+      type="text"
+      list="re_year_list"
+      placeholder="مثال: 2025/2026"
+      value={academicYear}
+      onChange={(e) => {
+        const val = e.target.value.replace(/[^\d/]/g, "");
+        setAcademicYear(val);
+        setLevelName("");
+        setTermName("");
+        setRegisteredInCurrentPeriod([]);
+      }}
+      style={ui.input}
+    />
+    <datalist id="re_year_list">
+      {smart.yearOptions.map((y) => (
+        <option key={y} value={y} />
+      ))}
+    </datalist>
+  </div>
 
-              {/* المستوى */}
-              <div style={ui.field}>
-                <label style={ui.label}>المستوى</label>
-                <input
-                  type="text"
-                  list="re_level_list"
-                  placeholder="مثال: المستوى الثاني"
-                  value={levelName}
-                  onChange={(e) => {
-                    setLevelName(e.target.value);
-                    setTermName("");
-                    setRegisteredInCurrentPeriod([]);
-                  }}
-                  style={ui.input}
-                  disabled={!academicYear}
-                />
-                <datalist id="re_level_list">
-                  {smart.levelOptions.map((l) => (
-                    <option key={l} value={l} />
-                  ))}
-                </datalist>
-              </div>
+  <div style={ui.field}>
+    <label style={ui.label}>المستوى</label>
+    <input
+      type="text"
+      list="re_level_list"
+      placeholder="مثال: المستوى الثاني"
+      value={levelName}
+      onChange={(e) => {
+        setLevelName(e.target.value);
+        setTermName("");
+        setRegisteredInCurrentPeriod([]);
+      }}
+      style={ui.input}
+      disabled={!academicYear}
+    />
+    <datalist id="re_level_list">
+      {smart.levelOptions.map((l) => (
+        <option key={l} value={l} />
+      ))}
+    </datalist>
+  </div>
 
-              {/* الفصل */}
-              <div style={ui.field}>
-                <label style={ui.label}>الفصل الدراسي</label>
-                <input
-                  type="text"
-                  list="re_term_list"
-                  placeholder="مثال: فصل أول"
-                  value={termName}
-                  onChange={(e) => {
-                    setTermName(e.target.value);
-                    setRegisteredInCurrentPeriod([]);
-                  }}
-                  onBlur={() => {
-                    if (academicYear && levelName && termName) {
-                      smart.ensurePeriodSaved(academicYear, levelName, termName);
-                    }
-                  }}
-                  style={ui.input}
-                  disabled={!levelName}
-                />
-                <datalist id="re_term_list">
-                  {smart.termOptions.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
-              </div>
-            </div>
+  <div style={ui.field}>
+    <label style={ui.label}>الفصل الدراسي</label>
+    <select
+      value={termName}
+      onChange={(e) => {
+        const val = e.target.value;
+        setTermName(val);
+        setRegisteredInCurrentPeriod([]);
+        if (academicYear && levelName && val) {
+          smart.ensurePeriodSaved(academicYear, levelName, val);
+        }
+      }}
+      style={ui.select} 
+      disabled={!levelName}
+    >
+      <option value="">اختر الفصل</option>
+      <option value="الفصل الأول">الفصل الأول</option>
+      <option value="الفصل الثاني">الفصل الثاني</option>
+    </select>
+  </div>
+</div>
           </div>
 
           {/* قائمة المواد الراسبة */}
@@ -2734,6 +2822,7 @@ function FeesTab({ showToast }) {
   const [loadingStudentFees, setLoadingStudentFees] = useState(false);
   const [feesSource, setFeesSource] = useState("");
   const [isDefaultMode, setIsDefaultMode] = useState(true);
+  
 
   const today = new Date().toISOString().split("T")[0];
   const navigate = useNavigate();
@@ -2786,6 +2875,17 @@ const minAllowedInstallments = paidCount >= 6 ? 6 : paidCount + 1;
     const cleaned = String(val).replace(/,/g, '').replace(/[^0-9.-]/g, '');
     return parseFloat(cleaned) || 0;
   };
+
+  const handleNumericInput = (fieldName, value, callback = null) => {
+  const regex = /^[0-9]*$/; 
+  if (regex.test(value) || value === "") {
+    if (callback) {
+      callback(value);
+    } else {
+      setFeesData(prev => ({ ...prev, [fieldName]: value }));
+    }
+  }
+};
 
 const formatCurrency = (amount) => {
   const value = cleanNumber(amount);
@@ -2957,6 +3057,9 @@ const loadDefaultFeesForLevel = async () => {
       academic_year: academicYear,
       level_name: levelName,
       program_type: programType,
+      // إضافة الكلية والقسم للرابط
+      faculty_id: facultyId || "", 
+      department_id: departmentId || "",
       ...(postgradProgram.trim() && { postgraduate_program: postgradProgram.trim() }),
     });
 
@@ -2966,21 +3069,20 @@ const loadDefaultFeesForLevel = async () => {
       const data = await res.json();
       fillFeesData(data);
       setFeesSource("default");
+      
+      // حساب عدد الأقساط
       let count = 0;
-      if (data.installment_6) count = 6;
-      else if (data.installment_5) count = 5;
-      else if (data.installment_4) count = 4;
-      else if (data.installment_3) count = 3;
-      else if (data.installment_2) count = 2;
-      else if (data.installment_1) count = 1;
+      for (let i = 1; i <= 6; i++) {
+        if (data[`installment_${i}`]) count = i;
+      }
       setInstallmentCount(count);
-      showToast("تم جلب الرسوم العامة لهذا المستوى", "success");
+      showToast("تم جلب الرسوم العامة لهذه التخصص", "success");
     } 
     else if (res.status === 404) {
       setFeesData(defaultFeesData);
       setInstallmentCount(0);
       setFeesSource("");
-      showToast("لا توجد رسوم عامة محفوظة لهذا المستوى/السنة", "info");
+      showToast("لا توجد رسوم عامة لهذا التخصص/المستوى", "info");
     } 
     else {
       throw new Error(await res.text() || "مشكلة في السيرفر");
@@ -2993,7 +3095,7 @@ const loadDefaultFeesForLevel = async () => {
 
 //  دالة جلب رسوم الطالب
 const loadFees = async () => {
-  setPaidInstallments({1:false,2:false,3:false,4:false,5:false,6:false});
+  setPaidInstallments({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false });
   setLoadingStudentFees(true);
   try {
     const params = new URLSearchParams({
@@ -3002,6 +3104,7 @@ const loadFees = async () => {
       level_name: levelName,
     });
 
+    // 1. محاولة جلب رسوم الطالب الخاصة
     let res = await fetch(`${API_BASE}/student-fees?${params}`);
     let feesToUse = null;
     let source = "";
@@ -3009,100 +3112,66 @@ const loadFees = async () => {
     if (res.ok) {
       feesToUse = await res.json();
       source = "student";
-      showToast("تم تحميل رسوم خاصة بالطالب", "success");
-    } else if (res.status === 404) {
+    } else {
+      // 2. إذا لم توجد رسوم خاصة، جلب الرسوم العامة (Default)
       const defParams = new URLSearchParams({
         academic_year: academicYear,
         level_name: levelName,
         program_type: programType,
+        faculty_id: facultyId, // نرسل الكلية والقسم لضمان دقة الرسوم العامة
+        department_id: departmentId,
         ...(postgradProgram && { postgraduate_program: postgradProgram.trim() }),
       });
-
       res = await fetch(`${API_BASE}/term-default-fees?${defParams}`);
       if (res.ok) {
         feesToUse = await res.json();
         source = "default";
-        showToast("لا رسوم خاصة – تم تحميل الرسوم العامة", "info");
-
-        try {
-          const prevParams = new URLSearchParams({ student_id: selectedStudent.id });
-          const prevRes = await fetch(`${API_BASE}/student-fees?${prevParams}`);
-          
-          if (prevRes.ok) {
-            const prevFees = await prevRes.json();
-            
-            const isSamePeriod = 
-              prevFees.academic_year === academicYear && 
-              prevFees.level_name === levelName;
-
-            if (!isSamePeriod &&
-                prevFees.scholarship_type &&
-                prevFees.scholarship_type !== "لا منحة" &&
-                Number(prevFees.scholarship_percentage) > 0) {
-              
-              feesToUse.scholarship_type = prevFees.scholarship_type;
-              feesToUse.scholarship_percentage = Number(prevFees.scholarship_percentage);
-            }
-          }
-        } catch (prevErr) {
-          // console.log("No previous scholarship found", prevErr);
-        }
-      } else {
-        showToast("لا توجد رسوم عامة لهذه الفترة", "warning");
       }
     }
 
+    const calcRes = await fetch(`${API_BASE}/student-fees-calculated?${params}`);
+    let calculatedData = null;
+    if (calcRes.ok) {
+      calculatedData = await calcRes.json();
+      setCalculatedFees(calculatedData);
+      setAcademicStatus(calculatedData.academic_status || "نظامي");
+      setFacultyType(calculatedData.faculty_type || "غير محدد");
+    }
+
     if (feesToUse) {
-      fillFeesData(feesToUse);
+      fillFeesData(feesToUse); 
       setFeesSource(source);
 
-      if (source === "default" && feesToUse.scholarship_percentage > 0) {
-        applyScholarshipDiscount(feesToUse.scholarship_percentage);
+      if (calculatedData) {
+        setFeesData(prev => ({
+          ...prev,
+          registration_fee: calculatedData.registration_fee?.toString() || prev.registration_fee,
+          tuition_fee: calculatedData.tuition_fee?.toString() || prev.tuition_fee,
+          freeze_fee: calculatedData.total_extra && calculatedData.notes?.includes("تجميد") 
+                      ? calculatedData.total_extra.toString() : "0",
+        }));
       }
     }
 
     const statusRes = await fetch(`${API_BASE}/student-installments-status?${params}`);
-if (statusRes.ok) {
-  const statusData = await statusRes.json();
-  
-  const newPaid = {1:false,2:false,3:false,4:false,5:false,6:false};
-  for (let i = 1; i <= 6; i++) {
-    if (statusData[`installment_${i}_paid`] === 1 || statusData[`installment_${i}_paid`] === true) {
-      newPaid[i] = true;
-    }
-  }
-  setPaidInstallments(newPaid);
-} else {
-  console.warn("لم يتم جلب حالة الدفع");
-}
-
-    res = await fetch(`${API_BASE}/student-fees-calculated?${params}`);
-    if (res.ok) {
-      const calc = await res.json();
-      setCalculatedFees(calc);
-      setAcademicStatus(calc.academic_status || "نظامي");
-      setFacultyType(calc.faculty_type || "غير محدد");
-
-      let original = calc.tuition_fee?.toString() || "";
-      let afterRepeat = original;
-
-      if (calc.academic_status === "إعاده" && calc.repeat_discount) {
-        const repeatPerc = cleanNumber(calc.repeat_discount) / 100 || 0.5;
-        original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
+    if (statusRes.ok) {
+      const statusData = await statusRes.json();
+      const newPaid = {};
+      for (let i = 1; i <= 6; i++) {
+        newPaid[i] = !!(statusData[`installment_${i}_paid`]);
       }
-
-      setFeesData(prev => ({
-        ...prev,
-        tuition_fee: calc.tuition_fee?.toString() || prev.tuition_fee,
-        tuition_fee_original: original,
-        tuition_after_repeat: afterRepeat,
-        freeze_fee: calc.total_extra && calc.notes?.includes("تجميد") ? calc.total_extra.toString() : "0",
-        unfreeze_fee: "0",
-      }));
+      setPaidInstallments(newPaid);
     }
+
+    if (source === "default") {
+        showToast("لم يتم العثور على رسوم مخصصة، تم تحميل الرسوم العامة للمستوى", "info");
+    } else if (source === "student") {
+        showToast("تم تحميل رسوم الطالب المخصصة", "success");
+    }
+
   } catch (err) {
-    showToast(err.message || "لا رسوم متاحة لهذه الفترة", "warning");
-    setFeesSource("");
+    console.error(err);
+    showToast("خطأ أثناء تحميل بيانات الرسوم", "error");
   } finally {
     setLoadingStudentFees(false);
   }
@@ -3212,9 +3281,7 @@ useEffect(() => {
   };
 
   // جلب الرسوم + الموقف الأكاديمي
-  // ─── جلب الرسوم (عامة أو خاصة بالطالب) ───
 useEffect(() => {
-  // لو مفيش سنة أو مستوى → ريست كل حاجة
   if (!academicYear || !levelName) {
     setFeesData(defaultFeesData);
     setInstallmentCount(0);
@@ -3225,21 +3292,18 @@ useEffect(() => {
     return;
   }
 
-  // لو فيه طالب مختار → جيب رسوم الطالب + محسوبة
   if (selectedStudent) {
     setIsDefaultMode(false);
     loadFees();
     return;
   }
 
-  // مفيش طالب → جيب الرسوم العامة فقط
   setIsDefaultMode(true);
   loadDefaultFeesForLevel();
 
 }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
 
 
-  // جلب الرسوم المحسوبة تلقائيًا كل ما يتغير الطالب أو السنة أو المستوى أو البرنامج
 useEffect(() => {
   if (!selectedStudent || !academicYear || !levelName) {
     setCalculatedFees(null);
@@ -3297,7 +3361,6 @@ useEffect(() => {
   fetchCalculatedFees();
 }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
 
-  // ملء البيانات
   const fillFeesData = (fees) => {
     const tuition = fees.tuition_fee?.toString() || "";
     let original = tuition;
@@ -3356,7 +3419,6 @@ useEffect(() => {
     }
   };
 
-  // حساب الرسوم النهائية تلقائيًا
   const calculateFinalFees = async () => {
     if (!selectedStudent || !academicYear || !levelName) {
       showToast("يرجى اختيار طالب وسنة ومستوى", "error");
@@ -3424,6 +3486,22 @@ const saveFees = async () => {
   if (!academicYear || !levelName) {
     showToast("يرجى اختيار السنة والمستوى", "error");
     return;
+  }
+
+  const totalDue = cleanNumber(mainTotal);
+  const totalInstallments = cleanNumber(installmentsTotal);
+
+  if (selectedStudent) {
+    if (Math.abs(totalDue - totalInstallments) > 0.1) {
+      const diff = totalDue - totalInstallments;
+      showToast(
+        `لا يمكن الحفظ: مجموع الأقساط (${formatCurrency(totalInstallments)}) ` +
+        `لا يساوي الإجمالي المستحق للطلاب (${formatCurrency(totalDue)}). ` +
+        `الفرق: ${formatCurrency(diff)}`, 
+        "error"
+      );
+      return; 
+    }
   }
 
   const token = sessionStorage.getItem("token");
@@ -3522,61 +3600,6 @@ const saveFees = async () => {
       "success"
     );
     
-// ─────────────────────────────────────────────────────────────
-//  إرسال الرسوم للمحاكي (للتجربة)
-// ─────────────────────────────────────────────────────────────
-// if (!selectedStudent) {
-//     console.log("تم حفظ الرسوم العامة بنجاح (لم يتم الإرسال للمحاكي لأنه لا يوجد طالب محدد).");
-//     return;
-// }
-
-// try {
-//   const installmentsList = [];
-//   for (let i = 1; i <= installmentCount; i++) {
-//     if (feesData[`installment_${i}`]) {
-//       installmentsList.push({
-//         installment_number: i,
-//         amount: Number(feesData[`installment_${i}`]), 
-//         date: feesData[`installment_${i}_start`],   
-//         dateEnd: feesData[`installment_${i}_end`]   
-//       });
-//     }
-//   }
-
-// const payload = {
-//     university_id: selectedStudent.university_id || "N/A", 
-//     full_name: selectedStudent.full_name || "",
-//     academic_year: academicYear,
-//     level_name: levelName,
-//     currency: feesData.currency, 
-//     installments: installmentsList 
-//   };
-
-//   const resFinancial = await fetch("http://127.0.0.1:30000/api/receive-fees", {
-//     method: "POST",
-//     mode: "cors",
-//     headers: {
-//       "Content-Type": "application/json",
-//       "Accept": "application/json",
-//       "Authorization": "STUDENT_SYSTEM_TOKEN_2026" 
-//     },
-//     body: JSON.stringify(payload)
-//   });
-
-//   const responseData = await resFinancial.json();
-
-//   if (resFinancial.ok && responseData.success) {
-//     console.log(" رد السيرفر المالي:", responseData.msg); 
-//     // showToast(`تم الحفظ وإرسال المطالبة لـ ${selectedStudent.full_name}`, "success");
-//   } else {
-//     console.error(" خطأ من السيرفر المالي:", responseData.msg);
-//     // showToast(responseData.msg || "فشل الاتصال بالمحاكي", "error");
-//   }
-// } catch (err) {
-//   console.error(" خطأ في الإرسال للمحاكي:", err.message);
-// }
-
-/////
     resetAllForm();
     setSelectedStudent(null);
     setSearchQuery("");
@@ -3602,8 +3625,6 @@ const printFeesReport = async () => {
   }
 
   try {
-    // showToast("جاري تحميل أحدث بيانات الرسوم...", "info");
-
     const params = new URLSearchParams({
       student_id: selectedStudent.id,
       academic_year: academicYear,
@@ -3611,33 +3632,19 @@ const printFeesReport = async () => {
     });
 
     const url = `${API_BASE}/student-installments-status?${params}`;
-    console.log("Fetching:", url); 
-
     const response = await fetch(url);
 
     if (!response.ok) {
-      let errorMsg = `حالة ${response.status}`;
-      try {
-        const errData = await response.json();
-        errorMsg = errData.error || errorMsg;
-      } catch {
-        errorMsg = await response.text() || errorMsg;
-      }
-      throw new Error(errorMsg);
+      throw new Error("فشل جلب بيانات الرسوم");
     }
 
     const data = await response.json();
 
-    // ────────────────────────────────────────────────
-    // حساب الإجمالي والمدفوع
-    const totalDue =
-      cleanNumber(data.registration_fee || 0) +
-      cleanNumber(data.tuition_fee || 0) +
-      cleanNumber(data.late_fee || 0) +
-      cleanNumber(data.freeze_fee || 0) +
-      cleanNumber(data.unfreeze_fee || 0);
 
-    let totalPaid = 0;
+    let totalPaid = 0;    
+    let totalRemaining = 0; 
+    let totalDue = 0;      
+
     const installmentsRows = [];
 
     for (let i = 1; i <= 6; i++) {
@@ -3646,17 +3653,21 @@ const printFeesReport = async () => {
 
       const isPaid = data[`installment_${i}_paid`] === 1 || data[`installment_${i}_paid`] === true;
       const paidDateRaw = data[`installment_${i}_paid_at`];
-      const paidDate = paidDateRaw && paidDateRaw !== '0000-00-00' 
-      ? paidDateRaw 
-      : "—";
+      const paidDate = (isPaid && paidDateRaw && paidDateRaw !== '0000-00-00') ? paidDateRaw : "—";
 
-      if (isPaid) totalPaid += amount;
+      // الحسابات
+      totalDue += amount;
+      if (isPaid) {
+        totalPaid += amount;
+      } else {
+        totalRemaining += amount;
+      }
 
       installmentsRows.push(`
         <tr style="background: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
-          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${i}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">قسط ${i}</td>
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: right;">${formatCurrency(amount)}</td>
-          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center; color: ${isPaid ? '#0a3753' : '#0a3753'}; font-weight: ${isPaid ? 'bold' : 'normal'};">
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center; color: ${isPaid ? '#059669' : '#dc2626'}; font-weight: bold;">
             ${isPaid ? 'مدفوع' : 'غير مدفوع'}
           </td>
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${paidDate}</td>
@@ -3664,74 +3675,72 @@ const printFeesReport = async () => {
       `);
     }
 
-    const remaining = totalDue - totalPaid;
-
-    // ────────────────────────────────────────────────
+    
     const headerHTML = `
-      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #0a3753; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif;">
-        <h1 style="margin: 0; color: #0a3753; font-size: 24px; font-weight: bold;">
-          جامعة بورتسودان الأهلية
-        </h1>
-        <p style="margin: 10px 0 6px; font-size: 18px; font-weight: bold; color: #0a3753;">
-          تقرير الرسوم الدراسية
-        </p>
-        <p style="margin: 4px 0; font-size: 15px; color: #374151;">
-          السنة الدراسية: ${academicYear} | المستوى: ${levelName}
-        </p>
-        <p style="margin: 12px 0 0; font-size: 14px; color: #4b5563;">
-          الطالب: ${selectedStudent.full_name} - ${selectedStudent.university_id || "غير مسجل"}
+      <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0a3753; direction: rtl; font-family: 'Cairo', sans-serif;">
+        <h1 style="margin: 0; color: #0a3753; font-size: 22px; font-weight: bold;">جامعة بورتسودان الأهلية</h1>
+        <p style="margin: 5px 0; font-size: 16px; font-weight: bold; color: #0a3753;">تقرير الموقف المالي للأقساط</p>
+        <p style="margin: 4px 0; font-size: 14px; color: #374151;">السنة الدراسية: ${academicYear} | ${levelName}</p>
+        <p style="margin: 10px 0; font-size: 15px; color: #1f2937; font-weight: bold;">
+          الطالب/ة: ${selectedStudent.full_name} | الرقم الجامعي: )${selectedStudent.university_id || "—"}(
         </p>
       </div>
     `;
 
-    const basicFeesTable = `
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; font-size: 14px;">
-        <thead>
-          <tr style="background: #6e6e6e; color: white;">
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: right;">البند</th>
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center;">المبلغ</th>
+    const summaryTable = `
+      <div style="margin-bottom: 25px; direction: rtl; font-family: 'Cairo', sans-serif;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; direction: rtl; font-family: 'Cairo', sans-serif; font-size: 13px;">
+           <tr style="background: #6e6e6e; color: white;">
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المستحق</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتحصل</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتبقي</th>
           </tr>
-        </thead>
-        <tbody>
-          <tr><td style="padding: 10px; border: 1px solid #d1d5db;">رسوم التسجيل</td><td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(data.registration_fee || 0)}</td></tr>
-          <tr><td style="padding: 10px; border: 1px solid #d1d5db;">رسوم الدراسة</td><td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(data.tuition_fee || 0)}</td></tr>
-          ${Number(data.late_fee || 0) > 0 ? `<tr><td style="padding: 10px; border: 1px solid #d1d5db;">رسوم التأخير</td><td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(data.late_fee)}</td></tr>` : ''}
-          ${Number(data.freeze_fee || 0) > 0 ? `<tr><td style="padding: 10px; border: 1px solid #d1d5db;">رسوم التجميد</td><td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(data.freeze_fee)}</td></tr>` : ''}
-          ${Number(data.unfreeze_fee || 0) > 0 ? `<tr><td style="padding: 10px; border: 1px solid #d1d5db;">رسوم فك التجميد</td><td style="padding: 10px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(data.unfreeze_fee)}</td></tr>` : ''}
-          <tr style="font-weight: bold; background: #e5e7eb;">
-            <td style="padding: 12px; border: 1px solid #9ca3af; text-align: right;">الإجمالي المستحق</td>
-            <td style="padding: 12px; border: 1px solid #9ca3af; text-align: center; color: #0a3753;">${formatCurrency(totalDue)}</td>
+          <tr style="text-align: center; font-size: 17px; font-weight: bold; background-color: white;">
+            <td style="padding: 12px; border: 1px solid #9ca3af;">${formatCurrency(totalDue)}</td>
+            <td style="padding: 12px; border: 1px solid #9ca3af; color: #059669;">${formatCurrency(totalPaid)}</td>
+            <td style="padding: 12px; border: 1px solid #9ca3af; color: #dc2626;">${formatCurrency(totalRemaining)}</td>
           </tr>
-        </tbody>
-      </table>
+        </table>
+      </div>
     `;
 
     const installmentsTable = `
-      <table style="width: 100%; border-collapse: collapse; margin: 30px 0 20px; direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; font-size: 14px;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; direction: rtl; font-family: 'Cairo', sans-serif; font-size: 13px;">
         <thead>
           <tr style="background: #6e6e6e; color: white;">
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center;">القسط</th>
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center;">المبلغ المستحق</th>
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center;">حالة الدفع</th>
-            <th style="padding: 12px; border: 1px solid #9ca3af; text-align: center;">تاريخ الدفع</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">بيان القسط</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">المبلغ</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">الحالة</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">تاريخ السداد</th>
           </tr>
         </thead>
         <tbody>
-          ${installmentsRows.length > 0 ? installmentsRows.join('') : '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #6b7280;">لا توجد أقساط مسجلة لهذه الفترة</td></tr>'}
+          ${installmentsRows.length > 0 ? installmentsRows.join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">لا توجد أقساط مجدولة</td></tr>'}
         </tbody>
       </table>
     `;
 
     const footerHTML = `
-      <div style="text-align: center; margin-top: 60px; color: #6b7280; font-size: 13px; direction: rtl;">
-        تم إنشاء التقرير بتاريخ ${new Date().toLocaleDateString('EG')} الساعة ${new Date().toLocaleTimeString('EG')}
+      <div style="margin-top: 40px; direction: rtl; font-family: 'Cairo', sans-serif;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+          <div style="text-align: center; width: 40%;">
+          </div>
+          <div style="text-align: center; width: 40%;">
+            <p style="font-weight: bold; margin-bottom: 30px;">توقيع المسجل :</p>
+            <p>........................................</p>
+          </div>
+        </div>
+        <div style="text-align: center; color: #6b7280; font-size: 11px; border-top: 1px solid #eee; padding-top: 10px;">
+          صدر هذا التقرير بتاريخ ${new Date().toLocaleDateString('EG')}
+        </div>
       </div>
     `;
 
     const fullContent = `
-      <div style="padding: 30px 40px; direction: rtl;">
+      <div style="padding: 20px; direction: rtl;">
         ${headerHTML}
-        ${basicFeesTable}
+        ${summaryTable}
+        <h4 style="margin: 0 0 10px; color: #374151; font-family: 'Cairo', sans-serif;">تفاصيل الأقساط:</h4>
         ${installmentsTable}
         ${footerHTML}
       </div>
@@ -3739,26 +3748,20 @@ const printFeesReport = async () => {
     
     const element = document.createElement('div');
     element.innerHTML = fullContent;
-    element.style.padding = '20px 40px';
-    element.style.direction = 'rtl';
-    element.style.fontFamily = "'Cairo', 'Tajawal', sans-serif";
 
     html2pdf()
       .from(element)
       .set({
-        margin: 1,
-        filename: `تقرير_رسوم_${selectedStudent.full_name.replace(/ /g, '_')}_${academicYear.replace('/', '-')}.pdf`,
+        margin: [0.5, 0.5],
+        filename: `تقرير_مالي_${selectedStudent.full_name}.pdf`,
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
         html2canvas: { scale: 2 }
       })
       .save();
 
-    // showToast("جاري تجهيز التقرير كـ PDF...", "success");
-    
-
   } catch (err) {
-    console.error("خطأ في طباعة التقرير:", err);
-    showToast("فشل جلب بيانات الرسوم: " + (err.message || "خطأ غير متوقع"), "error");
+    console.error("خطأ التقرير:", err);
+    showToast("حدث خطأ أثناء استخراج التقرير", "error");
   }
 };
 
@@ -3884,33 +3887,37 @@ const printFeesReport = async () => {
               {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
             </select>
           </div>
-          <div style={ui.field}>
-            <label>السنة الدراسية</label>
-            <input 
-              list="fees_years" 
-              value={academicYear} 
-              onChange={e => setAcademicYear(e.target.value)} 
-              placeholder="مثال: 2025/2026" 
-              style={ui.input} 
-            />
-            <datalist id="fees_years">
-              {smart.yearOptions.map(y => <option key={y} value={y} />)}
-            </datalist>
-          </div>
-          <div style={ui.field}>
-            <label>المستوى</label>
-            <input 
-              list="fees_levels" 
-              value={levelName} 
-              onChange={e => setLevelName(e.target.value)} 
-              placeholder="مثال: المستوى الثاني" 
-              disabled={!academicYear} 
-              style={ui.input} 
-            />
-            <datalist id="fees_levels">
-              {smart.levelOptions.map(l => <option key={l} value={l} />)}
-            </datalist>
-          </div>
+<div style={ui.field}>
+  <label>السنة الدراسية</label>
+  <input 
+    list="fees_years" 
+    value={academicYear} 
+    onChange={e => {
+      const val = e.target.value.replace(/[^\d/]/g, "");
+      setAcademicYear(val);
+    }} 
+    placeholder="مثال: 2025/2026" 
+    style={ui.input} 
+  />
+  <datalist id="fees_years">
+    {smart.yearOptions.map(y => <option key={y} value={y} />)}
+  </datalist>
+</div>
+
+<div style={ui.field}>
+  <label>المستوى</label>
+  <input 
+    list="fees_levels" 
+    value={levelName} 
+    onChange={e => setLevelName(e.target.value)} 
+    placeholder="مثال: المستوى الثاني" 
+    disabled={!academicYear} 
+    style={ui.input} 
+  />
+  <datalist id="fees_levels">
+    {smart.levelOptions.map(l => <option key={l} value={l} />)}
+  </datalist>
+</div>
         </div>
       </div>
 
@@ -4023,56 +4030,72 @@ const printFeesReport = async () => {
             <p style={{ color: "#0a3753", textAlign: "center", fontWeight: 600 }}>جاري التحميل...</p>
           ) : (
             <div style={ui.grid}>
-              <div style={ui.field}>
-                <label>رسوم التسجيل</label>
-                <input type="number" value={feesData.registration_fee} onChange={e => setFeesData({...feesData, registration_fee: e.target.value})} style={ui.input} />
-              </div>
+<div style={ui.field}>
+  <label>رسوم التسجيل</label>
+  <input 
+    type="text" 
+    inputMode="numeric"
+    value={feesData.registration_fee} 
+    onChange={e => handleNumericInput("registration_fee", e.target.value)} 
+    style={ui.input} 
+  />
+</div>
 
-              <div style={ui.field}>
-                <label>رسوم الدراسة</label>
-                <input 
-                  type="number" 
-                  value={feesData.tuition_fee} 
-                  onChange={e => {
-                    const newValue = e.target.value;
-                    setFeesData(prev => ({
-                      ...prev,
-                      tuition_fee: newValue,
-                      tuition_fee_original: newValue,
-                    }));
-                  }}
-                  style={ui.input} 
-                />
-              </div>
+<div style={ui.field}>
+  <label>رسوم الدراسة</label>
+  <input 
+    type="text" 
+    inputMode="numeric"
+    value={feesData.tuition_fee} 
+    onChange={e => {
+      handleNumericInput("tuition_fee", e.target.value, (val) => {
+        setFeesData(prev => ({
+          ...prev,
+          tuition_fee: val,
+          tuition_fee_original: val,
+        }));
+      });
+    }}
+    style={ui.input} 
+  />
+</div>
 
-              <div style={ui.field}>
-                <label>رسوم المتأخرات</label>
-                <input type="number" value={feesData.late_fee} onChange={e => setFeesData({...feesData, late_fee: e.target.value})} style={ui.input} />
-              </div>
+<div style={ui.field}>
+  <label>رسوم المتأخرات</label>
+  <input 
+    type="text" 
+    inputMode="numeric"
+    value={feesData.late_fee} 
+    onChange={e => handleNumericInput("late_fee", e.target.value)} 
+    style={ui.input} 
+  />
+</div>
 
-              {academicStatus === "مجمّد" && (
-                <>
-                  <div style={ui.field}>
-                    <label>رسوم التجميد</label>
-                    <input 
-                      type="number" 
-                      value={feesData.freeze_fee} 
-                      onChange={e => setFeesData({...feesData, freeze_fee: e.target.value})} 
-                      style={ui.input} 
-                    />
-                  </div>
+{academicStatus === "مجمّد" && (
+  <>
+    <div style={ui.field}>
+      <label>رسوم التجميد</label>
+      <input 
+        type="text" 
+        inputMode="numeric"
+        value={feesData.freeze_fee} 
+        onChange={e => handleNumericInput("freeze_fee", e.target.value)} 
+        style={ui.input} 
+      />
+    </div>
 
-                  <div style={ui.field}>
-                    <label>رسوم فك التجميد</label>
-                    <input 
-                      type="number" 
-                      value={feesData.unfreeze_fee} 
-                      onChange={e => setFeesData({...feesData, unfreeze_fee: e.target.value})} 
-                      style={ui.input} 
-                    />
-                  </div>
-                </>
-              )}
+    <div style={ui.field}>
+      <label>رسوم فك التجميد</label>
+      <input 
+        type="text" 
+        inputMode="numeric"
+        value={feesData.unfreeze_fee} 
+        onChange={e => handleNumericInput("unfreeze_fee", e.target.value)} 
+        style={ui.input} 
+      />
+    </div>
+  </>
+)}
 
               {academicStatus === "إعاده" && (
                 <div style={ui.field}>
@@ -4103,19 +4126,30 @@ const printFeesReport = async () => {
   <>
     {/* نسبة الخصم – تظهر بس للمنح اليدوية */}
     {["منحة أشقاء", "تخفيضات المدير", "أخرى"].includes(feesData.scholarship_type) && (
-      <div style={ui.field}>
-        <label>نسبة الخصم (%)</label>
-        <input 
-          type="number" 
-          min="0" 
-          max="100" 
-          step="0.1" 
-          value={feesData.scholarship_percentage || ""} 
-          onChange={e => applyScholarshipDiscount(Number(e.target.value) || 0)} 
-          style={ui.input} 
-          placeholder="مثال: 35" 
-        />
-      </div>
+<div style={ui.field}>
+  <label>نسبة الخصم (%)</label>
+  <input 
+    type="text" 
+    inputMode="decimal"
+    value={feesData.scholarship_percentage || ""} 
+    onChange={e => {
+      const val = e.target.value;
+      const regex = /^[0-9]*\.?[0-9]*$/;
+      
+      if (regex.test(val) || val === "") {
+        const numValue = parseFloat(val);
+        
+        if (numValue > 100) {
+          showToast("لا يمكن أن تتجاوز النسبة 100%", "warning");
+          return;
+        }
+        applyScholarshipDiscount(val === "" ? 0 : Number(val));
+      }
+    }} 
+    style={ui.input} 
+    placeholder="مثال: 35" 
+  />
+</div>
     )}
 
     {/* حقل مانح المنحة – يظهر لكل أنواع المنح */}
@@ -4165,8 +4199,8 @@ const printFeesReport = async () => {
         type="radio"
         name="currency"
         value="SDG"
-        checked={feesData.currency === "SDG"}           // ← صح
-        onChange={() => setFeesData(prev => ({ ...prev, currency: "SDG" }))}   // ← صح
+        checked={feesData.currency === "SDG"}        
+        onChange={() => setFeesData(prev => ({ ...prev, currency: "SDG" }))}   
       />
       جنيه سوداني (SDG)
     </label>
@@ -4176,14 +4210,14 @@ const printFeesReport = async () => {
         type="radio"
         name="currency"
         value="USD"
-        checked={feesData.currency === "USD"}           // ← صح
-        onChange={() => setFeesData(prev => ({ ...prev, currency: "USD" }))}   // ← صح
+        checked={feesData.currency === "USD"}        
+        onChange={() => setFeesData(prev => ({ ...prev, currency: "USD" }))}   
       />
       دولار أمريكي (USD)
     </label>
   </div>
 </div>
-
+{selectedStudent && (
 <div style={{ gridColumn: "1 / -1" }}>
   <label style={ui.label}>عدد الأقساط</label>
 
@@ -4280,6 +4314,7 @@ const printFeesReport = async () => {
     </button>
   )}
 </div>
+)}
 
 {installmentCount > 0 && (
   <div style={{ gridColumn: "1 / -1" }}>

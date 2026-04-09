@@ -303,7 +303,7 @@ useEffect(() => {
       if (!res.ok) throw new Error(data?.error || "فشل تحميل الطلاب");
 
       setStudents(Array.isArray(data) ? data : []);
-      showToast(`تم تحميل ${data.length} طالب`, "success");
+      // showToast(`تم تحميل ${data.length} طالب`, "success");
     } catch (e) {
       console.error(e);
       showToast(e.message || "مشكلة في تحميل الطلاب", "error");
@@ -588,27 +588,34 @@ useEffect(() => {
                 </datalist>
               </div>
 
-              <div className="input-group">
-                <label className="input-label">الفصل الدراسي</label>
-                <input
-                  className="input-field"
-                  dir="rtl"
-                  list="terms_list_students"
-                  placeholder="مثال: الفصل الأول"
-                  value={termName}
-                  onChange={(e) => {
-                    setTermName(e.target.value);
-                    setStudents([]);
-                    setSearchText("");
-                  }}
-                  disabled={!canPickTerm}
-                />
-                <datalist id="terms_list_students">
-                  {termOptions.map((x) => (
-                    <option key={x} value={x} />
-                  ))}
-                </datalist>
-              </div>
+<div className="input-group">
+  <label className="input-label">الفصل الدراسي</label>
+  <select
+    className="input-field"
+    dir="rtl"
+    value={termName}
+    onChange={(e) => {
+      setTermName(e.target.value);
+      setStudents([]); 
+      setSearchText("");
+    }}
+    disabled={!canPickTerm}
+  >
+    <option value="">— اختر الفصل —</option>
+    {termOptions.length > 0 ? (
+      termOptions.map((x) => (
+        <option key={x} value={x}>
+          {x}
+        </option>
+      ))
+    ) : (
+      <>
+        <option value="الفصل الأول">الفصل الأول</option>
+        <option value="الفصل الثاني">الفصل الثاني</option>
+      </>
+    )}
+  </select>
+</div>
             </div>
           </div>
 

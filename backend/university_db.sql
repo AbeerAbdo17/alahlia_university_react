@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 05, 2026 at 10:54 AM
+-- Generation Time: Apr 09, 2026 at 09:32 AM
 -- Server version: 5.5.27
 -- PHP Version: 5.4.7
 
@@ -28,11 +28,11 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `academic_periods` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `academic_year` varchar(20) NOT NULL,
-  `level_name` varchar(60) NOT NULL,
-  `term_name` varchar(30) NOT NULL,
-  `program_type` enum('diploma','bachelor','postgraduate') NOT NULL DEFAULT 'bachelor',
-  `postgraduate_program` varchar(100) DEFAULT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
+  `term_name` varchar(30) CHARACTER SET utf8 NOT NULL,
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
+  `postgraduate_program` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_period` (`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `academic_periods` (
   KEY `idx_ap_year_prog_pg` (`academic_year`,`program_type`,`postgraduate_program`),
   KEY `idx_ap_year_level_prog` (`academic_year`,`level_name`,`program_type`),
   KEY `idx_academic_periods_year_level_term` (`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=289 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=308 ;
 
 --
 -- Dumping data for table `academic_periods`
@@ -286,7 +286,6 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (228, '2025/2026', 'المستوى الرابع', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:33:30'),
 (229, '2025/2026', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:34:05'),
 (230, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:34:39'),
-(231, '2025/2026', 'المستوى الثاني', 'الفصل', 'bachelor', NULL, '2026-03-09 11:35:02'),
 (232, '2026/2027', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:35:45'),
 (233, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:37:42'),
 (234, '2026/2027', 'المستوى الثاني', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:38:37'),
@@ -294,7 +293,6 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (236, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:40:02'),
 (237, '2028/2029', 'المستوى الرابع', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:40:53'),
 (238, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:41:45'),
-(239, '2025/2026', 'المستوى الأول', 'الفصل', 'bachelor', NULL, '2026-03-09 11:44:11'),
 (240, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:44:25'),
 (241, '2026/2027', 'المستوى الثاني', 'الفصل الثاني', 'bachelor', NULL, '2026-03-09 11:45:40'),
 (242, '2027/2028', 'المستوى الثالث', 'الفصل الأول', 'bachelor', NULL, '2026-03-09 11:47:09'),
@@ -342,7 +340,23 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (284, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-01 08:10:12'),
 (285, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-04 13:16:44'),
 (286, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-04 13:16:44'),
-(287, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', '2026-04-05 07:58:48');
+(287, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', '2026-04-05 07:58:48'),
+(289, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-05 12:01:57'),
+(290, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-05 12:01:57'),
+(291, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 08:35:53'),
+(292, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 08:35:55'),
+(293, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 08:53:44'),
+(294, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 08:54:53'),
+(295, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 08:54:53'),
+(296, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-04-06 10:22:25'),
+(297, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-04-06 13:09:37'),
+(298, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-04-06 13:10:20'),
+(302, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 07:37:47'),
+(303, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 07:38:24'),
+(304, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 07:51:54'),
+(305, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 13:13:18'),
+(306, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-08 11:26:05'),
+(307, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-08 11:26:05');
 
 -- --------------------------------------------------------
 
@@ -360,7 +374,7 @@ CREATE TABLE IF NOT EXISTS `books` (
   `is_pdf` tinyint(1) DEFAULT '0',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `is_borrowed` tinyint(1) DEFAULT '0',
-  `borrower_name` varchar(255) CHARACTER SET utf8mb4 DEFAULT NULL,
+  `borrower_name` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `borrower_id` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `borrowed_at` datetime DEFAULT NULL,
   `returned_at` datetime DEFAULT NULL,
@@ -727,16 +741,16 @@ CREATE TABLE IF NOT EXISTS `departments` (
   KEY `faculty_id` (`faculty_id`),
   KEY `idx_departments_faculty_id` (`faculty_id`),
   KEY `idx_departments_department_name` (`department_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=14 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=16 ;
 
 --
 -- Dumping data for table `departments`
 --
 
 INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`) VALUES
-(1, 1, 'نظم معلومات', 4),
-(2, 1, 'علوم حاسب', 4),
-(3, 1, 'هندسة برمجيات', 4),
+(1, 1, 'نظم المعلومات', 4),
+(2, 1, 'علوم الحاسوب', 4),
+(3, 1, 'الشبكات', 4),
 (4, 2, 'هندسة مدنية', 5),
 (5, 2, 'هندسة كهربائية', 5),
 (6, 2, 'هندسة معمارية', 5),
@@ -746,7 +760,9 @@ INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`
 (10, 4, 'باطني', 4),
 (11, 4, 'جراحه', 4),
 (12, 5, 'الطفيليات', 4),
-(13, 7, 'اللغة الانجليزية', 4);
+(13, 7, 'اللغة الانجليزية', 4),
+(14, 1, 'تقنية المعلومات', 4),
+(15, 6, 'طب اسنان', 5);
 
 -- --------------------------------------------------------
 
@@ -757,7 +773,7 @@ INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`
 CREATE TABLE IF NOT EXISTS `faculties` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `faculty_name` varchar(200) CHARACTER SET utf8 NOT NULL,
-  `faculty_type` enum('theoretical','practical') NOT NULL DEFAULT 'theoretical',
+  `faculty_type` enum('theoretical','practical') CHARACTER SET utf8 NOT NULL DEFAULT 'theoretical',
   PRIMARY KEY (`id`),
   KEY `idx_faculties_faculty_name` (`faculty_name`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=8 ;
@@ -772,7 +788,7 @@ INSERT INTO `faculties` (`id`, `faculty_name`, `faculty_type`) VALUES
 (3, 'كلية الاقتصاد', 'theoretical'),
 (4, 'كلية علوم التمريض', 'practical'),
 (5, 'كلية المختبرات الطبية', 'practical'),
-(6, 'دراسات قرانيه', 'theoretical'),
+(6, 'كلية الطب', 'theoretical'),
 (7, 'كلية اللغات', 'theoretical');
 
 -- --------------------------------------------------------
@@ -784,19 +800,19 @@ INSERT INTO `faculties` (`id`, `faculty_name`, `faculty_type`) VALUES
 CREATE TABLE IF NOT EXISTS `fees` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) DEFAULT NULL,
-  `academic_year` varchar(20) NOT NULL,
-  `level_name` varchar(60) NOT NULL,
-  `currency` enum('SDG','USD') NOT NULL DEFAULT 'SDG',
-  `term_name` varchar(30) NOT NULL,
-  `program_type` enum('diploma','bachelor','postgraduate') NOT NULL DEFAULT 'bachelor',
-  `postgraduate_program` varchar(100) DEFAULT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
+  `currency` enum('SDG','USD') CHARACTER SET utf8 NOT NULL DEFAULT 'SDG',
+  `term_name` varchar(30) CHARACTER SET utf8 NOT NULL,
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
+  `postgraduate_program` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `department_id` int(11) DEFAULT NULL,
   `registration_fee` decimal(10,2) DEFAULT NULL,
   `tuition_fee` decimal(10,2) DEFAULT NULL,
   `late_fee` decimal(10,2) DEFAULT NULL,
-  `scholarship_type` varchar(100) DEFAULT 'لا منحة',
+  `scholarship_type` varchar(100) CHARACTER SET utf8 DEFAULT 'لا منحة',
   `scholarship_percentage` decimal(5,2) DEFAULT '0.00' COMMENT 'نسبة الخصم',
-  `scholarship_granted_by` varchar(150) DEFAULT NULL,
+  `scholarship_granted_by` varchar(150) CHARACTER SET utf8 DEFAULT NULL,
   `payment_start_date` date DEFAULT NULL,
   `payment_end_date` date DEFAULT NULL,
   `installment_1` decimal(10,2) DEFAULT NULL,
@@ -835,7 +851,7 @@ CREATE TABLE IF NOT EXISTS `fees` (
   `installment_6_end` date DEFAULT NULL,
   `installment_6_paid` tinyint(1) DEFAULT '0',
   `installment_6_paid_at` date DEFAULT NULL,
-  `registrar` varchar(100) DEFAULT NULL,
+  `registrar` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `freeze_fee` decimal(10,2) DEFAULT '0.00',
@@ -856,8 +872,10 @@ CREATE TABLE IF NOT EXISTS `fees` (
   KEY `fk_fees_department` (`department_id`),
   KEY `idx_fees_student_year_level` (`student_id`,`academic_year`,`level_name`),
   KEY `idx_fees_year_level` (`academic_year`,`level_name`),
-  KEY `idx_fees_dept_year_level` (`department_id`,`academic_year`,`level_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=46 ;
+  KEY `idx_fees_dept_year_level` (`department_id`,`academic_year`,`level_name`),
+  KEY `idx_fees_is_synced` (`is_synced`),
+  KEY `idx_fees_student_id` (`student_id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=56 ;
 
 --
 -- Dumping data for table `fees`
@@ -865,43 +883,51 @@ CREATE TABLE IF NOT EXISTS `fees` (
 
 INSERT INTO `fees` (`id`, `student_id`, `academic_year`, `level_name`, `currency`, `term_name`, `program_type`, `postgraduate_program`, `department_id`, `registration_fee`, `tuition_fee`, `late_fee`, `scholarship_type`, `scholarship_percentage`, `scholarship_granted_by`, `payment_start_date`, `payment_end_date`, `installment_1`, `installment_1_id`, `installment_1_start`, `installment_1_end`, `installment_1_paid`, `installment_1_paid_at`, `installment_2`, `installment_2_id`, `installment_2_start`, `installment_2_end`, `installment_2_paid`, `installment_2_paid_at`, `installment_3`, `installment_3_id`, `installment_3_start`, `installment_3_end`, `installment_3_paid`, `installment_3_paid_at`, `installment_4`, `installment_4_id`, `installment_4_start`, `installment_4_end`, `installment_4_paid`, `installment_4_paid_at`, `installment_5`, `installment_5_id`, `installment_5_start`, `installment_5_end`, `installment_5_paid`, `installment_5_paid_at`, `installment_6`, `installment_6_id`, `installment_6_start`, `installment_6_end`, `installment_6_paid`, `installment_6_paid_at`, `registrar`, `created_at`, `updated_at`, `freeze_fee`, `unfreeze_fee`, `repeat_discount`, `is_paid`, `is_synced`) VALUES
 (1, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 8, 2500.00, 3500.00, 500.00, 'لا منحة', 0.00, NULL, '2026-04-04', '2026-05-05', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-19 11:49:07', '2026-02-21 12:58:00', 0.00, 0.00, 50, 0, 0),
-(3, 12, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 2500.00, 3500.00, 500.00, 'منحة أشقاء', 0.00, NULL, '2026-02-22', '2026-03-31', 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, '', '2026-02-22 12:17:23', '2026-02-22 12:17:23', 0.00, 0.00, 50, 0, 0),
 (4, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 5, 55000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, '2026-02-23', '2026-03-23', 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, 0.00, NULL, NULL, NULL, 0, NULL, '', '2026-02-23 10:58:34', '2026-02-23 10:58:34', 0.00, 0.00, 50, 0, 0),
 (5, NULL, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, 5, 1500.00, 3500.00, 0.00, 'لا منحة', 0.00, NULL, '2026-02-23', '2026-02-28', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-23 12:55:35', '2026-02-23 12:55:35', 0.00, 0.00, 50, 0, 0),
-(6, 3, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 1750.00, 0.00, 'أخرى', 50.00, NULL, '2026-02-22', '2026-02-27', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 11:09:13', '2026-02-25 11:09:13', 0.00, 0.00, 50, 0, 0),
-(7, 2, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 875.00, 0.00, 'منحة أبناء عاملين', 75.00, NULL, '2026-02-22', '2026-02-27', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 11:59:50', '2026-02-25 11:59:50', 0.00, 0.00, 50, 0, 0),
-(9, 9, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 875.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 2375.00, NULL, '2026-02-22', '2026-03-22', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 12:51:07', '2026-02-26 10:37:52', 0.00, 0.00, 50, 0, 0),
+(6, 3, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 1750.00, 0.00, 'أخرى', 50.00, NULL, '2026-02-22', '2026-02-27', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 11:09:13', '2026-02-25 11:09:13', 0.00, 0.00, 50, 0, 1),
+(7, 2, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 875.00, 0.00, 'منحة أبناء عاملين', 75.00, NULL, '2026-02-22', '2026-02-27', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 11:59:50', '2026-02-25 11:59:50', 0.00, 0.00, 50, 0, 1),
+(9, 9, '2025/2026', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 1500.00, 875.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 2375.00, NULL, '2026-02-22', '2026-03-22', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-25 12:51:07', '2026-02-26 10:37:52', 0.00, 0.00, 50, 0, 1),
 (10, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 10, 15000.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-02-26 11:03:49', '2026-02-26 11:03:49', 0.00, 0.00, 50, 0, 0),
 (11, NULL, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, 2, 15000.00, 5000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 07:53:13', '2026-03-01 07:53:13', 0.00, 0.00, 50, 0, 0),
-(12, 3, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 1750.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 8375.00, NULL, '2026-03-02', '2026-03-30', 1, '2026-03-01', 8375.00, NULL, '2026-04-01', '2026-04-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 07:56:40', '2026-03-01 07:58:24', 0.00, 0.00, 50, 0, 0),
-(13, 6, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 2450.00, 0.00, 'منحة أشقاء', 30.00, NULL, NULL, NULL, 17450.00, NULL, '2026-03-02', '2026-04-02', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 11:11:13', '2026-03-01 11:31:45', 0.00, 0.00, 50, 0, 0),
+(12, 3, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 1750.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 8375.00, NULL, '2026-03-02', '2026-03-30', 1, '2026-04-08', 8375.00, NULL, '2026-04-01', '2026-04-30', 1, '2026-04-08', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 07:56:40', '2026-03-01 07:58:24', 0.00, 0.00, 50, 0, 1),
+(13, 6, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 2450.00, 0.00, 'منحة أشقاء', 30.00, NULL, NULL, NULL, 17450.00, NULL, '2026-03-02', '2026-04-02', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 11:11:13', '2026-03-01 11:31:45', 0.00, 0.00, 50, 0, 1),
 (14, NULL, '2027/2028', 'المستوى الثالث', 'SDG', '', 'bachelor', NULL, 1, 24000.00, 16000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 11:36:53', '2026-03-01 11:36:53', 0.00, 0.00, 50, 0, 0),
-(16, 6, '2027/2028', 'المستوى الثالث', 'SDG', '', 'bachelor', NULL, NULL, 24000.00, 11200.00, 0.00, 'منحة أشقاء', 30.00, NULL, NULL, NULL, 17600.00, NULL, '2026-03-02', '2026-04-02', 0, NULL, 17600.00, NULL, '2026-05-02', '2026-06-02', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 12:53:29', '2026-03-01 12:53:29', 0.00, 0.00, 50, 0, 0),
-(17, 83, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 18800.00, 0.00, 'أخرى', 20.00, 'الوكيل (محمد خالد)', NULL, NULL, 33800.00, NULL, '2026-02-01', '2026-02-14', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-02 14:09:42', '2026-03-30 08:04:50', 0.00, 0.00, 50, 0, 0),
+(16, 6, '2027/2028', 'المستوى الثالث', 'SDG', '', 'bachelor', NULL, NULL, 24000.00, 11200.00, 0.00, 'منحة أشقاء', 30.00, NULL, NULL, NULL, 17600.00, NULL, '2026-03-02', '2026-04-02', 0, NULL, 17600.00, NULL, '2026-05-02', '2026-06-02', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-01 12:53:29', '2026-03-01 12:53:29', 0.00, 0.00, 50, 0, 1),
+(17, 83, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 18800.00, 0.00, 'أخرى', 20.00, 'الوكيل (محمد خالد)', NULL, NULL, 33800.00, NULL, '2026-02-01', '2026-02-14', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-02 14:09:42', '2026-03-30 08:04:50', 0.00, 0.00, 50, 0, 1),
 (18, NULL, '2025/2026', 'المستوى الخامس', 'SDG', '', 'bachelor', NULL, 5, 25000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-03 09:37:40', '2026-03-03 09:37:40', 0.00, 0.00, 50, 0, 0),
-(19, 17, '2025/2026', 'المستوى الخامس', 'SDG', '', 'bachelor', NULL, NULL, 25000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 20000.00, NULL, '2026-02-02', '2026-02-28', 1, '2026-03-03', 20000.00, NULL, '2026-03-02', '2026-03-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-03 09:39:32', '2026-03-03 09:39:32', 0.00, 0.00, 50, 0, 0),
+(19, 17, '2025/2026', 'المستوى الخامس', 'SDG', '', 'bachelor', NULL, NULL, 25000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 20000.00, NULL, '2026-02-02', '2026-02-28', 1, '2026-03-03', 20000.00, NULL, '2026-03-02', '2026-03-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-03 09:39:32', '2026-03-03 09:39:32', 0.00, 0.00, 50, 0, 1),
 (20, NULL, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 8, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:15:06', '2026-03-04 11:15:06', 0.00, 0.00, 50, 0, 0),
-(21, 86, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'منحة أشقاء', 50.00, 'المدير', NULL, NULL, 17000.00, NULL, '2026-03-04', '2026-03-25', 1, '2026-04-02', 5666.67, NULL, '2026-04-04', '2026-04-25', 0, NULL, 11333.33, NULL, '2026-05-07', '2026-05-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:16:15', '2026-04-04 12:40:14', 0.00, 0.00, 50, 0, 0),
-(23, 85, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-04', '2026-03-25', 0, NULL, 17000.00, NULL, '2026-04-04', '2026-04-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:24:33', '2026-03-04 11:24:33', 0.00, 0.00, 50, 0, 0),
-(24, 84, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 11333.34, NULL, '2026-03-04', '2026-03-25', 0, NULL, 11333.33, NULL, '2026-04-04', '2026-04-25', 0, NULL, 11333.33, NULL, '2026-05-04', '2026-05-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:30:59', '2026-03-04 12:02:38', 0.00, 0.00, 50, 0, 0),
-(25, 87, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-07', '2026-03-28', 1, NULL, 17000.00, NULL, '2026-04-07', '2026-04-28', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 11:53:49', '2026-03-07 11:53:49', 0.00, 0.00, 50, 0, 0),
-(26, 88, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 11333.34, NULL, '2026-03-07', '2026-03-25', 1, NULL, 11333.33, NULL, '2026-04-07', '2026-04-25', 1, NULL, 5666.67, NULL, '2026-05-07', '2026-05-25', 0, NULL, 5666.66, NULL, '2026-06-07', '2026-06-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 12:07:01', '2026-03-07 12:09:10', 0.00, 0.00, 50, 0, 0),
-(27, 89, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-07', '2026-03-25', 0, NULL, 17000.00, NULL, '2026-04-07', '2026-04-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 13:05:11', '2026-03-07 13:05:11', 0.00, 0.00, 50, 0, 0),
+(21, 86, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'منحة أشقاء', 50.00, 'المدير', NULL, NULL, 17000.00, NULL, '2026-03-04', '2026-03-25', 1, '2026-04-02', 5666.67, NULL, '2026-04-04', '2026-04-25', 0, NULL, 5666.67, NULL, '2026-05-07', '2026-05-25', 0, NULL, 5666.66, 15, '2026-06-08', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:16:15', '2026-04-08 10:30:15', 0.00, 0.00, 50, 0, 1),
+(23, 85, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-04', '2026-03-25', 0, NULL, 17000.00, NULL, '2026-04-04', '2026-04-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:24:33', '2026-03-04 11:24:33', 0.00, 0.00, 50, 0, 1),
+(24, 84, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 11333.34, NULL, '2026-03-04', '2026-03-25', 0, NULL, 11333.33, NULL, '2026-04-04', '2026-04-25', 0, NULL, 11333.33, NULL, '2026-05-04', '2026-05-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-04 11:30:59', '2026-03-04 12:02:38', 0.00, 0.00, 50, 0, 1),
+(25, 87, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-07', '2026-03-28', 1, NULL, 17000.00, NULL, '2026-04-07', '2026-04-28', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 11:53:49', '2026-03-07 11:53:49', 0.00, 0.00, 50, 0, 1),
+(26, 88, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 11333.34, NULL, '2026-03-07', '2026-03-25', 1, NULL, 11333.33, NULL, '2026-04-07', '2026-04-25', 1, NULL, 5666.67, NULL, '2026-05-07', '2026-05-25', 0, NULL, 5666.66, NULL, '2026-06-07', '2026-06-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 12:07:01', '2026-03-07 12:09:10', 0.00, 0.00, 50, 0, 1),
+(27, 89, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-07', '2026-03-25', 0, NULL, 17000.00, NULL, '2026-04-07', '2026-04-25', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-07 13:05:11', '2026-03-07 13:05:11', 0.00, 0.00, 50, 0, 1),
 (28, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'postgraduate', 'ماجستير البرمجيات المدمجة', 3, 5500.00, 500.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 08:21:15', '2026-03-12 08:21:15', 0.00, 0.00, 50, 0, 0),
-(30, 90, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 12100.00, NULL, '2026-03-12', '2026-03-26', 0, NULL, 12100.00, NULL, '2026-04-12', '2026-04-26', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 10:15:26', '2026-03-12 10:15:26', 0.00, 0.00, 50, 0, 0),
-(31, 2, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 5000.00, 0.00, 'منحة أبناء عاملين', 75.00, 'المدير محمد  خالد', NULL, NULL, 10000.00, NULL, '2026-03-12', '2026-04-26', 0, NULL, 10000.00, NULL, '2026-04-12', '2026-04-26', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 10:46:57', '2026-03-12 10:46:57', 0.00, 0.00, 50, 0, 0),
-(32, 20, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 5000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 10000.00, NULL, '2026-03-12', '2026-03-28', 1, NULL, 10000.00, NULL, '2026-04-12', '2026-04-28', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 12:49:44', '2026-03-12 12:49:44', 0.00, 0.00, 50, 0, 0),
-(33, 76, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 12100.00, NULL, '2026-03-12', '2026-03-27', 0, NULL, 12100.00, NULL, '2026-04-12', '2026-04-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 13:29:24', '2026-03-12 13:29:24', 0.00, 0.00, 50, 0, 0),
-(34, 91, '2025/2026', 'المستوى الأول', 'SDG', '', 'diploma', NULL, NULL, 500.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 4750.00, NULL, '2026-03-13', '2026-03-30', 1, NULL, 2375.00, NULL, '2026-05-12', '2026-05-30', 0, NULL, 2375.00, NULL, '2026-06-12', '2026-06-27', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 13:37:32', '2026-03-12 13:42:40', 0.00, 0.00, 50, 0, 0),
-(35, 93, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-15', '2026-03-31', 0, NULL, 17000.00, NULL, '2026-04-15', '2026-04-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-15 15:26:11', '2026-03-15 16:12:30', 0.00, 0.00, 50, 0, 0),
-(36, 94, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-30', '2026-04-30', 0, NULL, 17000.00, NULL, '2026-05-30', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-30 08:02:26', '2026-03-30 08:02:26', 0.00, 0.00, 50, 0, 0),
-(37, 95, '2026/2027', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15000.00, 500.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 7750.00, NULL, '2026-03-31', '2026-04-30', 0, NULL, 7750.00, NULL, '2026-05-01', '2026-06-01', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-31 08:07:54', '2026-03-31 08:07:54', 0.00, 0.00, 50, 0, 0),
-(40, 96, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 400.00, 0.00, 'منحة أشقاء', 20.00, 'الوكيل', NULL, NULL, 7700.00, 1, '2026-04-01', '2026-05-01', 0, NULL, 7700.00, 2, '2026-06-01', '2026-07-01', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 07:45:18', '2026-04-01 07:45:18', 0.00, 0.00, 50, 0, 0),
-(41, 97, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 500.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 5166.67, 3, '2026-04-01', '2026-04-30', 0, NULL, 5166.67, 4, '2026-05-01', '2026-05-31', 0, NULL, 5166.66, 5, '2026-06-01', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 07:48:41', '2026-04-01 07:48:41', 0.00, 0.00, 50, 0, 0),
+(30, 90, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 12100.00, NULL, '2026-03-12', '2026-03-26', 0, NULL, 12100.00, NULL, '2026-04-12', '2026-04-26', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 10:15:26', '2026-03-12 10:15:26', 0.00, 0.00, 50, 0, 1),
+(31, 2, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 5000.00, 0.00, 'منحة أبناء عاملين', 75.00, 'المدير محمد  خالد', NULL, NULL, 10000.00, NULL, '2026-03-12', '2026-04-26', 0, NULL, 10000.00, NULL, '2026-04-12', '2026-04-26', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 10:46:57', '2026-03-12 10:46:57', 0.00, 0.00, 50, 0, 1),
+(32, 20, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 5000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 10000.00, NULL, '2026-03-12', '2026-03-28', 1, NULL, 10000.00, NULL, '2026-04-12', '2026-04-28', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 12:49:44', '2026-03-12 12:49:44', 0.00, 0.00, 50, 0, 1),
+(33, 76, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15200.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 12100.00, NULL, '2026-03-12', '2026-03-27', 0, NULL, 12100.00, NULL, '2026-04-12', '2026-04-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 13:29:24', '2026-03-12 13:29:24', 0.00, 0.00, 50, 0, 1),
+(34, 91, '2025/2026', 'المستوى الأول', 'SDG', '', 'diploma', NULL, NULL, 500.00, 9000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 4750.00, NULL, '2026-03-13', '2026-03-30', 1, NULL, 2375.00, NULL, '2026-05-12', '2026-05-30', 0, NULL, 2375.00, NULL, '2026-06-12', '2026-06-27', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-12 13:37:32', '2026-03-12 13:42:40', 0.00, 0.00, 50, 0, 1),
+(35, 93, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-15', '2026-03-31', 0, NULL, 17000.00, NULL, '2026-04-15', '2026-04-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-15 15:26:11', '2026-03-15 16:12:30', 0.00, 0.00, 50, 0, 1),
+(36, 94, '2025/2026', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15200.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17000.00, NULL, '2026-03-30', '2026-04-30', 0, NULL, 17000.00, NULL, '2026-05-30', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-30 08:02:26', '2026-03-30 08:02:26', 0.00, 0.00, 50, 0, 1),
+(37, 95, '2026/2027', 'المستوى الأول', 'USD', '', 'bachelor', NULL, NULL, 15000.00, 500.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 7750.00, NULL, '2026-03-31', '2026-04-30', 0, NULL, 7750.00, NULL, '2026-05-01', '2026-06-01', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-03-31 08:07:54', '2026-03-31 08:07:54', 0.00, 0.00, 50, 0, 1),
+(40, 96, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 400.00, 0.00, 'منحة أشقاء', 20.00, 'الوكيل', NULL, NULL, 7700.00, 1, '2026-04-01', '2026-05-01', 0, NULL, 7700.00, 2, '2026-06-01', '2026-07-01', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 07:45:18', '2026-04-01 07:45:18', 0.00, 0.00, 50, 0, 1),
+(41, 97, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 500.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 5166.67, 3, '2026-04-01', '2026-04-30', 0, NULL, 5166.67, 4, '2026-05-01', '2026-05-31', 0, NULL, 5166.66, 5, '2026-06-01', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 07:48:41', '2026-04-01 07:48:41', 0.00, 0.00, 50, 0, 1),
 (42, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 13, 15000.00, 55000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 08:07:57', '2026-04-01 08:07:57', 0.00, 0.00, 50, 0, 0),
-(43, 98, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 55000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17500.00, 6, '2026-04-01', '2026-04-30', 1, '2026-04-04', 26250.00, 7, '2026-05-01', '2026-05-31', 1, '2026-04-04', 26250.00, 8, '2026-06-01', '2026-07-31', 0, NULL, NULL, 9, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 'SYSTEM', '2026-04-01 08:12:09', '2026-04-04 13:12:40', 0.00, 0.00, 50, 0, 0),
+(43, 98, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 55000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 17500.00, 6, '2026-04-01', '2026-04-30', 1, '2026-04-04', 26250.00, 7, '2026-05-01', '2026-05-31', 1, '2026-04-04', 26250.00, 8, '2026-06-01', '2026-07-31', 0, NULL, NULL, 9, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 'SYSTEM', '2026-04-01 08:12:09', '2026-04-04 13:12:40', 0.00, 0.00, 50, 0, 1),
 (44, NULL, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 13, 30000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-01 12:37:41', '2026-04-01 12:40:21', 0.00, 0.00, 50, 0, 0),
-(45, 99, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 55000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 23333.34, NULL, '2026-04-04', '2026-04-30', 0, NULL, 15555.56, NULL, '2026-05-04', '2026-05-31', 0, NULL, 15555.55, NULL, '2026-06-04', '2026-06-30', 0, NULL, 15555.55, NULL, '2026-07-04', '2026-07-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 'SYSTEM', '2026-04-04 13:17:58', '2026-04-04 13:20:22', 0.00, 0.00, 50, 0, 0);
+(45, 99, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 55000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 23333.34, NULL, '2026-04-04', '2026-04-30', 0, NULL, 15555.56, NULL, '2026-05-04', '2026-05-31', 0, NULL, 15555.55, NULL, '2026-06-04', '2026-06-30', 0, NULL, 15555.55, NULL, '2026-07-04', '2026-07-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 'SYSTEM', '2026-04-04 13:17:58', '2026-04-04 13:20:22', 0.00, 0.00, 50, 0, 1),
+(47, 101, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 30000.00, 15040.00, 0.00, 'منحة أشقاء', 20.00, 'الوكيل محمد', NULL, NULL, 15013.34, 10, '2026-04-06', '2026-04-30', 1, NULL, 15013.33, 11, '2026-05-06', '2026-05-31', 0, NULL, 15013.33, 12, '2026-06-06', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-06 11:23:55', '2026-04-06 11:23:55', 0.00, 0.00, 50, 0, 1),
+(48, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 4, 58000.00, 98000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-06 12:09:44', '2026-04-06 12:09:44', 0.00, 0.00, 50, 0, 0),
+(49, NULL, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 4, 55000.00, 65000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-06 12:22:21', '2026-04-06 12:22:21', 0.00, 0.00, 50, 0, 0),
+(50, 103, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 16250.00, 0.00, 'منحة أبناء عاملين', 75.00, 'المدير خالد', NULL, NULL, 35625.00, 13, '2026-04-06', '2026-04-30', 0, NULL, 35625.00, 14, '2026-05-06', '2026-05-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-06 12:23:15', '2026-04-06 12:23:15', 0.00, 0.00, 50, 0, 1),
+(51, NULL, '2026/2027', 'المستوى الثاني', 'SDG', '', 'bachelor', NULL, 4, 55000.00, 155000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-06 13:10:54', '2026-04-06 13:10:54', 0.00, 0.00, 50, 0, 0),
+(52, 12, '2026/2027', 'المستوى الثالث', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 16900.00, 16, '2026-04-08', '2026-04-30', 0, NULL, 16900.00, 17, '2026-05-08', '2026-05-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 10:35:36', '2026-04-08 10:37:08', 0.00, 0.00, 50, 0, 1),
+(53, 104, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 65000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 40000.00, 18, '2026-04-08', '2026-04-30', 0, NULL, 40000.00, 19, '2026-05-08', '2026-05-31', 0, NULL, 40000.00, 22, '2026-06-08', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 10:59:15', '2026-04-08 12:08:04', 0.00, 0.00, 50, 0, 1),
+(54, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 15, 55000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 11:27:26', '2026-04-08 11:27:26', 0.00, 0.00, 50, 0, 0),
+(55, 105, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 23333.34, 20, '2026-04-08', '2026-04-30', 1, '2026-04-08', 23333.33, 21, '2026-05-08', '2026-05-31', 1, '2026-04-08', 23333.33, 23, '2026-06-08', '2026-06-30', 1, '2026-04-08', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 11:27:59', '2026-04-08 12:47:08', 0.00, 0.00, 50, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -1010,46 +1036,67 @@ INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_va
 
 CREATE TABLE IF NOT EXISTS `payment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `university_id` varchar(50) NOT NULL,
-  `academic_year` varchar(20) NOT NULL,
-  `level_name` varchar(60) NOT NULL,
+  `university_id` varchar(50) CHARACTER SET utf8 NOT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
   `installment_number` tinyint(4) NOT NULL,
   `amount_paid` decimal(12,2) NOT NULL,
   `payment_date` datetime NOT NULL,
-  `transaction_id` varchar(100) DEFAULT NULL,
+  `transaction_id` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `status` tinyint(1) NOT NULL DEFAULT '0',
-  `currency` varchar(10) DEFAULT 'SDG',
-  `notes` text,
+  `currency` varchar(10) CHARACTER SET utf8 DEFAULT 'SDG',
+  `notes` text CHARACTER SET utf8,
   `received_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_confirmed` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `idx_university_year` (`university_id`,`academic_year`),
   KEY `idx_installment` (`university_id`,`academic_year`,`installment_number`),
   KEY `idx_status` (`status`),
   KEY `idx_received` (`received_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=18 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=38 ;
 
 --
 -- Dumping data for table `payment`
 --
 
-INSERT INTO `payment` (`id`, `university_id`, `academic_year`, `level_name`, `installment_number`, `amount_paid`, `payment_date`, `transaction_id`, `status`, `currency`, `notes`, `received_at`) VALUES
-(1, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-02 07:34:56', 'TXN-1775115296625', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:34:56'),
-(2, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-02 07:35:59', 'TXN-1775115359353', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:35:59'),
-(3, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-02 10:06:33', 'TXN-1775124393111', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:06:33'),
-(4, '2500004', '2025/2026', 'المستوى الأول', 1, 17000.00, '2026-04-02 10:10:32', 'TXN-1775124632837', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:10:32'),
-(5, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-02 10:17:14', 'TXN-1775125034996', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:17:15'),
-(6, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:21:20', 'SIM-1775301680112', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:20'),
-(7, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-04 11:21:23', 'SIM-1775301683676', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:23'),
-(8, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-04 11:21:27', 'SIM-1775301687091', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:27'),
-(9, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:24:09', 'SIM-1775301849840', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 11:24:09'),
-(10, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-04 12:40:23', 'SIM-1775306423728', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 12:40:23'),
-(11, '2026/00001', '2026/2027', 'المستوى الأول', 2, 26250.00, '2026-04-04 13:12:53', 'SIM-1775308373181', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:12:53'),
-(12, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 13:19:48', 'SIM-1775308788767', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:19:48'),
-(13, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:10:56', 'SIM-1775311856493', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:10:56'),
-(14, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:06', 'SIM-1775311926965', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:06'),
-(15, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:09', 'SIM-1775311929234', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:09'),
-(16, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:45', 'SIM-1775311965942', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:45'),
-(17, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:49', 'SIM-1775311969686', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:49');
+INSERT INTO `payment` (`id`, `university_id`, `academic_year`, `level_name`, `installment_number`, `amount_paid`, `payment_date`, `transaction_id`, `status`, `currency`, `notes`, `received_at`, `is_confirmed`) VALUES
+(1, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-02 07:34:56', 'TXN-1775115296625', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:34:56', 0),
+(2, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-02 07:35:59', 'TXN-1775115359353', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:35:59', 0),
+(3, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-02 10:06:33', 'TXN-1775124393111', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:06:33', 0),
+(4, '2500004', '2025/2026', 'المستوى الأول', 1, 17000.00, '2026-04-02 10:10:32', 'TXN-1775124632837', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:10:32', 0),
+(5, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-02 10:17:14', 'TXN-1775125034996', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:17:15', 0),
+(6, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:21:20', 'SIM-1775301680112', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:20', 0),
+(7, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-04 11:21:23', 'SIM-1775301683676', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:23', 0),
+(8, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-04 11:21:27', 'SIM-1775301687091', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:27', 0),
+(9, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:24:09', 'SIM-1775301849840', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 11:24:09', 0),
+(10, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-04 12:40:23', 'SIM-1775306423728', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 12:40:23', 0),
+(11, '2026/00001', '2026/2027', 'المستوى الأول', 2, 26250.00, '2026-04-04 13:12:53', 'SIM-1775308373181', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:12:53', 0),
+(12, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 13:19:48', 'SIM-1775308788767', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:19:48', 0),
+(13, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:10:56', 'SIM-1775311856493', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:10:56', 0),
+(14, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:06', 'SIM-1775311926965', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:06', 0),
+(15, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:09', 'SIM-1775311929234', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:09', 0),
+(16, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:45', 'SIM-1775311965942', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:45', 0),
+(17, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:49', 'SIM-1775311969686', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:49', 0),
+(18, '240003', '2026/2027', 'المستوى الثاني', 1, 8375.00, '2026-04-08 10:39:13', 'SIM-1775644753640', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 10:39:13', 0),
+(19, '240003', '2026/2027', 'المستوى الثاني', 1, 8375.00, '2026-04-08 10:41:42', 'SIM-1775644902732', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 10:41:42', 0),
+(20, '240003', '2026/2027', 'المستوى الثاني', 2, 8375.00, '2026-04-08 10:42:17', 'SIM-1775644937465', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 10:42:17', 0),
+(21, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 11:44:50', 'SIM-1775648690757', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 11:44:50', 0),
+(22, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 11:45:09', 'SIM-1775648709097', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 11:45:09', 0),
+(23, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 12:21:46', 'SIM-1775650906443', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 12:21:46', 0),
+(24, '258963/26', '2025/2026', 'المستوى الأول', 2, 40000.00, '2026-04-08 12:39:18', 'SIM-1775651958415', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 12:39:18', 0),
+(25, '258963/26', '2025/2026', 'المستوى الأول', 2, 40000.00, '2026-04-08 12:40:07', 'SIM-1775652007308', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 12:40:07', 0),
+(26, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 12:40:11', 'SIM-1775652011753', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 12:40:11', 0),
+(27, '147852/26', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-08 13:22:38', 'SIM-1775654558104', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:22:38', 0),
+(28, '147852/26', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-08 13:23:02', 'SIM-1775654582069', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:23:02', 1),
+(29, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:13', 'SIM-1775654893630', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:28:13', 0),
+(30, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:19', 'SIM-1775654899439', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:28:19', 1),
+(31, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:25', 'SIM-1775654905440', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:28:25', 1),
+(32, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:17', 'SIM-1775656157121', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:17', 1),
+(33, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:21', 'SIM-1775656161511', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:49:21', 1),
+(34, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:24', 'SIM-1775656164725', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:24', 1),
+(35, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:28', 'SIM-1775656168273', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:28', 1),
+(36, '147852/26', '2026/2027', 'المستوى الأول', 3, 23333.33, '2026-04-08 13:49:32', 'SIM-1775656172969', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:32', 0),
+(37, '147852/26', '2026/2027', 'المستوى الأول', 3, 23333.33, '2026-04-08 13:49:37', 'SIM-1775656177034', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:49:37', 1);
 
 -- --------------------------------------------------------
 
@@ -1126,6 +1173,10 @@ INSERT INTO `staff_members` (`id`, `full_name`, `staff_code`, `email`, `phone`, 
 
 CREATE TABLE IF NOT EXISTS `students` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
+  `second_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
+  `third_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
+  `fourth_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `full_name` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `nationality` varchar(100) CHARACTER SET utf8 DEFAULT NULL COMMENT 'الجنسية',
   `gender` enum('male','female') CHARACTER SET utf8 DEFAULT NULL,
@@ -1150,113 +1201,119 @@ CREATE TABLE IF NOT EXISTS `students` (
   KEY `idx_std_univ_name` (`university_id`,`full_name`),
   KEY `idx_std_dept_name` (`department_id`,`full_name`),
   KEY `idx_std_univ_dept` (`university_id`,`department_id`),
-  KEY `idx_students_dept_status` (`department_id`,`academic_status`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=101 ;
+  KEY `idx_students_dept_status` (`department_id`,`academic_status`),
+  KEY `idx_student_id` (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=106 ;
 
 --
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`id`, `full_name`, `nationality`, `gender`, `status`, `university_id`, `phone`, `receipt_number`, `department_id`, `college`, `level`, `academic_year`, `academic_status`, `registration_status`, `notes`, `registrar`, `created_at`) VALUES
-(1, 'أحمد محمد', NULL, 'male', 'active', '240001', '0978901234', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(2, 'سارة علي', NULL, 'female', 'active', '240002', '0945678901', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(3, 'عمر حسن', 'سوداني', 'male', 'active', '240003', '0912345678', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(4, 'مريم عثمان', NULL, 'female', 'active', '240004', '0989012345', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(5, 'خالد يوسف', NULL, 'male', 'active', '240005', '0956789012', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(6, 'هبة أحمد', NULL, 'female', 'active', '240006', '0923456789', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(7, 'محمد عبدالسلام', NULL, 'male', 'active', '240007', '0901122334', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(8, 'آلاء عمر', NULL, 'female', 'active', '240008', '0902233445', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(9, 'ريم خالد', NULL, 'female', 'active', '240009', '0903344556', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(10, 'مصطفى عادل', NULL, 'male', 'active', '240010', '0904455667', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(11, 'نهى حسن', NULL, 'female', 'active', '240011', '0905566778', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(12, 'ضياء أحمد', NULL, 'male', 'active', '240012', '0906677889', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(13, 'رنا يوسف', NULL, 'female', 'active', '240013', '0907788990', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(14, 'إيهاب عثمان', NULL, 'male', 'active', '240014', '0908899001', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(15, 'سلمى محمد', NULL, 'female', 'active', '240015', '0909900112', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(16, 'عبير عبده ادم صالح', NULL, 'female', 'active', '201822000313', '090123456', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-31 13:50:37'),
-(17, 'عبير عبده', NULL, 'female', 'active', '123456789', '09552288', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 06:13:04'),
-(19, 'علي هاشم', NULL, 'male', 'active', '147852369', '0987456321', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 08:08:11'),
-(20, 'منعم احمد', NULL, 'male', 'active', '250003', '0905050545', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-05 12:32:20'),
-(21, 's1', NULL, NULL, 'active', 's0001', '122334', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:18:18'),
-(22, 's2', NULL, NULL, 'active', 's0002', '321232', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:18:44'),
-(23, 's3', NULL, NULL, 'active', 's0003', '32456789', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:19:18'),
-(24, 's4', NULL, NULL, 'active', 's0004', '213456789', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:19:49'),
-(25, 's5', NULL, NULL, 'active', 's0005', '123456', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:20:15'),
-(26, 'أحمد محمد علي', NULL, 'male', 'active', 'MED-250001', '0912345678', 'REC-2501', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(27, 'سارة حسن عمر', NULL, NULL, 'active', 'MED-250002', '0923456789', 'REC-2502', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(28, 'عمر خالد يوسف', NULL, NULL, 'active', 'MED-250003', '0934567890', 'REC-2503', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(29, 'مريم عثمان أحمد', NULL, NULL, 'active', 'MED-250004', '0945678901', 'REC-2504', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(30, 'خالد محمد حسن', NULL, NULL, 'active', 'MED-250005', '0956789012', 'REC-2505', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(31, 'هبة علي عبدالله', NULL, NULL, 'active', 'MED-250006', '0967890123', 'REC-2506', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(32, 'محمد يوسف عمر', NULL, NULL, 'active', 'MED-250007', '0978901234', 'REC-2507', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(33, 'آلاء أحمد خالد', NULL, NULL, 'active', 'MED-250008', '0989012345', 'REC-2508', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(34, 'ريم حسن محمد', NULL, NULL, 'active', 'MED-250009', '0990123456', 'REC-2509', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(35, 'مصطفى عثمان علي', NULL, NULL, 'active', 'MED-250010', '0901234567', 'REC-2510', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(36, 'نهى خالد يوسف', NULL, NULL, 'active', 'MED-250011', '0912345679', 'REC-2511', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(37, 'ضياء محمد حسن', NULL, NULL, 'active', 'MED-250012', '0923456790', 'REC-2512', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(38, 'رنا علي عمر', NULL, NULL, 'active', 'MED-250013', '0934567901', 'REC-2513', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(39, 'إيهاب يوسف أحمد', NULL, NULL, 'active', 'MED-250014', '0945679012', 'REC-2514', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(40, 'سلمى حسن خالد', NULL, NULL, 'active', 'MED-250015', '0956789123', 'REC-2515', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(41, 'عبير محمد عثمان', NULL, NULL, 'active', 'MED-250016', '0967891234', 'REC-2516', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(42, 'علي أحمد حسن', NULL, NULL, 'active', 'MED-250017', '0978901345', 'REC-2517', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(43, 'منعم يوسف محمد', NULL, NULL, 'active', 'MED-250018', '0989013456', 'REC-2518', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(44, 'فاطمة عمر خالد', NULL, NULL, 'active', 'MED-250019', '0990124567', 'REC-2519', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(45, 'حسن عثمان علي', NULL, NULL, 'active', 'MED-250020', '0901235678', 'REC-2520', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(46, 'يوسف محمد حسن', NULL, NULL, 'active', 'MED-250021', '0912346789', 'REC-2521', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(47, 'خالد علي يوسف', NULL, NULL, 'active', 'MED-250022', '0923457890', 'REC-2522', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(48, 'لينا محمود عبدالله', NULL, NULL, 'active', 'MED-250023', '0934568901', 'REC-2523', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(49, 'زينب عمر محمد', NULL, NULL, 'active', 'MED-250024', '0945679012', 'REC-2524', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(50, 'بدر الدين خالد', NULL, NULL, 'active', 'MED-250025', '0956780123', 'REC-2525', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(51, 'نورا حسن يوسف', NULL, NULL, 'active', 'MED-250026', '0967891234', 'REC-2526', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(52, 'أيمن علي عثمان', NULL, NULL, 'active', 'MED-250027', '0978902345', 'REC-2527', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(53, 'سمية محمد أحمد', NULL, NULL, 'active', 'MED-250028', '0989013456', 'REC-2528', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(54, 'طارق يوسف عمر', NULL, NULL, 'active', 'MED-250029', '0990124567', 'REC-2529', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(55, 'رقية حسن خالد', NULL, NULL, 'active', 'MED-250030', '0901235678', 'REC-2530', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(56, 'إبراهيم عثمان علي', NULL, NULL, 'active', 'MED-250031', '0912346789', 'REC-2531', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(57, 'أمل محمد حسن', NULL, NULL, 'active', 'MED-250032', '0923457890', 'REC-2532', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(58, 'جمال خالد يوسف', NULL, NULL, 'active', 'MED-250033', '0934568901', 'REC-2533', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(59, 'لطيفة علي عمر', NULL, NULL, 'active', 'MED-250034', '0945679012', 'REC-2534', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(60, 'صلاح أحمد محمد', NULL, NULL, 'active', 'MED-250035', '0956780123', 'REC-2535', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(61, 'هند حسن عثمان', NULL, NULL, 'active', 'MED-250036', '0967891234', 'REC-2536', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(62, 'عبدالله يوسف خالد', NULL, NULL, 'active', 'MED-250037', '0978902345', 'REC-2537', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(63, 'مريم علي أحمد', NULL, NULL, 'active', 'MED-250038', '0989013456', 'REC-2538', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(64, 'فهد محمد عمر', NULL, NULL, 'active', 'MED-250039', '0990124567', 'REC-2539', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(65, 'سجود حسن يوسف', NULL, NULL, 'active', 'MED-250040', '0901235678', 'REC-2540', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(66, 'بلال خالد عثمان', NULL, NULL, 'active', 'MED-250041', '0912346789', 'REC-2541', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(67, 'نوال أحمد محمد', NULL, NULL, 'active', 'MED-250042', '0923457890', 'REC-2542', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(68, 'عادل علي حسن', NULL, NULL, 'active', 'MED-250043', '0934568901', 'REC-2543', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(69, 'شيماء يوسف عمر', NULL, NULL, 'active', 'MED-250044', '0945679012', 'REC-2544', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(70, 'مازن محمد خالد', NULL, NULL, 'active', 'MED-250045', '0956780123', 'REC-2545', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(71, 'روان حسن أحمد', NULL, NULL, 'active', 'MED-250046', '0967891234', 'REC-2546', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(72, 'عمار عثمان يوسف', NULL, NULL, 'active', 'MED-250047', '0978902345', 'REC-2547', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(73, 'لمعان علي محمد', NULL, NULL, 'active', 'MED-250048', '0989013456', 'REC-2548', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(74, 'بسمة خالد عمر', NULL, NULL, 'active', 'MED-250049', '0990124567', 'REC-2549', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(75, 'زياد أحمد حسن', NULL, NULL, 'active', 'MED-250050', '0901235679', 'REC-2550', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
-(76, 'فاطمه احمد', NULL, NULL, 'active', '260003', '123456789', NULL, 12, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-09 07:30:08'),
-(77, 'عبدالرحمن', NULL, NULL, 'active', '260001', '0123456789', NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-11 06:43:34'),
-(78, 'وليد', NULL, NULL, 'active', '260004', '3346658', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:12:01'),
-(79, 'عواطف عاطف', NULL, NULL, 'active', '250007', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:14:58'),
-(80, 'ابتهال عاطف', NULL, NULL, 'active', '250008', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:16:48'),
-(81, 'هاله', NULL, NULL, 'active', '260002', '952352', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:17:57'),
-(82, 'عاليه', NULL, NULL, 'active', '357000', '542864', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:21:47'),
-(83, 'احمد محمد', NULL, NULL, 'active', '2500001', '09052487', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-02 14:06:34'),
-(84, 'خالد احمد', NULL, NULL, 'active', '2500002', '0904580950', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 08:44:27'),
-(85, 'ابراهيم محمد', NULL, NULL, 'active', '2500003', '095863987', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 08:49:26'),
-(86, 'عبدالرحمن محمد', NULL, NULL, 'active', '2500004', '0114879632', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 09:05:02'),
-(87, 'محسن خالد', NULL, NULL, 'active', '2500005', '0118896352', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 09:08:57'),
-(88, 'منذر محمد', NULL, NULL, 'active', '2500006', '0115639874', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 11:46:11'),
-(89, 'مازن محمد', NULL, NULL, 'active', '2500007', '0114806967', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 13:14:43'),
-(90, 'هاشم محمد', NULL, NULL, 'active', '2500010', '0902587412', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-12 10:12:48'),
-(91, 'ساره خالد', NULL, NULL, 'active', '260012', '0908542158', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-12 13:36:27'),
-(92, 'ابراهيم يوسف', 'سوداني', 'male', '', '2025/123456', '098574123', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15 14:32:16'),
-(93, 'ايه محمد', 'سوداني', 'female', 'active', '2025/23456', '0902580910', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15 14:59:53'),
-(94, 'عبدالرازق محمد', 'سوداني', 'male', '', '2500015', '0905800910', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-30 07:56:17'),
-(95, 'يوسف خالد', 'سوداني', 'male', '', '2600001', '09035200001', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-31 08:07:03'),
-(96, 'برعي ابراهيم', 'مصري', 'male', '', '2600002', '0900080000', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:19:45'),
-(97, 'مهند بكري', 'مصري', 'male', '', '2600003', '0114800089', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:47:52'),
-(98, 'أمنة خالد', 'سوداني', 'female', '', '2026/00001', '0905060850', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 08:10:12'),
-(99, 'خنساء احمد', 'سوداني', 'female', '', '2026/260005', '0900055200', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-04 13:16:44'),
-(100, 'خالد محمد خالد', 'سوداني', 'male', '', '2025/250001', '0900000010', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-05 07:58:48');
+INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth_name`, `full_name`, `nationality`, `gender`, `status`, `university_id`, `phone`, `receipt_number`, `department_id`, `college`, `level`, `academic_year`, `academic_status`, `registration_status`, `notes`, `registrar`, `created_at`) VALUES
+(1, NULL, NULL, NULL, NULL, 'أحمد محمد', NULL, 'male', 'active', '240001', '0978901234', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(2, NULL, NULL, NULL, NULL, 'سارة علي', NULL, 'female', 'active', '240002', '0945678901', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(3, NULL, NULL, NULL, NULL, 'عمر حسن', 'سوداني', 'male', 'active', '240003', '0912345678', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(4, NULL, NULL, NULL, NULL, 'مريم عثمان', NULL, 'female', 'active', '240004', '0989012345', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(5, NULL, NULL, NULL, NULL, 'خالد يوسف', NULL, 'male', 'active', '240005', '0956789012', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(6, NULL, NULL, NULL, NULL, 'هبة أحمد', NULL, 'female', 'active', '240006', '0923456789', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(7, NULL, NULL, NULL, NULL, 'محمد عبدالسلام', NULL, 'male', 'active', '240007', '0901122334', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(8, NULL, NULL, NULL, NULL, 'آلاء عمر', NULL, 'female', 'active', '240008', '0902233445', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(9, NULL, NULL, NULL, NULL, 'ريم خالد', NULL, 'female', 'active', '240009', '0903344556', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(10, NULL, NULL, NULL, NULL, 'مصطفى عادل', NULL, 'male', 'active', '240010', '0904455667', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(11, NULL, NULL, NULL, NULL, 'نهى حسن', NULL, 'female', 'active', '240011', '0905566778', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(12, NULL, NULL, NULL, NULL, 'ضياء أحمد', NULL, 'male', 'active', '240012', '0906677889', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(13, NULL, NULL, NULL, NULL, 'رنا يوسف', NULL, 'female', 'active', '240013', '0907788990', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(14, NULL, NULL, NULL, NULL, 'إيهاب عثمان', NULL, 'male', 'active', '240014', '0908899001', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(15, NULL, NULL, NULL, NULL, 'سلمى محمد', NULL, 'female', 'active', '240015', '0909900112', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(16, NULL, NULL, NULL, NULL, 'عبير عبده ادم صالح', NULL, 'female', 'active', '201822000313', '090123456', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-31 13:50:37'),
+(17, NULL, NULL, NULL, NULL, 'عبير عبده', NULL, 'female', 'active', '123456789', '09552288', NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 06:13:04'),
+(19, NULL, NULL, NULL, NULL, 'علي هاشم', NULL, 'male', 'active', '147852369', '0987456321', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 08:08:11'),
+(20, NULL, NULL, NULL, NULL, 'منعم احمد', NULL, 'male', 'active', '250003', '0905050545', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-05 12:32:20'),
+(21, NULL, NULL, NULL, NULL, 's1', 'سوري', NULL, 'active', 's0001', '122334', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:18:18'),
+(22, NULL, NULL, NULL, NULL, 's2', NULL, NULL, 'active', 's0002', '321232', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:18:44'),
+(23, NULL, NULL, NULL, NULL, 's3', NULL, NULL, 'active', 's0003', '32456789', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:19:18'),
+(24, NULL, NULL, NULL, NULL, 's4', NULL, NULL, 'active', 's0004', '213456789', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:19:49'),
+(25, NULL, NULL, NULL, NULL, 's5', NULL, NULL, 'active', 's0005', '123456', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-07 15:20:15'),
+(26, NULL, NULL, NULL, NULL, 'أحمد محمد علي', NULL, 'male', 'active', 'MED-250001', '0912345678', 'REC-2501', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(27, NULL, NULL, NULL, NULL, 'سارة حسن عمر', NULL, NULL, 'active', 'MED-250002', '0923456789', 'REC-2502', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(28, NULL, NULL, NULL, NULL, 'عمر خالد يوسف', NULL, NULL, 'active', 'MED-250003', '0934567890', 'REC-2503', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(29, NULL, NULL, NULL, NULL, 'مريم عثمان أحمد', NULL, NULL, 'active', 'MED-250004', '0945678901', 'REC-2504', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(30, NULL, NULL, NULL, NULL, 'خالد محمد حسن', NULL, NULL, 'active', 'MED-250005', '0956789012', 'REC-2505', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(31, NULL, NULL, NULL, NULL, 'هبة علي عبدالله', NULL, NULL, 'active', 'MED-250006', '0967890123', 'REC-2506', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(32, NULL, NULL, NULL, NULL, 'محمد يوسف عمر', NULL, NULL, 'active', 'MED-250007', '0978901234', 'REC-2507', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(33, NULL, NULL, NULL, NULL, 'آلاء أحمد خالد', NULL, NULL, 'active', 'MED-250008', '0989012345', 'REC-2508', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(34, NULL, NULL, NULL, NULL, 'ريم حسن محمد', NULL, NULL, 'active', 'MED-250009', '0990123456', 'REC-2509', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(35, NULL, NULL, NULL, NULL, 'مصطفى عثمان علي', NULL, NULL, 'active', 'MED-250010', '0901234567', 'REC-2510', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(36, NULL, NULL, NULL, NULL, 'نهى خالد يوسف', NULL, NULL, 'active', 'MED-250011', '0912345679', 'REC-2511', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(37, NULL, NULL, NULL, NULL, 'ضياء محمد حسن', NULL, NULL, 'active', 'MED-250012', '0923456790', 'REC-2512', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(38, NULL, NULL, NULL, NULL, 'رنا علي عمر', NULL, NULL, 'active', 'MED-250013', '0934567901', 'REC-2513', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(39, NULL, NULL, NULL, NULL, 'إيهاب يوسف أحمد', NULL, NULL, 'active', 'MED-250014', '0945679012', 'REC-2514', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(40, NULL, NULL, NULL, NULL, 'سلمى حسن خالد', NULL, NULL, 'active', 'MED-250015', '0956789123', 'REC-2515', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(41, NULL, NULL, NULL, NULL, 'عبير محمد عثمان', NULL, NULL, 'active', 'MED-250016', '0967891234', 'REC-2516', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(42, NULL, NULL, NULL, NULL, 'علي أحمد حسن', NULL, NULL, 'active', 'MED-250017', '0978901345', 'REC-2517', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(43, NULL, NULL, NULL, NULL, 'منعم يوسف محمد', NULL, NULL, 'active', 'MED-250018', '0989013456', 'REC-2518', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(44, NULL, NULL, NULL, NULL, 'فاطمة عمر خالد', NULL, NULL, 'active', 'MED-250019', '0990124567', 'REC-2519', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(45, NULL, NULL, NULL, NULL, 'حسن عثمان علي', NULL, NULL, 'active', 'MED-250020', '0901235678', 'REC-2520', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(46, NULL, NULL, NULL, NULL, 'يوسف محمد حسن', NULL, NULL, 'active', 'MED-250021', '0912346789', 'REC-2521', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(47, NULL, NULL, NULL, NULL, 'خالد علي يوسف', NULL, NULL, 'active', 'MED-250022', '0923457890', 'REC-2522', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(48, NULL, NULL, NULL, NULL, 'لينا محمود عبدالله', NULL, NULL, 'active', 'MED-250023', '0934568901', 'REC-2523', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(49, NULL, NULL, NULL, NULL, 'زينب عمر محمد', NULL, NULL, 'active', 'MED-250024', '0945679012', 'REC-2524', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(50, NULL, NULL, NULL, NULL, 'بدر الدين خالد', NULL, NULL, 'active', 'MED-250025', '0956780123', 'REC-2525', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(51, NULL, NULL, NULL, NULL, 'نورا حسن يوسف', NULL, NULL, 'active', 'MED-250026', '0967891234', 'REC-2526', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(52, NULL, NULL, NULL, NULL, 'أيمن علي عثمان', NULL, NULL, 'active', 'MED-250027', '0978902345', 'REC-2527', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(53, NULL, NULL, NULL, NULL, 'سمية محمد أحمد', NULL, NULL, 'active', 'MED-250028', '0989013456', 'REC-2528', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(54, NULL, NULL, NULL, NULL, 'طارق يوسف عمر', NULL, NULL, 'active', 'MED-250029', '0990124567', 'REC-2529', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(55, NULL, NULL, NULL, NULL, 'رقية حسن خالد', NULL, NULL, 'active', 'MED-250030', '0901235678', 'REC-2530', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(56, NULL, NULL, NULL, NULL, 'إبراهيم عثمان علي', NULL, NULL, 'active', 'MED-250031', '0912346789', 'REC-2531', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(57, NULL, NULL, NULL, NULL, 'أمل محمد حسن', NULL, NULL, 'active', 'MED-250032', '0923457890', 'REC-2532', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(58, NULL, NULL, NULL, NULL, 'جمال خالد يوسف', NULL, NULL, 'active', 'MED-250033', '0934568901', 'REC-2533', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(59, NULL, NULL, NULL, NULL, 'لطيفة علي عمر', NULL, NULL, 'active', 'MED-250034', '0945679012', 'REC-2534', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(60, NULL, NULL, NULL, NULL, 'صلاح أحمد محمد', NULL, NULL, 'active', 'MED-250035', '0956780123', 'REC-2535', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(61, NULL, NULL, NULL, NULL, 'هند حسن عثمان', NULL, NULL, 'active', 'MED-250036', '0967891234', 'REC-2536', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(62, NULL, NULL, NULL, NULL, 'عبدالله يوسف خالد', NULL, NULL, 'active', 'MED-250037', '0978902345', 'REC-2537', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(63, NULL, NULL, NULL, NULL, 'مريم علي أحمد', NULL, NULL, 'active', 'MED-250038', '0989013456', 'REC-2538', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(64, NULL, NULL, NULL, NULL, 'فهد محمد عمر', NULL, NULL, 'active', 'MED-250039', '0990124567', 'REC-2539', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(65, NULL, NULL, NULL, NULL, 'سجود حسن يوسف', NULL, NULL, 'active', 'MED-250040', '0901235678', 'REC-2540', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(66, NULL, NULL, NULL, NULL, 'بلال خالد عثمان', NULL, NULL, 'active', 'MED-250041', '0912346789', 'REC-2541', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(67, NULL, NULL, NULL, NULL, 'نوال أحمد محمد', NULL, NULL, 'active', 'MED-250042', '0923457890', 'REC-2542', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(68, NULL, NULL, NULL, NULL, 'عادل علي حسن', NULL, NULL, 'active', 'MED-250043', '0934568901', 'REC-2543', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(69, NULL, NULL, NULL, NULL, 'شيماء يوسف عمر', NULL, NULL, 'active', 'MED-250044', '0945679012', 'REC-2544', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(70, NULL, NULL, NULL, NULL, 'مازن محمد خالد', NULL, NULL, 'active', 'MED-250045', '0956780123', 'REC-2545', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(71, NULL, NULL, NULL, NULL, 'روان حسن أحمد', NULL, NULL, 'active', 'MED-250046', '0967891234', 'REC-2546', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(72, NULL, NULL, NULL, NULL, 'عمار عثمان يوسف', NULL, NULL, 'active', 'MED-250047', '0978902345', 'REC-2547', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(73, NULL, NULL, NULL, NULL, 'لمعان علي محمد', NULL, NULL, 'active', 'MED-250048', '0989013456', 'REC-2548', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(74, NULL, NULL, NULL, NULL, 'بسمة خالد عمر', NULL, NULL, 'active', 'MED-250049', '0990124567', 'REC-2549', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(75, NULL, NULL, NULL, NULL, 'زياد أحمد حسن', NULL, NULL, 'active', 'MED-250050', '0901235679', 'REC-2550', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-08 11:25:30'),
+(76, NULL, NULL, NULL, NULL, 'فاطمه احمد', NULL, NULL, 'active', '260003', '123456789', NULL, 12, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-09 07:30:08'),
+(77, NULL, NULL, NULL, NULL, 'عبدالرحمن', NULL, NULL, 'active', '260001', '0123456789', NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-11 06:43:34'),
+(78, NULL, NULL, NULL, NULL, 'وليد', NULL, NULL, 'active', '260004', '3346658', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:12:01'),
+(79, NULL, NULL, NULL, NULL, 'عواطف عاطف', NULL, NULL, 'active', '250007', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:14:58'),
+(80, NULL, NULL, NULL, NULL, 'ابتهال عاطف', NULL, NULL, 'active', '250008', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:16:48'),
+(81, NULL, NULL, NULL, NULL, 'هاله', NULL, NULL, 'active', '260002', '952352', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:17:57'),
+(82, NULL, NULL, NULL, NULL, 'عاليه', NULL, NULL, 'active', '357000', '542864', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:21:47'),
+(83, NULL, NULL, NULL, NULL, 'احمد محمد', NULL, NULL, 'active', '2500001', '09052487', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-02 14:06:34'),
+(84, NULL, NULL, NULL, NULL, 'خالد احمد', NULL, NULL, 'active', '2500002', '0904580950', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 08:44:27'),
+(85, NULL, NULL, NULL, NULL, 'ابراهيم محمد', NULL, NULL, 'active', '2500003', '095863987', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 08:49:26'),
+(86, NULL, NULL, NULL, NULL, 'عبدالرحمن محمد', NULL, NULL, 'active', '2500004', '0114879632', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 09:05:02'),
+(87, NULL, NULL, NULL, NULL, 'محسن خالد', NULL, NULL, 'active', '2500005', '0118896352', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 09:08:57'),
+(88, NULL, NULL, NULL, NULL, 'منذر محمد', NULL, NULL, 'active', '2500006', '0115639874', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 11:46:11'),
+(89, NULL, NULL, NULL, NULL, 'مازن محمد', NULL, NULL, 'active', '2500007', '0114806967', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 13:14:43'),
+(90, NULL, NULL, NULL, NULL, 'هاشم محمد', NULL, NULL, 'active', '2500010', '0902587412', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-12 10:12:48'),
+(91, NULL, NULL, NULL, NULL, 'ساره خالد', NULL, NULL, 'active', '260012', '0908542158', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-12 13:36:27'),
+(92, NULL, NULL, NULL, NULL, 'ابراهيم يوسف', 'سوداني', 'male', '', '2025/123456', '098574123', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15 14:32:16'),
+(93, NULL, NULL, NULL, NULL, 'ايه محمد', 'سوداني', 'female', 'active', '2025/23456', '0902580910', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15 14:59:53'),
+(94, NULL, NULL, NULL, NULL, 'عبدالرازق محمد', 'سوداني', 'male', '', '2500015', '0905800910', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-30 07:56:17'),
+(95, NULL, NULL, NULL, NULL, 'يوسف خالد', 'سوداني', 'male', '', '2600001', '09035200001', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-31 08:07:03'),
+(96, NULL, NULL, NULL, NULL, 'برعي ابراهيم', 'مصري', 'male', '', '2600002', '0900080000', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:19:45'),
+(97, NULL, NULL, NULL, NULL, 'مهند بكري', 'مصري', 'male', '', '2600003', '0114800089', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 07:47:52'),
+(98, NULL, NULL, NULL, NULL, 'أمنة خالد', 'سوداني', 'female', '', '2026/00001', '0905060850', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 08:10:12'),
+(99, NULL, NULL, NULL, NULL, 'خنساء احمد', 'سوداني', 'female', '', '2026/260005', '0900055200', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-04 13:16:44'),
+(100, NULL, NULL, NULL, NULL, 'خالد محمد خالد', 'سوداني', 'male', '', '2025/250001', '0900000010', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-05 07:58:48'),
+(101, NULL, NULL, NULL, NULL, 'منال محمد علي احمد', 'سوداني', 'female', '', '319011/26', '092508417', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-05 12:01:57'),
+(102, 'محمد', 'خالد', 'حسن', 'ابراهيم', 'محمد خالد حسن ابراهيم', 'سوداني', 'male', '', '3258877/26', '0945213699', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-06 08:35:55'),
+(103, 'حامد', 'محمد', 'خالد', 'حسن', 'حامد محمد خالد حسن', 'يمني', 'male', '', '55587/26', '0987456321', NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-06 08:54:53'),
+(104, 'عابده', 'خالد', 'حسن', 'محمداحمد', 'عابده خالد حسن محمداحمد', NULL, NULL, '', '258963/26', '0125874963', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-07 07:26:47'),
+(105, 'هالة', 'محمدعلي', 'خالد', 'حسن', 'هالة محمدعلي خالد حسن', 'سوداني', 'female', '', '147852/26', '0114785236', NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-08 11:26:05');
 
 -- --------------------------------------------------------
 
@@ -1267,20 +1324,20 @@ INSERT INTO `students` (`id`, `full_name`, `nationality`, `gender`, `status`, `u
 CREATE TABLE IF NOT EXISTS `student_registrations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL,
-  `academic_year` varchar(20) NOT NULL,
-  `level_name` varchar(100) NOT NULL,
-  `term_name` varchar(50) DEFAULT NULL,
-  `academic_status` varchar(50) NOT NULL DEFAULT 'منتظم',
-  `registration_status` varchar(50) NOT NULL DEFAULT 'مسجّل',
+  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
+  `level_name` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `term_name` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `academic_status` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT 'منتظم',
+  `registration_status` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT 'NUll',
   `receipt_number` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `notes` text CHARACTER SET utf8,
-  `repeated_courses` text,
+  `repeated_courses` text CHARACTER SET utf8,
   `registrar` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `result_status` tinyint(1) DEFAULT NULL COMMENT '1 = ناجح, 0 = راسب',
-  `program_type` enum('diploma','bachelor','postgraduate') NOT NULL DEFAULT 'bachelor',
-  `postgraduate_data` longtext,
-  `postgraduate_program` varchar(255) DEFAULT NULL,
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
+  `postgraduate_data` longtext CHARACTER SET utf8,
+  `postgraduate_program` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `repeat_count` int(11) DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `fk_reg_student` (`student_id`),
@@ -1305,7 +1362,7 @@ CREATE TABLE IF NOT EXISTS `student_registrations` (
   KEY `idx_reg_std_yr_lvl` (`student_id`,`academic_year`,`level_name`),
   KEY `idx_reg_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
   KEY `idx_registrations_student_year_level_term` (`student_id`,`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=281 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=291 ;
 
 --
 -- Dumping data for table `student_registrations`
@@ -1530,7 +1587,16 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (277, 97, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 07:47:52', NULL, 'bachelor', NULL, NULL, 0),
 (278, 98, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 08:10:12', NULL, 'bachelor', NULL, NULL, 0),
 (279, 99, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-04 13:16:44', NULL, 'bachelor', NULL, NULL, 0),
-(280, 100, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'xxyy', '2026-04-05 07:58:48', NULL, 'postgraduate', '{"prev_degree":"بكالوريوس","prev_university":"الاهليه","prev_grad_year":"2024","study_type":"بالبحث"}', 'ماجستير ادارة الاعمال', 0);
+(280, 100, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'xxyy', '2026-04-05 07:58:48', NULL, 'postgraduate', '{"prev_degree":"بكالوريوس","prev_university":"الاهليه","prev_grad_year":"2024","study_type":"بالبحث"}', 'ماجستير ادارة الاعمال', 0),
+(281, 101, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'mohmmed', '2026-04-05 12:01:57', NULL, 'bachelor', NULL, NULL, 0),
+(282, 102, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 08:35:55', NULL, 'bachelor', NULL, NULL, 0),
+(283, 103, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 08:54:53', NULL, 'bachelor', NULL, NULL, 0),
+(284, 101, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 10:22:25', NULL, 'bachelor', NULL, NULL, 0),
+(285, 103, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 13:09:37', NULL, 'bachelor', NULL, NULL, 0),
+(286, 103, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 13:10:20', NULL, 'bachelor', NULL, NULL, 0),
+(288, 104, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-07 07:38:24', NULL, 'bachelor', NULL, NULL, 0),
+(289, 101, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-07 13:13:18', NULL, 'bachelor', NULL, NULL, 0),
+(290, 105, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-08 11:26:05', NULL, 'bachelor', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1787,6 +1853,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` varchar(255) NOT NULL,
   `full_name` varchar(150) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
   `role` varchar(50) DEFAULT 'user',
   `is_active` tinyint(1) DEFAULT '1',
   `allowed_pages` text,
@@ -1799,24 +1866,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   KEY `idx_users_username` (`username`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=17 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20 ;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `role`, `is_active`, `allowed_pages`, `allowed_program_types`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
-(3, 'ahdi', '$2b$10$yX4rDI01wHzOyviHBF13MeQssEMxZcLtkIM/pr/CSPg4CXwvKL9gO', 'ahdi mohamed', '', 'registrar', 1, '["الشهادات","القبول والتسجيل"]', '["bachelor", "diploma", "postgraduate"]', '[3,6]', '2026-01-15 10:53:16', '0000-00-00 00:00:00', NULL, '{}'),
-(4, 'ahmed', '$2b$10$jkTtj5fJ0tTHPnCBAJeSCu8V4fsczSPPxVGiO6kx79650aWS6gfLG', 'ahmed adel', '', 'instructor', 1, '["إعدادات النظام الأكاديمي","إدخال الدرجات","حساب النتائج","قوائم الطلاب"]', '["bachelor", "diploma", "postgraduate"]', '[2]', '2026-01-15 10:53:52', '0000-00-00 00:00:00', NULL, '{}'),
-(5, 'منعم', '$2b$10$CY7u8awvnU30oYFzPPAHse/HxYXEEodE3N8swvztD7MIh73vN0mo.', '', '', 'user', 1, '["القبول والتسجيل","المكتبة"]', '["diploma"]', '[1,4]', '2026-02-05 13:25:11', '0000-00-00 00:00:00', NULL, '{"promotion":false,"single":true,"fees":true}'),
-(7, 'عبدالله ', '$2b$10$99k8e/EDi.g9CtxWoza10umQk60RXDMNi5viCG/gQqkhvdvgPyiHi', NULL, NULL, 'user', 1, '["المكتبة","القبول والتسجيل","إعدادات النظام الأكاديمي"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-02 09:11:29', '0000-00-00 00:00:00', NULL, '{}'),
-(9, 'kian', '$2b$10$Bl660NaJXSv5FbVHQ8Lv4eOtVj4A0TG33Ec2wS23glIXU2E0WgZRi', '', '', 'admin', 1, '[]', '["bachelor", "diploma", "postgraduate"]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
-(10, 'abeer', '$2b$10$M59U4RLntDpsC/AQM/oqdeTPwgg8O1L1B7Po.t317DujKUz8Hymo2', '', '', 'user', 1, '["القبول والتسجيل","إدخال الدرجات"]', '["bachelor", "diploma", "postgraduate"]', '[2,1]', '2026-03-04 08:28:11', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
-(11, 'mohmed', '$2b$10$5bKj.QMKtP6JpXQczCvAT.ViyJhq8UxchrCpAoxDGYT63GwHdbf7G', '', '', 'registrar', 1, '["القبول والتسجيل"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-04 08:33:15', '0000-00-00 00:00:00', NULL, '{"single":false,"fees":false,"promotion":true,"failed-courses":true}'),
-(12, 'علي', '$2b$10$zqAaycPtPxY5.OY08MUckO9k4aheksI53XsvK9FvXqETljf8pauwK', '', '', 'admin', 1, '[]', '["bachelor", "diploma", "postgraduate"]', '[]', '2026-03-05 10:56:00', '0000-00-00 00:00:00', NULL, '{}'),
-(13, 'سهى', '$2b$10$LgXoJoulNBhFypfVyGq6e./4zYu74YTO6N8FZxwSqhd8TMOo0WSb.', '', '', 'user', 1, '["القبول والتسجيل"]', '["bachelor"]', '[3]', '2026-03-08 12:07:02', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true}'),
-(15, 'ابراهيم محمد ', '$2b$10$2uZcFFEJFXhdP.xRUE.DreQCAskkl9slcZzr4S1esJwJ23S6Ov6o.', NULL, NULL, 'user', 1, '["المكتبة"]', '["bachelor", "diploma", "postgraduate"]', '[3]', '2026-03-08 12:15:35', '0000-00-00 00:00:00', NULL, '{}'),
-(16, 'xxyy', '$2b$10$D7f68vNCFsXlOmfDj.4O2uroazCtZ0NjwktExqjH1DZOQVeLXAQ3u', '', '', 'user', 1, '["القبول والتسجيل","إعدادات النظام الأكاديمي","إدخال الدرجات","حساب النتائج","قوائم الطلاب","الجداول الدراسية","الشهادات"]', '["postgraduate"]', '[3]', '2026-04-05 07:22:45', '0000-00-00 00:00:00', NULL, '{"promotion":true,"single":true,"failed-courses":true,"fees":true}');
+INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `department`, `role`, `is_active`, `allowed_pages`, `allowed_program_types`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
+(9, 'kian', '$2b$10$i5t0EynzIA5dqbyDCabISe0qh4CNQi6yWQsxUzrItLwjFri/GQ/wq', NULL, NULL, NULL, 'admin', 1, '[]', '[]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
+(18, 'mohmmed', '$2b$10$MfHtzSGDW858s71GNGRhnOTW3nRxZhJjIKIr0wj58mo.Bd0e5nGCe', NULL, NULL, 'شؤون الطلاب', 'user', 1, '["القبول والتسجيل"]', '["bachelor","diploma","postgraduate"]', '[3,6,7,5,2,4,1]', '2026-04-05 10:13:13', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true,"promotion":true,"failed-courses":true}');
 
 --
 -- Constraints for dumped tables

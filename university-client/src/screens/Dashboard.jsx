@@ -252,7 +252,7 @@ const handleLogout = () => {
             lineHeight: "1.6"
           }}>
             جامعة بورتسودان الأهلية - النظام الأكاديمي<br />
-            كل الحقوق محفوظة © kian 2024
+            كل الحقوق محفوظة © kian24
           </div>
           {toast && (
             <div className={"toast " + (toast.type === "error" ? "toast-error" : "toast-success")}>

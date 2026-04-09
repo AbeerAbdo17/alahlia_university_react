@@ -57,60 +57,60 @@ function buildFileUrl(req, filename) {
   return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 }
 
-// async function syncPendingFees() {
-//     try {
-//         // جلب السجلات غير المزامنة
-//         const [pending] = await dbp.query("SELECT * FROM fees WHERE is_synced = 0 LIMIT 50");
+async function syncPendingFees() {
+    try {
+        // جلب السجلات غير المزامنة
+        const [pending] = await dbp.query("SELECT * FROM fees WHERE is_synced = 0 LIMIT 50");
 
-//         for (const fee of pending) {
-//             // 1. جلب بيانات الطالب الأساسية
-//             const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [fee.student_id]);
-//             if (stu.length === 0) continue;
+        for (const fee of pending) {
+            // 1. جلب بيانات الطالب الأساسية
+            const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [fee.student_id]);
+            if (stu.length === 0) continue;
 
-//             // 2. تجهيز الأقساط من السجل
-//             const installments = [];
-//             for (let i = 1; i <= 6; i++) {
-//                 if (fee[`installment_${i}`] > 0) {
-//                     installments.push({
-//                         installment_number: i,
-//                         amount: fee[`installment_${i}`],
-//                         date: fee[`installment_${i}_start`],
-//                         dateEnd: fee[`installment_${i}_end`]
-//                     });
-//                 }
-//             }
+            // 2. تجهيز الأقساط من السجل
+            const installments = [];
+            for (let i = 1; i <= 6; i++) {
+                if (fee[`installment_${i}`] > 0) {
+                    installments.push({
+                        installment_number: i,
+                        amount: fee[`installment_${i}`],
+                        date: fee[`installment_${i}_start`],
+                        dateEnd: fee[`installment_${i}_end`]
+                    });
+                }
+            }
 
-//             // 3. المحاولة مرة أخرى
-//             try {
-//                 const response = await fetch("http://127.0.0.1:30000/api/receive-fees", {
-//                     method: "POST",
-//                     headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
-//                     body: JSON.stringify({
-//                         university_id: stu[0].university_id,
-//                         full_name: stu[0].full_name,
-//                         academic_year: fee.academic_year,
-//                         level_name: fee.level_name,
-//                         currency: fee.currency,
-//                         installments
-//                     })
-//                 });
+            // 3. المحاولة مرة أخرى
+            try {
+                const response = await fetch("http://127.0.0.1:30000//studentPayables", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
+                    body: JSON.stringify({
+                        university_id: stu[0].university_id,
+                        full_name: stu[0].full_name,
+                        academic_year: fee.academic_year,
+                        level_name: fee.level_name,
+                        currency: fee.currency,
+                        installments
+                    })
+                });
 
-//                 const resData = await response.json();
-//                 if (resData.success) {
-//                     await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [fee.id]);
-//                     console.log(`✅ تمت مزامنة السجل رقم ${fee.id} بنجاح.`);
-//                 }
-//             } catch (err) {
-//                 console.error(`❌ فشل محاولة مزامنة السجل ${fee.id} مرة أخرى.`);
-//             }
-//         }
-//     } catch (err) {
-//         console.error("Cron Job Error:", err);
-//     }
-// }
+                const resData = await response.json();
+                if (resData.success) {
+                    await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [fee.id]);
+                    console.log(`تمت مزامنة السجل رقم ${fee.id} بنجاح.`);
+                }
+            } catch (err) {
+                console.error(`فشل محاولة مزامنة السجل ${fee.id} مرة أخرى.`);
+            }
+        }
+    } catch (err) {
+        console.error("Cron Job Error:", err);
+    }
+}
 
 // تشغيل الدالة كل 10 دقائق 
-// setInterval(syncPendingFees, 10 * 60 * 1000);
+setInterval(syncPendingFees, 10 * 60 * 1000);
 
 function termOrder(t) {
   const x = (t || "").toString().trim();
@@ -468,6 +468,18 @@ app.delete('/api/books/:id', (req, res) => {
 
     res.json({ message: "Book deleted successfully" });
   });
+});
+
+app.get('/api/students/nationalities', async (req, res) => {
+    try {
+        const [rows] = await dbp.execute(
+            `SELECT DISTINCT nationality FROM students WHERE nationality IS NOT NULL AND nationality != '' ORDER BY nationality ASC`
+        );
+        const list = rows.map(r => r.nationality);
+        res.json(list);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // البحث عن طالب بالرقم الجامعي
@@ -894,18 +906,29 @@ app.get("/stats", (req, res) => {
 app.put("/api/students/:id", async (req, res) => {
   try {
     const studentId = req.params.id;
-    const { full_name, university_id, phone, nationality, gender, status, department_id } = req.body;
+    const { 
+      first_name, 
+      second_name, 
+      third_name, 
+      fourth_name, 
+      full_name, 
+      university_id, 
+      phone, 
+      nationality, 
+      gender, 
+      status, 
+      department_id 
+    } = req.body;
 
-    const name = (full_name || "").trim();
-    if (!name) {
-      return res.status(400).json({ message: "الاسم الرباعي مطلوب" });
+    if (!first_name || !second_name || !third_name || !fourth_name) {
+      return res.status(400).json({ message: "الاسم الرباعي مطلوب كاملاً (الأسماء الأربعة)" });
     }
 
+    const name = (full_name || "").trim();
     const uniIdRaw = (university_id ?? "").toString().trim();
-const uniId = uniIdRaw === "" ? "0" : uniIdRaw;   
+    const uniId = uniIdRaw === "" ? "0" : uniIdRaw;
+    const finalStatus = (status || "نشط").trim();
 
-
-    //  تحقق من تكرار الرقم الجامعي (لو ما 0)
     if (uniId && uniId !== "0") {
       const [rows] = await dbp.query(
         "SELECT id FROM students WHERE university_id = ? AND id <> ? LIMIT 1",
@@ -917,31 +940,44 @@ const uniId = uniIdRaw === "" ? "0" : uniIdRaw;
       }
     }
 
-    const finalStatus = (status || "نشط").trim();
-
     const [result] = await dbp.query(
       `
       UPDATE students
-      SET full_name = ?, university_id = ?, phone = ?,nationality = ?, gender = ?, status = ?, department_id = ?
+      SET 
+        first_name = ?, 
+        second_name = ?, 
+        third_name = ?, 
+        fourth_name = ?, 
+        full_name = ?, 
+        university_id = ?, 
+        phone = ?, 
+        nationality = ?, 
+        gender = ?, 
+        status = ?, 
+        department_id = ?
       WHERE id = ?
       `,
       [
-    name,
-    uniId || "0",
-    phone || null,
-    nationality?.trim() || null,
-    gender || null,
-    finalStatus,              
-    department_id || null,
-    studentId
-  ]
+        first_name.trim(),
+        second_name.trim(),
+        third_name.trim(),
+        fourth_name.trim(),
+        name, 
+        uniId || "0",
+        phone || null,
+        nationality?.trim() || null,
+        gender || null,
+        finalStatus,
+        department_id || null,
+        studentId
+      ]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "الطالب غير موجود" });
     }
 
-    return res.json({ message: "تم تحديث بيانات الطالب" });
+    return res.json({ message: "تم تحديث بيانات الطالب بنجاح" });
   } catch (e) {
     console.error("UPDATE STUDENT ERROR:", e);
     return res.status(500).json({ message: e.message });
@@ -1295,9 +1331,13 @@ app.put("/api/registrations/:id", async (req, res) => {
 });
 
 
-app.post('/api/students',authMiddleware, (req, res) => {
+app.post('/api/students', authMiddleware, (req, res) => {
   const {
-    full_name,
+    first_name,
+    second_name,
+    third_name,
+    fourth_name,
+    full_name, // مجمع من الفرونت إند
     university_id,
     phone,
     nationality,
@@ -1309,18 +1349,17 @@ app.post('/api/students',authMiddleware, (req, res) => {
     registrar
   } = req.body;
 
-  const name = (full_name || "").trim();
-  if (!name) {
-    return res.status(400).json({ message: "الاسم الرباعي مطلوب" });
+  // 1. التحقق من وجود الحقول الأربعة بدلاً من الحقل الواحد
+  if (!first_name || !second_name || !third_name || !fourth_name) {
+    return res.status(400).json({ message: "الاسم الرباعي مطلوب كاملاً" });
   }
 
- const uniIdRaw = (university_id ?? "").toString().trim();
-const uniId = uniIdRaw === "" ? "0" : uniIdRaw;  
+  const name = (full_name || "").trim();
+  const uniIdRaw = (university_id ?? "").toString().trim();
+  const uniId = uniIdRaw === "" ? "0" : uniIdRaw;
+  const finalStatus = (status || "نشط").trim();
 
-const finalStatus = (status || "نشط").trim();
-
-
-  // 1) منع تكرار الاسم الرباعي 
+  // التحقق من تكرار الاسم الكامل
   const checkNameSql = `SELECT id FROM students WHERE full_name = ? LIMIT 1`;
   db.query(checkNameSql, [name], (err, nameRows) => {
     if (err) return res.status(500).json({ message: "Database error" });
@@ -1329,24 +1368,30 @@ const finalStatus = (status || "نشط").trim();
       return res.status(409).json({ message: "اسم الطالب موجود مسبقاً" });
     }
 
-    // 2) منع تكرار الرقم الجامعي لو ما 0
     const checkUniSql = `SELECT id FROM students WHERE university_id = ? LIMIT 1`;
 
     const doInsert = () => {
       const insertSql = `
         INSERT INTO students
-        (full_name, university_id, phone,nationality, gender, status, receipt_number, department_id, notes, registrar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (first_name, second_name, third_name, fourth_name, full_name, 
+         university_id, phone, nationality, gender, status, 
+         receipt_number, department_id, notes, registrar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
+
       db.query(
         insertSql,
         [
-          name,
+          first_name.trim(),
+          second_name.trim(),
+          third_name.trim(),
+          fourth_name.trim(),
+          name, 
           uniId || "0",
           phone || null,
           nationality?.trim() || null,
-          gender || null, 
-          finalStatus,                     
+          gender || null,
+          finalStatus,
           receipt_number || null,
           department_id || null,
           notes || null,
@@ -1357,22 +1402,22 @@ const finalStatus = (status || "نشط").trim();
             console.log("MYSQL ERROR (add student):", err2);
             return res.status(500).json({ message: err2.message });
           }
-          return res.json({ message: "تم إضافة الطالب", student_id: result.insertId });
+          return res.json({ message: "تم إضافة الطالب بنجاح", student_id: result.insertId });
         }
       );
     };
 
     if (uniId && uniId !== "0") {
-      return db.query(checkUniSql, [uniId], (err3, uniRows) => {
+      db.query(checkUniSql, [uniId], (err3, uniRows) => {
         if (err3) return res.status(500).json({ message: "Database error" });
         if (uniRows.length > 0) {
           return res.status(409).json({ message: "الرقم الجامعي مستخدم من قبل طالب آخر" });
         }
-        return doInsert();
+        doInsert();
       });
+    } else {
+      doInsert();
     }
-
-    return doInsert();
   });
 });
 
@@ -3972,7 +4017,8 @@ const [rows] = await dbp.query(
 app.get("/api/term-students", async (req, res) => {
   try {
     const deptId = Number(req.query.department_id);
-    const academicYear = (req.query.academic_year || "").trim();
+    // تأكدي أن الاسم هنا academicYear
+    const academicYear = (req.query.academic_year || "").trim(); 
     const levelName = (req.query.level_name || "").trim();
     const termName = (req.query.term_name || "").trim();
 
@@ -3980,11 +4026,9 @@ app.get("/api/term-students", async (req, res) => {
     const pgRaw = (req.query.postgraduate_program || "").trim();
     const pgProgram = programType === "postgraduate" ? (pgRaw || null) : null;
 
+    // التصحيح هنا: استخدمنا academicYear بدلاً من academic_year
     if (!deptId || !academicYear || !levelName || !termName) {
       return res.status(400).json({ error: "بيانات ناقصة" });
-    }
-    if (programType === "postgraduate" && !pgProgram) {
-      return res.status(400).json({ error: "postgraduate_program مطلوب للدراسات العليا" });
     }
 
     const [rows] = await dbp.query(
@@ -3994,13 +4038,19 @@ app.get("/api/term-students", async (req, res) => {
         s.full_name,
         s.university_id,
         sr.academic_status,
-        sr.registration_status
+        COALESCE(f.installment_1_paid, 0) as inst1,
+        COALESCE(f.installment_2_paid, 0) as inst2,
+        COALESCE(f.installment_3_paid, 0) as inst3,
+        COALESCE(f.installment_4_paid, 0) as inst4,
+        COALESCE(f.installment_5_paid, 0) as inst5,
+        COALESCE(f.installment_6_paid, 0) as inst6
       FROM students s
       INNER JOIN student_registrations sr ON sr.student_id = s.id
+      LEFT JOIN fees f ON f.student_id = s.id AND f.academic_year = sr.academic_year
       WHERE s.department_id = ?
         AND sr.academic_year = ?
-        AND ${normSqlField("sr.level_name")} = ${normSqlField("?")}
-        AND ${normSqlField("sr.term_name")}  = ${normSqlField("?")}
+        AND sr.level_name = ?
+        AND sr.term_name = ?
         AND sr.program_type = ?
         AND (sr.postgraduate_program <=> ?)
       ORDER BY s.full_name
@@ -4008,7 +4058,36 @@ app.get("/api/term-students", async (req, res) => {
       [deptId, academicYear, levelName, termName, programType, pgProgram]
     );
 
-    return res.json(rows);
+    const processedRows = rows.map(row => {
+      let calcStatus = "غير مسجل";
+      const isFirstTerm = termName.includes("الأول");
+      const isSecondTerm = termName.includes("الثاني");
+
+      if (isFirstTerm && row.inst1 == 1) {
+        calcStatus = "مسجل";
+      } 
+      else if (isSecondTerm) {
+        // التحقق من الأقساط الستة
+        const allPaid = (
+          row.inst1 == 1 && row.inst2 == 1 && row.inst3 == 1 && 
+          row.inst4 == 1 && row.inst5 == 1 && row.inst6 == 1
+        );
+        
+        if (allPaid) {
+          calcStatus = "مسجل";
+        }
+      }
+
+      return {
+        student_id: row.student_id,
+        full_name: row.full_name,
+        university_id: row.university_id,
+        academic_status: row.academic_status,
+        registration_status: calcStatus
+      };
+    });
+
+    return res.json(processedRows);
   } catch (e) {
     console.error("TERM STUDENTS ERROR:", e);
     return res.status(500).json({ error: "Database error" });
@@ -5042,8 +5121,7 @@ app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
   let { 
     username, 
-    full_name, 
-    email, 
+    password, 
     department,
     role, 
     is_active, 
@@ -5064,14 +5142,20 @@ app.put('/api/users/:id', async (req, res) => {
       allowed_program_types = [];       
     }
 
-    if (username !== undefined)               { updates.push('username = ?');           values.push(username); }
-    if (full_name !== undefined)              { updates.push('full_name = ?');          values.push(full_name); }
-    if (email !== undefined)                  { updates.push('email = ?');              values.push(email); }
-    if (department !== undefined)             { updates.push('department = ?');         values.push(department); }
-    if (role !== undefined)                   { updates.push('role = ?');               values.push(role); }
-    if (is_active !== undefined)              { updates.push('is_active = ?');          values.push(is_active ? 1 : 0); }
-    if (allowed_pages !== undefined)          { updates.push('allowed_pages = ?');      values.push(JSON.stringify(allowed_pages)); }
-    if (allowed_faculties !== undefined)      { updates.push('allowed_faculties = ?');  values.push(JSON.stringify(allowed_faculties)); }
+    if (username !== undefined) { updates.push('username = ?'); values.push(username); }
+    if (department !== undefined) { updates.push('department = ?'); values.push(department); }
+    if (role !== undefined) { updates.push('role = ?'); values.push(role); }
+    if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+
+    if (password && password.trim() !== "") {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      updates.push('password_hash = ?'); 
+      values.push(hashedPassword);
+    }
+
+    if (allowed_pages !== undefined) { updates.push('allowed_pages = ?'); values.push(JSON.stringify(allowed_pages)); }
+    if (allowed_faculties !== undefined) { updates.push('allowed_faculties = ?'); values.push(JSON.stringify(allowed_faculties)); }
     if (registration_tab_permissions !== undefined) { 
       updates.push('registration_tab_permissions = ?'); 
       values.push(JSON.stringify(registration_tab_permissions)); 
@@ -5096,7 +5180,7 @@ app.put('/api/users/:id', async (req, res) => {
 
     res.json({ message: 'تم الحفظ بنجاح' });
   } catch (err) {
-    console.error("PUT /api/users/:id error:", err);
+    console.error("حدث خطأ في PUT /api/users/:id :", err);
     res.status(500).json({ error: 'خطأ أثناء الحفظ' });
   }
 });
@@ -6376,11 +6460,11 @@ app.post('/api/batch-promote-to-next-level',authMiddleware, async (req, res) => 
 
         const s = name.trim().toLowerCase();
 
-        console.log(`getLevelNumber debug: raw="${name}" | lower="${s}"`);
+        // console.log(`getLevelNumber debug: raw="${name}" | lower="${s}"`);
 
         const m = s.match(/(\d+)/);
         if (m) {
-          console.log(`getLevelNumber: found digit → ${m[1]}`);
+          // console.log(`getLevelNumber: found digit → ${m[1]}`);
           return Number(m[1]);
         }
 
@@ -6395,12 +6479,12 @@ app.post('/api/batch-promote-to-next-level',authMiddleware, async (req, res) => 
 
         for (const k of Object.keys(map)) {
           if (s.includes(k)) {
-            console.log(`getLevelNumber: match="${k}" → ${map[k]}`);
+            // console.log(`getLevelNumber: match="${k}" → ${map[k]}`);
             return map[k];
           }
         }
 
-        console.log(`getLevelNumber: no match → 0`);
+        // console.log(`getLevelNumber: no match → 0`);
         return 0;
       };
 
@@ -6445,7 +6529,6 @@ app.post('/api/batch-promote-to-next-level',authMiddleware, async (req, res) => 
         AND sr.term_name = ?
         AND sr.program_type = ?
         AND (sr.postgraduate_program <=> ?)
-        AND sr.registration_status = 'مسجّل'
         AND sr.student_id IN (?)
     `, [
       department_id, current_academic_year, current_level_name, current_term_name,
@@ -6458,6 +6541,42 @@ app.post('/api/batch-promote-to-next-level',authMiddleware, async (req, res) => 
 
     for (const reg of registrations) {
       const { student_id: studentId, full_name: fullName, faculty_id: facultyId, repeat_count: currentRepeat } = reg;
+
+      const [feeRows] = await dbp.query(
+  `SELECT * FROM fees WHERE student_id = ? AND academic_year = ? AND level_name = ? LIMIT 1`,
+  [studentId, current_academic_year, current_level_name]
+);
+
+if (feeRows.length === 0) {
+  results.failed.push({ student_id: studentId, full_name: fullName, reason: 'لا يوجد سجل مالي (Fees) لهذا العام' });
+  continue;
+}
+
+const fee = feeRows[0];
+const isMovingToNextLevel = (current_level_name !== new_level_name);
+
+if (!isMovingToNextLevel) {
+  // حالة: انتقال داخل المستوى (فصل أول -> ثاني) -> شرط القسط الأول
+  if (fee.installment_1_paid !== 1) {
+    results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد القسط الأول للانتقال للفصل الثاني' });
+    continue;
+  }
+} else {
+  // حالة: انتقال لمستوى جديد -> شرط سداد كل الأقساط المطلوبة (التي تحتوي على مبلغ)
+  let allPaid = true;
+  for (let i = 1; i <= 6; i++) {
+    const amount = fee[`installment_${i}`] || 0;
+    const isPaid = fee[`installment_${i}_paid`];
+    if (amount > 0 && isPaid !== 1) {
+      allPaid = false;
+      break;
+    }
+  }
+  if (!allPaid) {
+    results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد الأقساط المتبقية للانتقال للمستوى الجديد' });
+    continue;
+  }
+}
 
       // 1. موجود مسبقًا في الفترة الجديدة؟
       const [existing] = await dbp.query(`
@@ -6842,46 +6961,43 @@ app.get("/api/term-default-fees", async (req, res) => {
     academic_year,
     level_name,
     program_type,
+    faculty_id = null,
+    department_id = null,
     postgraduate_program = null,
   } = req.query;
 
   if (!academic_year || !level_name || !program_type) {
-    return res.status(400).json({ error: "البيانات الأساسية للفترة ناقصة (academic_year, level_name, program_type)" });
+    return res.status(400).json({ error: "البيانات الأساسية للفترة ناقصة" });
   }
 
   try {
+    // بناء الاستعلام مع مراعاة أن الكلية أو القسم قد يكونان null
     const [rows] = await dbp.query(
-      `SELECT 
-         id, academic_year, level_name, program_type, postgraduate_program,
-         registration_fee, tuition_fee, late_fee,
-         scholarship_type, scholarship_percentage,
-         scholarship_granted_by,   
-         payment_start_date, payment_end_date,
-         installment_1, installment_1_start, installment_1_end,
-         installment_2, installment_2_start, installment_2_end,
-         installment_3, installment_3_start, installment_3_end,
-         installment_4, installment_4_start, installment_4_end,
-         installment_5, installment_5_start, installment_5_end,
-         installment_6, installment_6_start, installment_6_end,
-         department_id, registrar, created_at, updated_at
-       FROM fees 
+      `SELECT * FROM fees 
        WHERE student_id IS NULL 
          AND TRIM(academic_year) = TRIM(?)
          AND TRIM(level_name) = TRIM(?)
          AND program_type = ?
+         AND (department_id <=> ? OR (department_id IS NULL AND ? IS NULL OR ? = ''))
          AND (postgraduate_program <=> ? OR (postgraduate_program IS NULL AND ? IS NULL))
        ORDER BY updated_at DESC LIMIT 1`,
-      [academic_year.trim(), level_name.trim(), program_type, postgraduate_program, postgraduate_program]
+      [
+        academic_year.trim(), 
+        level_name.trim(), 
+        program_type, 
+        department_id || null, department_id || null, department_id || null, // للتعامل مع القسم
+        postgraduate_program, postgraduate_program // للتعامل مع برنامج الدراسات العليا
+      ]
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "لا توجد رسوم افتراضية لهذه الفترة" });
+      return res.status(404).json({ error: "لا توجد رسوم افتراضية لهذا التخصص" });
     }
 
     res.json(rows[0]);
   } catch (err) {
     console.error("Get term default fees error:", err);
-    res.status(500).json({ error: "خطأ في جلب الرسوم" });
+    res.status(500).json({ error: "خطأ في جلب الرسوم من السيرفر" });
   }
 });
 
@@ -7118,6 +7234,47 @@ let neededInstallments = 0;
     res.status(500).json({ error: "خطأ في حفظ الرسوم: " + err.message });
   }
 });
+  
+// دالة لإرسال البيانات مباشرة للنظام المالي بعد حفظ رسوم الطالب
+async function sendToFinancialSystem(student_id, feeData) {
+    try {
+        // جلب بيانات الطالب
+        const [stu] = await dbp.query("SELECT full_name, university_id FROM students WHERE id = ?", [student_id]);
+        if (stu.length === 0) return false;
+
+        // تجهيز الأقساط
+        const installments = [];
+        for (let i = 1; i <= 6; i++) {
+            if (feeData[`installment_${i}`] > 0) {
+                installments.push({
+                    installment_number: i,
+                    amount: feeData[`installment_${i}`],
+                    date: feeData[`installment_${i}_start`],
+                    dateEnd: feeData[`installment_${i}_end`]
+                });
+            }
+        }
+
+        const response = await fetch("http://127.0.0.1:30000/studentPayables", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "STUDENT_SYSTEM_TOKEN_2026" },
+            body: JSON.stringify({
+                university_id: stu[0].university_id,
+                full_name: stu[0].full_name,
+                academic_year: feeData.academic_year,
+                level_name: feeData.level_name,
+                currency: feeData.currency,
+                installments
+            })
+        });
+
+        const resData = await response.json();
+        return resData.success;
+    } catch (err) {
+        console.error("خطأ في الاتصال الفوري بالنظام المالي:", err.message);
+        return false;
+    }
+}
 
 // POST /api/student-fees - Save/update fees for a specific student
 app.post("/api/student-fees", async (req, res) => {
@@ -7146,6 +7303,7 @@ app.post("/api/student-fees", async (req, res) => {
     installment_5 = null, installment_5_start = null, installment_5_end = null,
     installment_6 = null, installment_6_start = null, installment_6_end = null,
   } = req.body;
+  let result;
 
   if (!student_id || !academic_year || !level_name || !program_type) {
     return res.status(400).json({ error: "البيانات الأساسية ناقصة (student_id, academic_year, level_name, program_type)" });
@@ -7350,11 +7508,11 @@ await dbp.query(
     ]
   );
 
-  return res.json({ success: true, message: "تم تحديث رسوم الطالب بنجاح" });
+  // return res.json({ success: true, message: "تم تحديث رسوم الطالب بنجاح" });
 }
-
+else {
 // INSERT
-await dbp.query(
+[result] = await dbp.query(
   `INSERT INTO fees (
     student_id, academic_year, level_name, program_type, postgraduate_program,
     currency,
@@ -7445,7 +7603,28 @@ await dbp.query(
   ]
 );
 
-res.json({ success: true, message: "تم حفظ رسوم الطالب بنجاح" });
+// res.json({ success: true, message: "تم حفظ رسوم الطالب بنجاح" });
+}
+// 1. تحديد الـ ID (سواء كان تحديث أو إضافة جديدة)
+    const feeId = existing.length > 0 ? existing[0].id : result.insertId; 
+
+    // 2. محاولة المزامنة الفورية
+    const isSyncedNow = await sendToFinancialSystem(student_id, req.body);
+
+    if (isSyncedNow) {
+        // إذا نجحت المزامنة، نحدث العمود في قاعدة البيانات
+        await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [feeId]);
+    }
+
+    // 3. الرد النهائي والوحيد (ضمان عدم تكرار res.json)
+    return res.json({ 
+        success: true, 
+        is_synced: isSyncedNow,
+        message: isSyncedNow 
+            ? "تم حفظ الرسوم وإرسالها للنظام المالي بنجاح" 
+            : "تم حفظ الرسوم أكاديمياً، وفشلت المزامنة المالية (ستتم المزامنة تلقائياً لاحقاً)" 
+    });
+
   } catch (err) {
     console.error("Student fees error:", err);
     res.status(500).json({ error: "خطأ في حفظ الرسوم: " + err.message });
@@ -7554,161 +7733,126 @@ app.get("/api/student-fees-calculated", async (req, res) => {
     // 0. جلب بيانات الطالب الأساسية + القسم + نوع الكلية + الموقف الأكاديمي
     const [studentRows] = await dbp.query(
       `SELECT 
-         s.*,
-         d.id AS department_id,
-         f.faculty_type,
-         sr.academic_status
+          s.*, d.id AS department_id, f.faculty_type, sr.academic_status
        FROM students s
        LEFT JOIN departments d ON s.department_id = d.id
        LEFT JOIN faculties f ON d.faculty_id = f.id
        LEFT JOIN student_registrations sr 
-         ON sr.student_id = s.id 
-         AND sr.academic_year = ?
-         AND (sr.level_name = ? OR ? IS NULL)
-         AND (sr.term_name = ? OR ? IS NULL)
+          ON sr.student_id = s.id 
+          AND sr.academic_year = ?
+          AND (sr.level_name = ? OR ? IS NULL)
        WHERE s.id = ?
-       ORDER BY sr.id DESC
-       LIMIT 1`,
-      [academic_year, level_name || null, level_name, term_name || null, term_name, student_id]
+       ORDER BY sr.id DESC LIMIT 1`,
+      [academic_year, level_name || null, level_name, student_id]
     );
 
-    if (studentRows.length === 0) {
-      return res.status(404).json({ error: "الطالب غير موجود" });
-    }
+    if (studentRows.length === 0) return res.status(404).json({ error: "الطالب غير موجود" });
 
     const stud = studentRows[0];
-
     const currentDeptId = stud.department_id || null;
     const currentProgramType = stud.program_type || "bachelor";
     const currentPostgrad = stud.postgraduate_program || null;
     const status = stud.academic_status || "نظامي";
     const facultyType = stud.faculty_type || "غير محدد";
 
-    // 1. جلب سنة الدخول الأولى وآخر سنة نشطة
+    // 1. جلب سنة الدخول الأولى وآخر سنة نشطة 
     const [regRows] = await dbp.query(
       `SELECT 
-         MIN(academic_year) AS first_enrollment_year,
-         MAX(academic_year) AS last_active_year
+          MIN(academic_year) AS first_enrollment_year,
+          MAX(academic_year) AS last_active_year
        FROM student_registrations 
-       WHERE student_id = ?
-         AND registration_status = 'مسجّل'`,
+       WHERE student_id = ?`,
       [student_id]
     );
 
     const firstYear = regRows[0]?.first_enrollment_year || null;
     const lastActiveYear = regRows[0]?.last_active_year || null;
 
-    // 2. حساب عدد سنوات الغياب
+    // 2. حساب سنوات الغياب
     let yearsAbsent = 0;
     if (firstYear && lastActiveYear) {
-      const currentYearNum = parseInt(academic_year.split('/')[0]) || 0;
-      const lastActiveNum = parseInt(lastActiveYear.split('/')[0]) || 0;
+      // استخراج السنة الأولى من الصيغة 
+      const currentYearNum = parseInt(academic_year.match(/\d+/)) || 0;
+      const lastActiveNum = parseInt(lastActiveYear.match(/\d+/)) || 0;
       yearsAbsent = currentYearNum - lastActiveNum;
     }
 
-    // 4. جلب الرسوم الأساسية (خاصة أو عامة)
+    // 3. جلب الرسوم الأساسية للسنة الحالية 
     let sqlFees = `
       SELECT * FROM fees 
       WHERE academic_year = ? 
         AND (level_name = ? OR ? IS NULL)
-        AND (term_name = ? OR ? IS NULL)
         AND (student_id = ? OR student_id IS NULL)
-      ORDER BY student_id DESC, id DESC
-      LIMIT 1
-    `;
+      ORDER BY student_id DESC, id DESC LIMIT 1`;
 
-    const [feesRows] = await dbp.query(sqlFees, [
-      academic_year,
-      level_name || null,
-      level_name,
-      term_name || null,
-      term_name,
-      student_id
-    ]);
+    const [feesRows] = await dbp.query(sqlFees, [academic_year, level_name || null, level_name, student_id]);
 
-    if (feesRows.length === 0) {
-      return res.status(404).json({ error: "لا توجد رسوم متاحة لهذه الفترة" });
-    }
+    if (feesRows.length === 0) return res.status(404).json({ error: "لا توجد رسوم متاحة" });
 
     let fees = { ...feesRows[0] };
     let notes = [];
-
-    // 5. مصدر رسوم الدراسة
     let tuitionSource = "السنة الحالية";
-    if (yearsAbsent <= 2 && firstYear) {
+
+    // 4. منطق "تثبيت الرسوم" حسب سنة الدخول (إذا غاب أقل من سنتين)
+    if (yearsAbsent <= 2 && firstYear && firstYear !== academic_year) {
       const [enrollFees] = await dbp.query(
-        `SELECT f.tuition_fee 
-         FROM fees f
-         WHERE f.academic_year = ?
-           AND (f.student_id = ? OR f.student_id IS NULL)
-           AND f.department_id = ?
-           AND f.program_type = ?
-           AND (f.postgraduate_program <=> ?)
-         ORDER BY f.student_id DESC, f.updated_at DESC
-         LIMIT 1`,
-        [firstYear, student_id, currentDeptId, currentProgramType, currentPostgrad]
+        `SELECT tuition_fee FROM fees 
+         WHERE academic_year = ? 
+           AND (student_id = ? OR student_id IS NULL)
+           AND department_id = ?
+           AND program_type = ?
+         ORDER BY student_id DESC LIMIT 1`,
+        [firstYear, student_id, currentDeptId, currentProgramType]
       );
 
       if (enrollFees.length > 0 && enrollFees[0].tuition_fee) {
         fees.tuition_fee = enrollFees[0].tuition_fee;
         tuitionSource = `سنة الدخول الأولى (${firstYear})`;
+        notes.push(`تم اعتماد رسوم سنة الدخول: ${firstYear}`);
       }
     } else if (yearsAbsent > 2) {
-      notes.push(`غياب أكثر من سنتين (${yearsAbsent} سنة): استخدام رسوم السنة الحالية`);
+      notes.push(`غياب ${yearsAbsent} سنة: تم تطبيق رسوم السنة الحالية`);
     }
 
-    // 6. تعديل الرسوم حسب الموقف الأكاديمي
-    if (status === "مجمّد") {
-      const [prevReg] = await dbp.query(
-        `SELECT registration_fee FROM fees 
-         WHERE academic_year = ? 
-           AND (student_id = ? OR student_id IS NULL)
-         LIMIT 1`,
-        [lastActiveYear || firstYear, student_id]
-      );
-
-      const regDiff = (fees.registration_fee || 0) - (prevReg[0]?.registration_fee || 0);
-      const extra = regDiff + (fees.freeze_fee || 0) + (fees.unfreeze_fee || 0);
-
-      fees.total_extra = extra;
-      notes.push(`مجمد: فرق تسجيل (${regDiff}) + تجميد (${fees.freeze_fee || 0}) + فك تجميد (${fees.unfreeze_fee || 0})`);
-    } 
-    else if (status === "إعاده") {
+    // 5. تعديل الرسوم حسب الموقف الأكاديمي (إعادة، تجميد، فصل)
+    if (status === "إعاده") {
       const discount = (fees.repeat_discount || 50) / 100;
       fees.tuition_fee = (fees.tuition_fee || 0) * (1 - discount);
-      notes.push(`إعادة: خصم ${(discount * 100)}% على الرسوم الدراسية + تسجيل كامل`);
+      notes.push(`إعادة: خصم ${(discount * 100)}%`);
     } 
+    else if (status === "مجمّد") {
+      const extra = (fees.freeze_fee || 0) + (fees.unfreeze_fee || 0);
+      fees.total_extra = extra;
+      notes.push(`مجمد: رسوم تجميد وفك`);
+    }
     else if (status === "فصل") {
       if (facultyType === "theoretical") {
         fees.tuition_fee = 0;
-        notes.push("فصل بسبب غياب - نظري: رسوم تسجيل فقط");
+        notes.push("فصل (نظري): تسجيل فقط");
       } else {
         const discount = (fees.repeat_discount || 50) / 100;
         fees.tuition_fee = (fees.tuition_fee || 0) * (1 - discount);
-        notes.push("فصل بسبب غياب - عملي: نفس معاملة الإعادة (خصم 50%)");
+        notes.push("فصل (عملي): خصم 50%");
       }
     }
 
-    // 7. الإجمالي النهائي
-    fees.total = 
-      (fees.registration_fee || 0) +
-      (fees.tuition_fee || 0) +
-      (fees.late_fee || 0) +
-      (fees.total_extra || 0);
-
-    // 8. البيانات الإضافية
+    // 6. الحسابات النهائية للرد
     fees.first_enrollment_year = firstYear;
     fees.last_active_year = lastActiveYear;
-    fees.years_absent = yearsAbsent;
+    fees.years_absent = Math.max(0, yearsAbsent);
     fees.tuition_source = tuitionSource;
     fees.academic_status = status;
-    fees.faculty_type = facultyType;
-    fees.notes = notes.length > 0 ? notes.join(" | ") : "لا ملاحظات خاصة";
+    
+    fees.total = (fees.registration_fee || 0) + (fees.tuition_fee || 0) + 
+                 (fees.late_fee || 0) + (fees.total_extra || 0);
+    
+    fees.notes = notes.length > 0 ? notes.join(" | ") : "لا ملاحظات";
 
     res.json(fees);
+
   } catch (err) {
-    console.error("Calculated fees error:", err);
-    res.status(500).json({ error: "خطأ في حساب الرسوم: " + err.message });
+    console.error("Error:", err);
+    res.status(500).json({ error: "خطأ داخلي: " + err.message });
   }
 });
 
@@ -8205,6 +8349,69 @@ const verifyAcademicToken = (req, res, next) => {
     next(); 
 };
  // استقبال حاله الدفع من النظام المالي
+// app.post('/api/academic/receive-payment', verifyAcademicToken, async (req, res) => {
+//     const { 
+//         university_id, academic_year, level_name, installment_number, 
+//         amount_paid, payment_date, transaction_id, status, currency, notes 
+//     } = req.body;
+
+//     const connection = await dbp.getConnection();
+
+//     try {
+//         await connection.beginTransaction();
+
+//         // 1. جلب ID الطالب
+//         const [studentRows] = await connection.execute(
+//             'SELECT id FROM students WHERE university_id = ?', [university_id]
+//         );
+
+//         if (studentRows.length === 0) {
+//             throw new Error(`الطالب رقم ${university_id} غير موجود`);
+//         }
+
+//         const realStudentId = studentRows[0].id;
+
+//         // 2. تسجيل العملية في جدول payment (سواء كانت نجاح أو إلغاء للتوثيق)
+//         const sqlPayment = `
+//             INSERT INTO payment (
+//                 university_id, academic_year, level_name, installment_number, 
+//                 amount_paid, payment_date, transaction_id, status, currency, notes
+//             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+//         await connection.execute(sqlPayment, [
+//             university_id, academic_year, level_name, installment_number,
+//             amount_paid, payment_date, transaction_id, status, currency || 'SDG', notes || null
+//         ]);
+
+//         // 3. تحديث جدول fees بناءً على الـ status
+//         const paidColumn = `installment_${installment_number}_paid`;
+//         const dateColumn = `installment_${installment_number}_paid_at`;
+
+//         // إذا كانت الحالة 1 (دفع) نضع 1 وتاريخ، وإذا كانت 0 (إلغاء) نضع 0 و NULL
+//         const isPaid = (Number(status) === 1) ? 1 : 0;
+//         const pDate = (Number(status) === 1) ? payment_date : null;
+
+//         const sqlFees = `
+//             UPDATE fees 
+//             SET ${paidColumn} = ?, ${dateColumn} = ? 
+//             WHERE student_id = ? AND academic_year = ? AND level_name = ?`;
+
+//         await connection.execute(sqlFees, [isPaid, pDate, realStudentId, academic_year, level_name]);
+
+//         await connection.commit();
+        
+//         const successMsg = isPaid ? "تم تسجيل الدفع بنجاح" : "تم إلغاء عملية الدفع بنجاح";
+//         res.status(200).json({ success: true, msg: successMsg });
+
+//     } catch (err) {
+//         await connection.rollback();
+//         console.error("❌ خطأ:", err.message);
+//         res.status(500).json({ success: false, msg: err.message });
+//     } finally {
+//         connection.release();
+//     }
+// });
+
 app.post('/api/academic/receive-payment', verifyAcademicToken, async (req, res) => {
     const { 
         university_id, academic_year, level_name, installment_number, 
@@ -8221,50 +8428,110 @@ app.post('/api/academic/receive-payment', verifyAcademicToken, async (req, res) 
             'SELECT id FROM students WHERE university_id = ?', [university_id]
         );
 
+        // حالة: خطأ في البيانات (الطالب غير موجود) - Code: 1003
         if (studentRows.length === 0) {
-            throw new Error(`الطالب رقم ${university_id} غير موجود`);
+            return res.status(404).json({ 
+                success: false, 
+                code: 1003,
+                msg: `الطالب صاحب الرقم الجامعي ${university_id} غير موجود في النظام` 
+            });
         }
 
         const realStudentId = studentRows[0].id;
 
-        // 2. تسجيل العملية في جدول payment (سواء كانت نجاح أو إلغاء للتوثيق)
+        // --- فحص التكرار (is_confirmed) ---
+        const [existingPayment] = await connection.execute(
+            `SELECT id FROM payment 
+             WHERE university_id = ? AND academic_year = ? 
+             AND level_name = ? AND installment_number = ? AND status = 1`,
+            [university_id, academic_year, level_name, installment_number]
+        );
+        const isConfirmedFlag = existingPayment.length > 0 ? 1 : 0;
+
+        // 2. تسجيل العملية في جدول payment 
         const sqlPayment = `
             INSERT INTO payment (
                 university_id, academic_year, level_name, installment_number, 
-                amount_paid, payment_date, transaction_id, status, currency, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                amount_paid, payment_date, transaction_id, status, currency, notes, is_confirmed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         await connection.execute(sqlPayment, [
             university_id, academic_year, level_name, installment_number,
-            amount_paid, payment_date, transaction_id, status, currency || 'SDG', notes || null
+            amount_paid, payment_date, transaction_id, status, 
+            currency || 'SDG', notes || null, isConfirmedFlag
         ]);
 
-        // 3. تحديث جدول fees بناءً على الـ status
-        const paidColumn = `installment_${installment_number}_paid`;
-        const dateColumn = `installment_${installment_number}_paid_at`;
-
-        // إذا كانت الحالة 1 (دفع) نضع 1 وتاريخ، وإذا كانت 0 (إلغاء) نضع 0 و NULL
         const isPaid = (Number(status) === 1) ? 1 : 0;
-        const pDate = (Number(status) === 1) ? payment_date : null;
+        let targetTerm = '';
+        if (Number(installment_number) === 1) {
+            targetTerm = 'الفصل الأول';
+        } else if (Number(installment_number) >= 2) {
+            targetTerm = 'الفصل الثاني';
+        }
 
-        const sqlFees = `
-            UPDATE fees 
-            SET ${paidColumn} = ?, ${dateColumn} = ? 
-            WHERE student_id = ? AND academic_year = ? AND level_name = ?`;
+        // --- تنفيذ التحديثات فقط إذا كانت العملية غير مكررة ---
+        if (isConfirmedFlag === 0) {
+            // 3. تحديث جدول fees
+            const paidColumn = `installment_${installment_number}_paid`;
+            const dateColumn = `installment_${installment_number}_paid_at`;
+            const pDate = isPaid ? payment_date : null;
 
-        await connection.execute(sqlFees, [isPaid, pDate, realStudentId, academic_year, level_name]);
+            const sqlFees = `
+                UPDATE fees 
+                SET ${paidColumn} = ?, ${dateColumn} = ? 
+                WHERE student_id = ? AND academic_year = ? AND level_name = ?`;
+
+            await connection.execute(sqlFees, [isPaid, pDate, realStudentId, academic_year, level_name]);
+
+            // 4. تحديث جدول student_registrations
+            if (targetTerm !== '') {
+                const newStatus = isPaid ? 'مسجّل' : 'غير مسجّل';
+                const sqlUpdateReg = `
+                    UPDATE student_registrations 
+                    SET registration_status = ? 
+                    WHERE student_id = ? 
+                    AND academic_year = ? 
+                    AND level_name = ? 
+                    AND term_name = ?`;
+
+                await connection.execute(sqlUpdateReg, [
+                    newStatus, realStudentId, academic_year, level_name, targetTerm
+                ]);
+            }
+        } 
 
         await connection.commit();
-        
-        const successMsg = isPaid ? "تم تسجيل الدفع بنجاح" : "تم إلغاء عملية الدفع بنجاح";
-        res.status(200).json({ success: true, msg: successMsg });
+
+        // تحديد رسالة النجاح بناءً على الحالة (استلام / تأكيد / إلغاء) - Code: 1000
+        let successMsg = "";
+        if (Number(status) === 0) {
+            successMsg = "تم إلغاء حالة الدفع";
+        } else if (isConfirmedFlag === 1) {
+            successMsg = "تم تأكيد حالة الدفع";
+        } else {
+            successMsg = "تم استلام حالة الدفع";
+        }
+
+        return res.status(200).json({ 
+            success: true, 
+            code: 1000,
+            msg: successMsg, 
+            is_confirmed: isConfirmedFlag 
+        });
 
     } catch (err) {
-        await connection.rollback();
-        console.error("❌ خطأ:", err.message);
-        res.status(500).json({ success: false, msg: err.message });
+        // حالة: فشل استلام/تأكيد/إلغاء الحالة (خطأ تقني) - Code: 1005
+        if (connection) await connection.rollback();
+        console.error("خطأ تقني:", err.message);
+        
+        return res.status(500).json({ 
+            success: false, 
+            code: 1005,
+            msg: `فشل استلام حالة العملية: ${err.message}` 
+        });
+
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 });
 

@@ -1473,18 +1473,18 @@ const handleEditDepartment = (dept) => {
           <span>  إعدادات النظام الأكاديمي</span>
         </div>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate(-1)}
           style={{
             background: "none",
             border: "none",
-            cursor: "pointer",
+            fontSize: "32px",
             color: "white",
-            fontSize: "26px",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
-          title="رجوع للصفحة الرئيسية"
+          title="رجوع"
         >
           <IoArrowBack />
         </button>

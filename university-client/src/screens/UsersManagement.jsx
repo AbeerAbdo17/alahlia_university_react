@@ -220,8 +220,7 @@ export default function UsersManagement() {
   const [editingUser, setEditingUser] = useState(null);
 const [form, setForm] = useState({ 
   username: '', 
-  full_name: '', 
-  email: '', 
+  password: '', 
   role: 'user', 
   allowed_pages: [], 
   allowed_faculties: [], 
@@ -325,8 +324,7 @@ const handleEdit = (user) => {
   setEditingUser(user);
   setForm({
     username: user.username,
-    full_name: user.full_name || '',
-    email: user.email || '',
+    password: '',
     role: user.role,
     allowed_pages: user.allowed_pages || [],
     allowed_faculties: user.allowed_faculties || [],
@@ -534,6 +532,7 @@ const handleEdit = (user) => {
                 يحصل المستخدم على <strong>صلاحيات كاملة</strong> على<br />
                 • جميع الكليات<br />
                 • جميع الصفحات  <br />
+                • جميع انواع البرامج  <br />
                 (لا داعي لتحديد كليات أو شاشات معينة)
               </div>
             ) : (
@@ -689,7 +688,6 @@ const handleEdit = (user) => {
                 <thead>
                   <tr>
                     <th style={ui.th}>اسم المستخدم</th>
-                    <th style={ui.th}>الاسم الكامل</th>
                     <th style={ui.th}>القسم</th>
                     <th style={ui.th}>الدور</th>
                     <th style={ui.th}>الصفحات المسموحة</th>
@@ -701,7 +699,6 @@ const handleEdit = (user) => {
                   {filteredUsers.map(u => (
                     <tr key={u.id}>
                       <td style={ui.td}>{u.username}</td>
-                      <td style={ui.td}>{u.full_name || '—'}</td>
                       <td style={ui.td}>{u.department || 'غير محدد'}</td>
                       <td style={ui.td}>{u.role}</td>
                       <td style={ui.td}>
@@ -782,21 +779,16 @@ const handleEdit = (user) => {
                   />
                 </div>
                 <div style={ui.field}>
-                  <label style={ui.label}>الاسم الكامل</label>
-                  <input
-                    value={form.full_name}
-                    onChange={e => setForm({ ...form, full_name: e.target.value })}
-                    style={ui.input}
-                  />
-                </div>
-                <div style={ui.field}>
-                  <label style={ui.label}>الإيميل</label>
-                  <input
-                    value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
-                    style={ui.input}
-                  />
-                </div>
+        <label style={ui.label}>كلمة مرور جديدة (اتركها فارغة لعدم التغيير)</label>
+        <input
+          type="password"
+          placeholder="كلمة مرور جديدة"
+          value={form.password}
+          onChange={e => setForm({ ...form, password: e.target.value })}
+          style={ui.input}
+        />
+      </div>
+
                 <div style={ui.field}>
   <label style={ui.label}>القسم / الإدارة</label>
   <select
