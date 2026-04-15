@@ -7318,8 +7318,8 @@ app.post("/api/student-fees", async (req, res) => {
   } = req.body;
   let result;
 
-  if (!student_id || !academic_year || !level_name || !term_name || !program_type) {
-    return res.status(400).json({ error: "البيانات الأساسية ناقصة (student_id, academic_year, level_name, term_name, program_type)" });
+  if (!student_id || !academic_year || !level_name || !program_type) {
+    return res.status(400).json({ error: "البيانات الأساسية ناقصة (student_id, academic_year, level_name, program_type)" });
   }
 
   try {
@@ -7330,10 +7330,9 @@ app.post("/api/student-fees", async (req, res) => {
        WHERE student_id = ?
          AND academic_year = ?
          AND level_name = ?
-         AND term_name = ?
          AND program_type = ?
          AND (postgraduate_program <=> ?)`,
-      [student_id, academic_year, level_name, term_name, program_type, postgraduate_program]
+      [student_id, academic_year, level_name, program_type, postgraduate_program]
     );
 
     if (regCheck.length === 0) {
@@ -7369,10 +7368,9 @@ app.post("/api/student-fees", async (req, res) => {
        WHERE student_id = ? 
          AND academic_year = ? 
          AND level_name = ?
-         AND term_name = ?
          AND program_type = ? 
          AND (postgraduate_program <=> ?)`,
-      [student_id, academic_year, level_name, term_name, program_type, postgraduate_program]
+      [student_id, academic_year, level_name, program_type, postgraduate_program]
     );
 
     // توليد أرقام الأقساط
@@ -7529,7 +7527,7 @@ else {
 // INSERT
 [result] = await dbp.query(
   `INSERT INTO fees (
-    student_id, academic_year, level_name, term_name, program_type, postgraduate_program,
+    student_id, academic_year, level_name, program_type, postgraduate_program,
     currency,
     registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
     scholarship_type, scholarship_percentage, scholarship_granted_by,
@@ -7542,7 +7540,7 @@ else {
     installment_6, installment_6_start, installment_6_end, installment_6_id,
     registrar, created_at, updated_at
   ) VALUES (
-    ?, ?, ?, ?, ?, ?, 
+    ?, ?, ?, ?, ?, 
     ?,                                      
     ?, ?, ?, ?, ?, ?, 
     ?, ?, ?, 
@@ -7559,7 +7557,6 @@ else {
     student_id,
     academic_year,
     level_name,
-    term_name,
     program_type,
     postgraduate_program || null,
 

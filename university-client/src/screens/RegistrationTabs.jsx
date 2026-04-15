@@ -1,3 +1,4 @@
+//const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
@@ -2815,7 +2816,6 @@ function FeesTab({ showToast }) {
   const [departmentId, setDepartmentId] = useState("");
   const [academicYear, setAcademicYear] = useState("");
   const [levelName, setLevelName] = useState("");
-  const [termName, setTermName] = useState("");
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [installmentCount, setInstallmentCount] = useState(0);
@@ -3302,17 +3302,10 @@ useEffect(() => {
     return;
   }
 
-  if (!departmentId) {
-    setFeesData(defaultFeesData);
-    setInstallmentCount(0);
-    setFeesSource("");
-    return;
-  }
-
   setIsDefaultMode(true);
   loadDefaultFeesForLevel();
 
-}, [selectedStudent, academicYear, levelName, departmentId, facultyId, programType, postgradProgram]);
+}, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
 
 
 useEffect(() => {
@@ -3485,7 +3478,6 @@ const resetAllForm = () => {
 
   setAcademicYear("");
   setLevelName("");
-  setTermName("");
 
   setCalculatedFees(null);
   setAcademicStatus("");
@@ -3495,11 +3487,8 @@ const resetAllForm = () => {
 };
 
 const saveFees = async () => {
-  if (!academicYear || !levelName || (selectedStudent && !termName)) {
-    showToast(
-      `يرجى اختيار السنة والمستوى${selectedStudent ? " والفصل" : ""}`,
-      "error"
-    );
+  if (!academicYear || !levelName) {
+    showToast("يرجى اختيار السنة والمستوى", "error");
     return;
   }
 
@@ -3593,7 +3582,7 @@ const saveFees = async () => {
     let url = `${API_BASE}/term-default-fees`;
     if (selectedStudent) {
       url = `${API_BASE}/student-fees`;
-      body.term_name = termName;
+      body.student_id = selectedStudent.id;
     }
 
     const res = await fetch(url, {
@@ -3924,10 +3913,7 @@ const printFeesReport = async () => {
   <input 
     list="fees_levels" 
     value={levelName} 
-    onChange={e => {
-      setLevelName(e.target.value);
-      setTermName("");
-    }} 
+    onChange={e => setLevelName(e.target.value)} 
     placeholder="مثال: المستوى الثاني" 
     disabled={!academicYear} 
     style={ui.input} 
@@ -3936,19 +3922,6 @@ const printFeesReport = async () => {
     {smart.levelOptions.map(l => <option key={l} value={l} />)}
   </datalist>
 </div>
-
-{/* <div style={ui.field}>
-  <label>الفصل الدراسي</label>
-  <select
-    value={termName}
-    onChange={e => setTermName(e.target.value)}
-    disabled={!levelName}
-    style={ui.select}
-  >
-    <option value="">اختر الفصل</option>
-    {TERM_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-  </select>
-</div> */}
         </div>
       </div>
 
