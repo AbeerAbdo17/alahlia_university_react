@@ -3060,7 +3060,6 @@ const loadDefaultFeesForLevel = async () => {
     const params = new URLSearchParams({
       academic_year: academicYear,
       level_name: levelName,
-      term_name: termName,
       program_type: programType,
       // إضافة الكلية والقسم للرابط
       faculty_id: facultyId || "", 
@@ -3117,12 +3116,11 @@ const loadFees = async () => {
     if (res.ok) {
       feesToUse = await res.json();
       source = "student";
-    } else if (termName) {
+    } else {
       // 2. إذا لم توجد رسوم خاصة، جلب الرسوم العامة (Default)
       const defParams = new URLSearchParams({
         academic_year: academicYear,
         level_name: levelName,
-        term_name: termName,
         program_type: programType,
         faculty_id: facultyId, // نرسل الكلية والقسم لضمان دقة الرسوم العامة
         department_id: departmentId,
@@ -3304,7 +3302,7 @@ useEffect(() => {
     return;
   }
 
-  if (!termName || !departmentId) {
+  if (!departmentId) {
     setFeesData(defaultFeesData);
     setInstallmentCount(0);
     setFeesSource("");
@@ -3314,7 +3312,7 @@ useEffect(() => {
   setIsDefaultMode(true);
   loadDefaultFeesForLevel();
 
-}, [selectedStudent, academicYear, levelName, termName, departmentId, facultyId, programType, postgradProgram]);
+}, [selectedStudent, academicYear, levelName, departmentId, facultyId, programType, postgradProgram]);
 
 
 useEffect(() => {
@@ -3556,7 +3554,6 @@ const saveFees = async () => {
     const body = {
       academic_year: academicYear,
       level_name: levelName,
-      term_name: termName,
       program_type: programType,
       postgraduate_program: programType === "postgraduate" ? postgradProgram || null : null,
       department_id: departmentId ? Number(departmentId) : null,
@@ -3593,7 +3590,7 @@ const saveFees = async () => {
     let url = `${API_BASE}/term-default-fees`;
     if (selectedStudent) {
       url = `${API_BASE}/student-fees`;
-      body.student_id = selectedStudent.id;
+      body.term_name = termName;
     }
 
     const res = await fetch(url, {

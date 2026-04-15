@@ -6979,17 +6979,14 @@ app.get("/api/term-default-fees", async (req, res) => {
     return res.status(400).json({ error: "البيانات الأساسية للفترة ناقصة" });
   }
 
-  const termName = (term_name || "").toString().trim();
   const departmentId = department_id ? Number(department_id) : null;
 
   try {
-    // بناء الاستعلام مع دعم العودة إلى رسوم عامة بدون قسم أو بدون فصل إذا لم توجد قيمة محددة
     const [rows] = await dbp.query(
       `SELECT * FROM fees 
        WHERE student_id IS NULL 
          AND TRIM(academic_year) = TRIM(?)
          AND TRIM(level_name) = TRIM(?)
-         AND (TRIM(term_name) = ? OR TRIM(term_name) = '')
          AND program_type = ?
          AND (department_id = ? OR department_id IS NULL)
          AND (postgraduate_program <=> ? OR (postgraduate_program IS NULL AND ? IS NULL))
@@ -6997,7 +6994,6 @@ app.get("/api/term-default-fees", async (req, res) => {
       [
         academic_year.trim(),
         level_name.trim(),
-        termName,
         program_type,
         departmentId,
         postgraduate_program,
@@ -7044,8 +7040,8 @@ app.post("/api/term-default-fees", async (req, res) => {
     installment_6 = null, installment_6_start = null, installment_6_end = null,
   } = req.body;
 
-  if (!academic_year || !level_name || !term_name || !program_type) {
-    return res.status(400).json({ error: "البيانات الأساسية ناقصة (academic_year, level_name, term_name, program_type)" });
+  if (!academic_year || !level_name || !program_type) {
+    return res.status(400).json({ error: "البيانات الأساسية ناقصة (academic_year, level_name, program_type)" });
   }
 
   try {
@@ -7079,10 +7075,10 @@ let neededInstallments = 0;
 
     const [existing] = await dbp.query(
       `SELECT id FROM fees
-       WHERE academic_year = ? AND level_name = ? AND term_name = ?
+       WHERE academic_year = ? AND level_name = ?
          AND program_type = ? AND (postgraduate_program <=> ?)
          AND (department_id <=> ?) AND student_id IS NULL`,
-      [academic_year, level_name, term_name, program_type, postgraduate_program, department_id]
+      [academic_year, level_name, program_type, postgraduate_program, department_id]
     );
 
     let result;
@@ -7189,7 +7185,6 @@ let neededInstallments = 0;
         [
                 academic_year, 
             level_name,
-            term_name,
             program_type,
             postgraduate_program || null,
             department_id,
