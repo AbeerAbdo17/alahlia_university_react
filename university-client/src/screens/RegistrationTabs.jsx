@@ -3495,8 +3495,11 @@ const resetAllForm = () => {
 };
 
 const saveFees = async () => {
-  if (!academicYear || !levelName || !termName) {
-    showToast("يرجى اختيار السنة والمستوى والفصل", "error");
+  if (!academicYear || !levelName || (selectedStudent && !termName)) {
+    showToast(
+      `يرجى اختيار السنة والمستوى${selectedStudent ? " والفصل" : ""}`,
+      "error"
+    );
     return;
   }
 
@@ -3934,7 +3937,7 @@ const printFeesReport = async () => {
   </datalist>
 </div>
 
-<div style={ui.field}>
+{/* <div style={ui.field}>
   <label>الفصل الدراسي</label>
   <select
     value={termName}
@@ -3945,7 +3948,7 @@ const printFeesReport = async () => {
     <option value="">اختر الفصل</option>
     {TERM_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
   </select>
-</div>
+</div> */}
         </div>
       </div>
 

@@ -7170,7 +7170,7 @@ let neededInstallments = 0;
             created_at, 
             updated_at
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, NULL,
+            ?, ?, '', ?, ?, ?, NULL,
             ?, ?, ?, ?,
             ?, ?, ?,
             ?, ?,
