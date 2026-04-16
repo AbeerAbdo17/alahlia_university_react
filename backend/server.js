@@ -10,6 +10,11 @@ const jwt = require('jsonwebtoken');
 const DEFAULT_REGISTRAR = "";
 
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(48).toString("base64url");
+// app.use(cors({
+//   origin: "https://university.kian24.com", 
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   credentials: true
+// }));
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -7527,7 +7532,7 @@ else {
 // INSERT
 [result] = await dbp.query(
   `INSERT INTO fees (
-    student_id, academic_year, level_name, program_type, postgraduate_program,
+    student_id, academic_year, level_name, term_name, program_type, postgraduate_program,
     currency,
     registration_fee, tuition_fee, late_fee, freeze_fee, unfreeze_fee, repeat_discount,
     scholarship_type, scholarship_percentage, scholarship_granted_by,
@@ -7540,7 +7545,7 @@ else {
     installment_6, installment_6_start, installment_6_end, installment_6_id,
     registrar, created_at, updated_at
   ) VALUES (
-    ?, ?, ?, ?, ?, 
+    ?, ?, ?, ?, ?, ?, 
     ?,                                      
     ?, ?, ?, ?, ?, ?, 
     ?, ?, ?, 
@@ -7557,6 +7562,7 @@ else {
     student_id,
     academic_year,
     level_name,
+    term_name || '',
     program_type,
     postgraduate_program || null,
 
