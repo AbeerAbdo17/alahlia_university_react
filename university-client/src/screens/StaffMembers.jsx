@@ -419,11 +419,9 @@ const loadRanks = async () => {
                         <td style={{ whiteSpace: "nowrap" }}>{x.phone || "-"}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{x.academic_rank || "-"}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{x.specialization || "-"}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <button className="btn btn-outline btn-small" onClick={() => startEdit(x)}>تعديل</button>
-                            <button className="btn btn-danger btn-small" onClick={() => remove(x.id)}>حذف</button>
-                          </div>
+                        <td style={{ whiteSpace: "nowrap", display: "flex", gap: 8 }}>
+                          <button className="btn btn-small" onClick={() => startEdit(x)}>تعديل</button>
+                          <button className="btn btn-danger btn-small" onClick={() => remove(x.id)}>حذف</button>
                         </td>
                       </tr>
                     ))}
@@ -432,14 +430,28 @@ const loadRanks = async () => {
               </div>
             )}
           </div>
+
+          {/* Toast */}
+          {toast && (
+            <div
+              style={{
+                position: "fixed",
+                right: 16,
+                bottom: 16,
+                background: toast.type === "error" ? "#dc2626" : "#16a34a",
+                color: "white",
+                padding: "12px 14px",
+                borderRadius: 10,
+                fontWeight: 900,
+                boxShadow: "0 12px 30px rgba(0,0,0,.25)",
+                zIndex: 9999,
+              }}
+            >
+              {toast.message}
+            </div>
+          )}
         </div>
       </main>
-
-      {toast && (
-        <div className={`toast toast-${toast.type}`}>
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 }
