@@ -1,20 +1,21 @@
 -- phpMyAdmin SQL Dump
--- version 3.5.2.2
--- http://www.phpmyadmin.net
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 09, 2026 at 09:32 AM
--- Server version: 5.5.27
--- PHP Version: 5.4.7
+-- Generation Time: Apr 22, 2026 at 11:47 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
-SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `university_db`
@@ -26,32 +27,15 @@ SET time_zone = "+00:00";
 -- Table structure for table `academic_periods`
 --
 
-CREATE TABLE IF NOT EXISTS `academic_periods` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
-  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
-  `term_name` varchar(30) CHARACTER SET utf8 NOT NULL,
-  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
-  `postgraduate_program` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_period` (`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
-  KEY `idx_academic_periods_academic_year` (`academic_year`),
-  KEY `idx_academic_periods_level_name` (`level_name`),
-  KEY `idx_academic_periods_term_name` (`term_name`),
-  KEY `idx_academic_periods_program_type` (`program_type`),
-  KEY `idx_academic_periods_postgraduate_program` (`postgraduate_program`),
-  KEY `idx_academic_periods_program_type_postgraduate_program` (`program_type`,`postgraduate_program`),
-  KEY `idx_ap_year` (`academic_year`),
-  KEY `idx_ap_level` (`level_name`),
-  KEY `idx_ap_term` (`term_name`),
-  KEY `idx_ap_prog_type` (`program_type`),
-  KEY `idx_ap_pg_program` (`postgraduate_program`),
-  KEY `idx_ap_prog_pg` (`program_type`,`postgraduate_program`),
-  KEY `idx_ap_year_prog_pg` (`academic_year`,`program_type`,`postgraduate_program`),
-  KEY `idx_ap_year_level_prog` (`academic_year`,`level_name`,`program_type`),
-  KEY `idx_academic_periods_year_level_term` (`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=308 ;
+CREATE TABLE `academic_periods` (
+  `id` int(11) NOT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `term_name` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'bachelor',
+  `postgraduate_program` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `academic_periods`
@@ -356,7 +340,56 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (304, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 07:51:54'),
 (305, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-04-07 13:13:18'),
 (306, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-08 11:26:05'),
-(307, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-08 11:26:05');
+(307, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-08 11:26:05'),
+(308, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-09 07:59:03'),
+(309, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-09 07:59:03'),
+(310, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-14 13:00:38'),
+(311, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-14 13:00:38'),
+(312, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-04-14 13:26:54'),
+(313, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-15 07:32:18'),
+(314, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-15 07:32:18'),
+(315, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-15 08:08:46'),
+(316, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-15 08:08:46'),
+(317, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 08:54:38'),
+(318, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 08:55:37'),
+(319, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 08:55:37'),
+(320, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 09:24:23'),
+(321, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 09:24:25'),
+(322, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 09:47:54'),
+(323, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 09:47:54'),
+(324, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:05:08'),
+(325, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:05:08'),
+(326, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:11:58'),
+(327, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:11:58'),
+(333, '2025/2026', 'الدفعة الأولى', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', '2026-04-18 10:38:48'),
+(334, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:40:16'),
+(335, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 10:40:16'),
+(336, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 11:33:44'),
+(337, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 11:33:45'),
+(339, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 12:54:22'),
+(340, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 12:54:22'),
+(341, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 15:25:01'),
+(342, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 15:25:02'),
+(343, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 15:27:42'),
+(344, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-18 15:27:42'),
+(345, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-04-19 08:38:52'),
+(346, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-19 08:40:30'),
+(347, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-19 08:40:31'),
+(348, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-19 08:59:31'),
+(349, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-19 09:00:59'),
+(350, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-19 09:01:00'),
+(351, '2028/2029', 'المستوى الرابع', 'الفصل الأول', 'bachelor', NULL, '2026-04-20 10:07:39'),
+(352, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', NULL, '2026-04-20 10:09:50'),
+(353, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-20 11:55:57'),
+(361, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 08:40:48'),
+(362, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 08:42:16'),
+(363, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 08:42:18'),
+(366, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 11:44:36'),
+(367, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 11:45:55'),
+(368, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-21 11:45:55'),
+(369, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-22 09:45:35'),
+(370, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-22 09:46:40'),
+(371, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-04-22 09:46:50');
 
 -- --------------------------------------------------------
 
@@ -364,26 +397,24 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 -- Table structure for table `books`
 --
 
-CREATE TABLE IF NOT EXISTS `books` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8 NOT NULL,
-  `description` text CHARACTER SET utf8,
-  `author` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `faculty` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `pdf_url` varchar(500) CHARACTER SET utf8 DEFAULT NULL,
-  `is_pdf` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_borrowed` tinyint(1) DEFAULT '0',
-  `borrower_name` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `borrower_id` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+CREATE TABLE `books` (
+  `id` int(11) NOT NULL,
+  `title` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `description` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `author` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `faculty` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `pdf_url` varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `is_pdf` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_borrowed` tinyint(1) DEFAULT 0,
+  `borrower_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `borrower_id` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `borrowed_at` datetime DEFAULT NULL,
   `returned_at` datetime DEFAULT NULL,
-  `copies` int(11) DEFAULT '1',
-  `location` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `faculty_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_books_faculty` (`faculty_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=23 ;
+  `copies` int(11) DEFAULT 1,
+  `location` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `faculty_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `books`
@@ -410,7 +441,8 @@ INSERT INTO `books` (`id`, `title`, `description`, `author`, `faculty`, `pdf_url
 (19, 'مقدمة في الاقتصاد', '002', 'اولقا حسن', NULL, 'http://localhost:5000/uploads/1767006113066.pdf', 1, '2025-12-29 11:01:53', 0, NULL, NULL, NULL, NULL, 1, '', 3),
 (20, 'test', '002', 'henary', NULL, '', 0, '2026-02-02 11:30:04', 0, NULL, NULL, NULL, NULL, 1, 'rf45', 3),
 (21, 'df', '002', 'rty', NULL, 'http://localhost:5000/uploads/1770033643111.pdf', 1, '2026-02-02 12:00:25', 0, NULL, NULL, NULL, NULL, 2, '', 3),
-(22, 'testing', '002', 'احمد محمد', NULL, '', 0, '2026-03-04 07:34:27', 0, NULL, NULL, NULL, NULL, 2, '', 1);
+(22, 'testing', '002', 'احمد محمد', NULL, '', 0, '2026-03-04 07:34:27', 0, NULL, NULL, NULL, NULL, 2, '', 1),
+(23, 'اختبار الانظمه', '', 'هاله خالد', NULL, 'http://localhost:5000/uploads/1776251844972.docx', 1, '2026-04-15 06:58:09', 0, NULL, NULL, NULL, NULL, 1, '', 1);
 
 -- --------------------------------------------------------
 
@@ -418,17 +450,15 @@ INSERT INTO `books` (`id`, `title`, `description`, `author`, `faculty`, `pdf_url
 -- Table structure for table `borrowed_books`
 --
 
-CREATE TABLE IF NOT EXISTS `borrowed_books` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `borrowed_books` (
+  `id` int(11) NOT NULL,
   `book_id` int(11) NOT NULL,
-  `student_id` varchar(255) CHARACTER SET utf8 NOT NULL,
-  `student_name` varchar(255) CHARACTER SET utf8 NOT NULL,
-  `faculty` varchar(255) CHARACTER SET utf8 NOT NULL,
-  `borrowed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `returned_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `book_id` (`book_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=6 ;
+  `student_id` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `student_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `faculty` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `borrowed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `returned_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `borrowed_books`
@@ -444,8 +474,8 @@ INSERT INTO `borrowed_books` (`id`, `book_id`, `student_id`, `student_name`, `fa
 -- Table structure for table `courses`
 --
 
-CREATE TABLE IF NOT EXISTS `courses` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `courses` (
+  `id` int(11) NOT NULL,
   `faculty_id` int(11) NOT NULL,
   `department_id` int(11) NOT NULL,
   `academic_year` varchar(20) NOT NULL,
@@ -454,38 +484,14 @@ CREATE TABLE IF NOT EXISTS `courses` (
   `course_name` varchar(255) NOT NULL,
   `instructor` varchar(255) DEFAULT NULL,
   `credit_hours` decimal(5,2) DEFAULT NULL,
-  `total_mark` int(11) NOT NULL DEFAULT '100',
-  `coursework_max` int(11) NOT NULL DEFAULT '40',
-  `final_exam_max` int(11) NOT NULL DEFAULT '60',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `total_mark` int(11) NOT NULL DEFAULT 100,
+  `coursework_max` int(11) NOT NULL DEFAULT 40,
+  `final_exam_max` int(11) NOT NULL DEFAULT 60,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `program_type` varchar(20) NOT NULL DEFAULT 'bachelor',
-  `postgraduate_program` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_courses_filter` (`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`),
-  KEY `fk_courses_department` (`department_id`),
-  KEY `idx_courses_faculty_id` (`faculty_id`),
-  KEY `idx_courses_department_id` (`department_id`),
-  KEY `idx_courses_academic_year` (`academic_year`),
-  KEY `idx_courses_level_name` (`level_name`),
-  KEY `idx_courses_term_name` (`term_name`),
-  KEY `idx_courses_program_type` (`program_type`),
-  KEY `idx_courses_postgraduate_program` (`postgraduate_program`),
-  KEY `idx_courses_course_name` (`course_name`),
-  KEY `idx_crs_faculty` (`faculty_id`),
-  KEY `idx_crs_dept` (`department_id`),
-  KEY `idx_crs_year` (`academic_year`),
-  KEY `idx_crs_level` (`level_name`),
-  KEY `idx_crs_term` (`term_name`),
-  KEY `idx_crs_prog` (`program_type`),
-  KEY `idx_crs_pg` (`postgraduate_program`),
-  KEY `idx_crs_name` (`course_name`),
-  KEY `idx_crs_fac_dept` (`faculty_id`,`department_id`),
-  KEY `idx_crs_period` (`academic_year`,`level_name`,`term_name`),
-  KEY `idx_crs_prog_pg` (`program_type`,`postgraduate_program`),
-  KEY `idx_crs_yr_lvl_term` (`academic_year`,`level_name`,`term_name`),
-  KEY `idx_crs_fac_yr_lvl` (`faculty_id`,`academic_year`,`level_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=65 ;
+  `postgraduate_program` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `courses`
@@ -563,32 +569,20 @@ INSERT INTO `courses` (`id`, `faculty_id`, `department_id`, `academic_year`, `le
 -- Table structure for table `course_grades`
 --
 
-CREATE TABLE IF NOT EXISTS `course_grades` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `course_grades` (
+  `id` int(11) NOT NULL,
   `course_id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
-  `attempt_number` tinyint(3) unsigned NOT NULL DEFAULT '1',
+  `attempt_number` tinyint(3) UNSIGNED NOT NULL DEFAULT 1,
   `coursework_mark` decimal(6,2) DEFAULT NULL,
   `final_exam_mark` decimal(6,2) DEFAULT NULL,
   `total_mark` decimal(6,2) DEFAULT NULL,
   `letter` varchar(10) DEFAULT NULL,
   `points` decimal(4,2) DEFAULT NULL,
-  `is_repeat` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_student_course_attempt` (`student_id`,`course_id`,`attempt_number`),
-  KEY `fk_course_grades_student` (`student_id`),
-  KEY `fk_course_grades_course` (`course_id`),
-  KEY `idx_course_grades_student_id` (`student_id`),
-  KEY `idx_course_grades_course_id` (`course_id`),
-  KEY `idx_course_grades_attempt_number` (`attempt_number`),
-  KEY `idx_course_grades_student_id_course_id` (`student_id`,`course_id`),
-  KEY `idx_grd_std_course` (`student_id`,`course_id`),
-  KEY `idx_grd_attempt` (`attempt_number`),
-  KEY `idx_course_grades_student_course` (`student_id`,`course_id`),
-  KEY `idx_course_grades_course` (`course_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=186 ;
+  `is_repeat` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `course_grades`
@@ -724,7 +718,11 @@ INSERT INTO `course_grades` (`id`, `course_id`, `student_id`, `attempt_number`, 
 (182, 60, 1, 1, 30.00, 20.00, 50.00, 'C', 2.00, 0, '2026-03-09 12:00:20', '0000-00-00 00:00:00'),
 (183, 60, 3, 1, 30.00, 40.00, 70.00, 'B', 3.00, 0, '2026-03-09 12:00:20', '0000-00-00 00:00:00'),
 (184, 60, 7, 1, 20.00, 30.00, 50.00, 'C', 2.00, 0, '2026-03-09 12:00:20', '0000-00-00 00:00:00'),
-(185, 60, 4, 1, 30.00, 0.00, 30.00, 'F', 0.00, 0, '2026-03-09 12:00:20', '0000-00-00 00:00:00');
+(185, 60, 4, 1, 30.00, 0.00, 30.00, 'F', 0.00, 0, '2026-03-09 12:00:20', '0000-00-00 00:00:00'),
+(186, 62, 7, 1, 40.00, 30.00, 70.00, 'B', 3.00, 0, '2026-04-20 10:10:13', '0000-00-00 00:00:00'),
+(187, 61, 7, 1, 40.00, 55.00, 95.00, 'A', 4.00, 0, '2026-04-20 10:10:22', '0000-00-00 00:00:00'),
+(188, 63, 7, 1, 40.00, 60.00, 100.00, 'A', 4.00, 0, '2026-04-20 10:10:36', '0000-00-00 00:00:00'),
+(189, 64, 7, 1, 40.00, 55.00, 95.00, 'A', 4.00, 0, '2026-04-20 10:10:46', '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -732,16 +730,12 @@ INSERT INTO `course_grades` (`id`, `course_id`, `student_id`, `attempt_number`, 
 -- Table structure for table `departments`
 --
 
-CREATE TABLE IF NOT EXISTS `departments` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `departments` (
+  `id` int(11) NOT NULL,
   `faculty_id` int(11) NOT NULL,
-  `department_name` varchar(200) CHARACTER SET utf8 NOT NULL,
-  `levels_count` int(11) DEFAULT '4',
-  PRIMARY KEY (`id`),
-  KEY `faculty_id` (`faculty_id`),
-  KEY `idx_departments_faculty_id` (`faculty_id`),
-  KEY `idx_departments_department_name` (`department_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=16 ;
+  `department_name` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `levels_count` int(11) DEFAULT 4
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `departments`
@@ -751,9 +745,9 @@ INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`
 (1, 1, 'نظم المعلومات', 4),
 (2, 1, 'علوم الحاسوب', 4),
 (3, 1, 'الشبكات', 4),
-(4, 2, 'هندسة مدنية', 5),
-(5, 2, 'هندسة كهربائية', 5),
-(6, 2, 'هندسة معمارية', 5),
+(4, 2, 'تمويل', 4),
+(5, 2, 'إدارة أعمال', 4),
+(6, 2, 'محاسبة تكاليف', 4),
 (7, 3, 'محاسبة', 4),
 (8, 3, 'إدارة أعمال', 4),
 (9, 3, 'اقتصاد', 4),
@@ -762,7 +756,8 @@ INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`
 (12, 5, 'الطفيليات', 4),
 (13, 7, 'اللغة الانجليزية', 4),
 (14, 1, 'تقنية المعلومات', 4),
-(15, 6, 'طب اسنان', 5);
+(15, 6, 'طب اسنان', 5),
+(16, 9, 'الهندسة المدنية', 5);
 
 -- --------------------------------------------------------
 
@@ -770,26 +765,26 @@ INSERT INTO `departments` (`id`, `faculty_id`, `department_name`, `levels_count`
 -- Table structure for table `faculties`
 --
 
-CREATE TABLE IF NOT EXISTS `faculties` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `faculty_name` varchar(200) CHARACTER SET utf8 NOT NULL,
-  `faculty_type` enum('theoretical','practical') CHARACTER SET utf8 NOT NULL DEFAULT 'theoretical',
-  PRIMARY KEY (`id`),
-  KEY `idx_faculties_faculty_name` (`faculty_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=8 ;
+CREATE TABLE `faculties` (
+  `id` int(11) NOT NULL,
+  `faculty_name` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `faculty_type` enum('theoretical','practical') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'theoretical',
+  `faculty_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `faculties`
 --
 
-INSERT INTO `faculties` (`id`, `faculty_name`, `faculty_type`) VALUES
-(1, 'كلية علوم الحاسوب', 'practical'),
-(2, 'كلية الهندسة', 'practical'),
-(3, 'كلية الاقتصاد', 'theoretical'),
-(4, 'كلية علوم التمريض', 'practical'),
-(5, 'كلية المختبرات الطبية', 'practical'),
-(6, 'كلية الطب', 'theoretical'),
-(7, 'كلية اللغات', 'theoretical');
+INSERT INTO `faculties` (`id`, `faculty_name`, `faculty_type`, `faculty_code`) VALUES
+(1, 'كلية علوم الحاسوب', 'practical', 'PAU004'),
+(2, 'كلية العلوم الأدارية', 'theoretical', 'PAU006'),
+(3, 'كلية الإقتصاد والعلوم المصرفيه', 'theoretical', 'PAU005'),
+(4, 'كلية علوم التمريض', 'practical', 'PAU003'),
+(5, 'كلية علوم المختبرات الطبية', 'practical', 'PAU002'),
+(6, 'كلية الطب والجراحة', 'theoretical', 'PAU001'),
+(7, 'كلية اللغات والترجمه', 'theoretical', 'PAU007'),
+(9, 'كلية الهندسة', 'practical', 'PAU0008');
 
 -- --------------------------------------------------------
 
@@ -797,85 +792,69 @@ INSERT INTO `faculties` (`id`, `faculty_name`, `faculty_type`) VALUES
 -- Table structure for table `fees`
 --
 
-CREATE TABLE IF NOT EXISTS `fees` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `fees` (
+  `id` int(11) NOT NULL,
   `student_id` int(11) DEFAULT NULL,
-  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
-  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
-  `currency` enum('SDG','USD') CHARACTER SET utf8 NOT NULL DEFAULT 'SDG',
-  `term_name` varchar(30) CHARACTER SET utf8 NOT NULL,
-  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
-  `postgraduate_program` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `currency` enum('SDG','USD') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'SDG',
+  `term_name` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'bachelor',
+  `postgraduate_program` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `department_id` int(11) DEFAULT NULL,
   `registration_fee` decimal(10,2) DEFAULT NULL,
   `tuition_fee` decimal(10,2) DEFAULT NULL,
   `late_fee` decimal(10,2) DEFAULT NULL,
-  `scholarship_type` varchar(100) CHARACTER SET utf8 DEFAULT 'لا منحة',
-  `scholarship_percentage` decimal(5,2) DEFAULT '0.00' COMMENT 'نسبة الخصم',
-  `scholarship_granted_by` varchar(150) CHARACTER SET utf8 DEFAULT NULL,
+  `scholarship_type` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT 'لا منحة',
+  `scholarship_percentage` decimal(5,2) DEFAULT 0.00 COMMENT 'نسبة الخصم',
+  `scholarship_granted_by` varchar(150) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `payment_start_date` date DEFAULT NULL,
   `payment_end_date` date DEFAULT NULL,
   `installment_1` decimal(10,2) DEFAULT NULL,
   `installment_1_id` int(11) DEFAULT NULL,
   `installment_1_start` date DEFAULT NULL,
   `installment_1_end` date DEFAULT NULL,
-  `installment_1_paid` tinyint(1) DEFAULT '0',
+  `installment_1_paid` tinyint(1) DEFAULT 0,
   `installment_1_paid_at` date DEFAULT NULL,
   `installment_2` decimal(10,2) DEFAULT NULL,
   `installment_2_id` int(11) DEFAULT NULL,
   `installment_2_start` date DEFAULT NULL,
   `installment_2_end` date DEFAULT NULL,
-  `installment_2_paid` tinyint(1) DEFAULT '0',
+  `installment_2_paid` tinyint(1) DEFAULT 0,
   `installment_2_paid_at` date DEFAULT NULL,
   `installment_3` decimal(10,2) DEFAULT NULL,
   `installment_3_id` int(11) DEFAULT NULL,
   `installment_3_start` date DEFAULT NULL,
   `installment_3_end` date DEFAULT NULL,
-  `installment_3_paid` tinyint(1) DEFAULT '0',
+  `installment_3_paid` tinyint(1) DEFAULT 0,
   `installment_3_paid_at` date DEFAULT NULL,
   `installment_4` decimal(10,2) DEFAULT NULL,
   `installment_4_id` int(11) DEFAULT NULL,
   `installment_4_start` date DEFAULT NULL,
   `installment_4_end` date DEFAULT NULL,
-  `installment_4_paid` tinyint(1) DEFAULT '0',
+  `installment_4_paid` tinyint(1) DEFAULT 0,
   `installment_4_paid_at` date DEFAULT NULL,
   `installment_5` decimal(10,2) DEFAULT NULL,
   `installment_5_id` int(11) DEFAULT NULL,
   `installment_5_start` date DEFAULT NULL,
   `installment_5_end` date DEFAULT NULL,
-  `installment_5_paid` tinyint(1) DEFAULT '0',
+  `installment_5_paid` tinyint(1) DEFAULT 0,
   `installment_5_paid_at` date DEFAULT NULL,
   `installment_6` decimal(10,2) DEFAULT NULL,
   `installment_6_id` int(11) DEFAULT NULL,
   `installment_6_start` date DEFAULT NULL,
   `installment_6_end` date DEFAULT NULL,
-  `installment_6_paid` tinyint(1) DEFAULT '0',
+  `installment_6_paid` tinyint(1) DEFAULT 0,
   `installment_6_paid_at` date DEFAULT NULL,
-  `registrar` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `freeze_fee` decimal(10,2) DEFAULT '0.00',
-  `unfreeze_fee` decimal(10,2) DEFAULT '0.00',
-  `repeat_discount` int(11) DEFAULT '50',
-  `is_paid` tinyint(1) DEFAULT '0' COMMENT '0 = غير مدفوع, 1 = مدفوع',
-  `is_synced` tinyint(4) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
-  UNIQUE KEY `uq_default_period` (`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
-  UNIQUE KEY `installment_1_id` (`installment_1_id`),
-  UNIQUE KEY `installment_2_id` (`installment_2_id`),
-  UNIQUE KEY `installment_3_id` (`installment_3_id`),
-  UNIQUE KEY `installment_4_id` (`installment_4_id`),
-  UNIQUE KEY `installment_5_id` (`installment_5_id`),
-  UNIQUE KEY `installment_6_id` (`installment_6_id`),
-  KEY `fk_fees_student` (`student_id`),
-  KEY `fk_fees_department` (`department_id`),
-  KEY `idx_fees_student_year_level` (`student_id`,`academic_year`,`level_name`),
-  KEY `idx_fees_year_level` (`academic_year`,`level_name`),
-  KEY `idx_fees_dept_year_level` (`department_id`,`academic_year`,`level_name`),
-  KEY `idx_fees_is_synced` (`is_synced`),
-  KEY `idx_fees_student_id` (`student_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=56 ;
+  `registrar` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `freeze_fee` decimal(10,2) DEFAULT 0.00,
+  `unfreeze_fee` decimal(10,2) DEFAULT 0.00,
+  `repeat_discount` int(11) DEFAULT 50,
+  `is_paid` tinyint(1) DEFAULT 0 COMMENT '0 = غير مدفوع, 1 = مدفوع',
+  `is_synced` tinyint(4) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `fees`
@@ -927,7 +906,23 @@ INSERT INTO `fees` (`id`, `student_id`, `academic_year`, `level_name`, `currency
 (52, 12, '2026/2027', 'المستوى الثالث', 'SDG', '', 'bachelor', NULL, NULL, 15000.00, 18800.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 16900.00, 16, '2026-04-08', '2026-04-30', 0, NULL, 16900.00, 17, '2026-05-08', '2026-05-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 10:35:36', '2026-04-08 10:37:08', 0.00, 0.00, 50, 0, 1),
 (53, 104, '2025/2026', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 65000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 40000.00, 18, '2026-04-08', '2026-04-30', 0, NULL, 40000.00, 19, '2026-05-08', '2026-05-31', 0, NULL, 40000.00, 22, '2026-06-08', '2026-06-30', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 10:59:15', '2026-04-08 12:08:04', 0.00, 0.00, 50, 0, 1),
 (54, NULL, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 15, 55000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 11:27:26', '2026-04-08 11:27:26', 0.00, 0.00, 50, 0, 0),
-(55, 105, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 23333.34, 20, '2026-04-08', '2026-04-30', 1, '2026-04-08', 23333.33, 21, '2026-05-08', '2026-05-31', 1, '2026-04-08', 23333.33, 23, '2026-06-08', '2026-06-30', 1, '2026-04-08', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 11:27:59', '2026-04-08 12:47:08', 0.00, 0.00, 50, 0, 1);
+(55, 105, '2026/2027', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 55000.00, 15000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 23333.34, 20, '2026-04-08', '2026-04-30', 1, '2026-04-08', 23333.33, 21, '2026-05-08', '2026-05-31', 1, '2026-04-08', 23333.33, 23, '2026-06-08', '2026-06-30', 1, '2026-04-08', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-08 11:27:59', '2026-04-08 12:47:08', 0.00, 0.00, 50, 0, 1),
+(56, NULL, '2025/2026', 'المستوى الأول', 'SDG', 'الفصل الأول', 'bachelor', NULL, 7, 5000.00, 4000.00, 40000.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-15 09:24:37', '2026-04-15 09:24:37', 0.00, 0.00, 50, 0, 0),
+(57, NULL, '2028/2029', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 7, 400.00, 4500.00, 4500.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-15 10:32:50', '2026-04-15 10:32:50', 0.00, 0.00, 50, 0, 0),
+(58, 108, '2028/2029', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, NULL, 400.00, 4500.00, 4500.00, 'لا منحة', 0.00, NULL, NULL, NULL, 9400.00, 24, '2026-04-01', '2026-04-20', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-15 11:39:20', '2026-04-15 11:39:20', 0.00, 0.00, 50, 0, 0),
+(59, NULL, '2028/2029', 'المستوى الأول', 'SDG', '', 'bachelor', NULL, 15, 400.00, 5000.00, 45000.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-15 11:41:29', '2026-04-15 11:41:29', 0.00, 0.00, 50, 0, 0),
+(60, 7, '2027/2028', 'المستوى الثالث', 'SDG', NULL, 'bachelor', NULL, NULL, 24000.00, 16000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 40000.00, 25, '2026-04-20', '2026-04-30', 1, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-20 09:58:52', '2026-04-20 09:58:52', 0.00, 0.00, 50, 0, 0),
+(61, 7, '2028/2029', 'المستوى الرابع', 'SDG', NULL, 'bachelor', NULL, NULL, 40000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 100000.00, 26, '2026-04-20', '2026-04-30', 1, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-20 10:09:05', '2026-04-20 10:09:05', 0.00, 0.00, 50, 0, 0),
+(62, NULL, '2025/2026', 'الدفعة الأولى', 'SDG', '', 'postgraduate', 'ماجستير ادارة الاعمال', 8, 40000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 06:52:56', '2026-04-21 06:52:56', 0.00, 0.00, 50, 0, 0),
+(63, 124, '2025/2026', 'الدفعة الأولى', 'SDG', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', NULL, 40000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 100000.00, 27, '2026-04-21', '2026-05-21', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 06:53:40', '2026-04-21 06:53:40', 0.00, 0.00, 50, 0, 0),
+(64, 125, '2025/2026', 'الدفعة الأولى', 'SDG', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', NULL, 40000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 50000.00, 28, '2026-04-21', '2026-05-21', 0, NULL, 50000.00, 29, '2026-06-21', '2026-07-21', 0, NULL, NULL, NULL, '2026-08-21', '2026-09-21', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 07:00:50', '2026-04-21 09:12:55', 0.00, 0.00, 50, 0, 1),
+(65, 126, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, NULL, 5000.00, 4000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 4500.00, 31, '2026-04-21', '2026-05-21', 0, NULL, 4500.00, 32, '2026-06-21', '2026-07-21', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 08:54:50', '2026-04-21 09:10:34', 0.00, 0.00, 50, 0, 1),
+(66, 121, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, NULL, 5000.00, 4000.00, 40000.00, 'لا منحة', 0.00, NULL, NULL, NULL, 16333.34, 33, '2026-04-21', '2026-05-21', 1, '2026-04-22', 16333.33, 34, '2026-06-21', '2026-07-21', 0, NULL, 16333.33, 41, '2026-08-22', '2026-09-22', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 09:33:23', '2026-04-22 08:24:37', 0.00, 0.00, 50, 0, 0),
+(67, 123, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, NULL, 5000.00, 4000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 2250.00, 35, '2026-04-21', '2026-05-21', 0, NULL, 2250.00, 36, '2026-06-21', '2026-07-21', 0, NULL, 2250.00, 37, '2026-08-21', '2026-09-21', 0, NULL, 2250.00, 38, '2026-10-21', '2026-11-21', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 10:26:13', '2026-04-21 10:31:07', 0.00, 0.00, 50, 0, 1),
+(68, NULL, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, 16, 250000.00, 450000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 11:47:27', '2026-04-21 11:47:27', 0.00, 0.00, 50, 0, 0),
+(69, 127, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, NULL, 250000.00, 450000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 350000.00, 39, NULL, NULL, 0, NULL, 350000.00, 40, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-21 11:48:06', '2026-04-21 11:48:06', 0.00, 0.00, 50, 0, 0),
+(71, 122, '2025/2026', 'المستوى الأول', 'SDG', NULL, 'bachelor', NULL, NULL, 250000.00, 450000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 350000.00, 42, '2026-04-22', '2026-04-30', 1, '2026-04-22', 350000.00, 43, '2026-05-22', '2026-05-31', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-22 08:19:08', '2026-04-22 08:19:08', 0.00, 0.00, 50, 0, 0),
+(72, 115, '2025/2026', 'الدفعة الأولى', 'SDG', 'الفصل الأول', 'postgraduate', 'ماجستير ادارة الاعمال', NULL, 40000.00, 60000.00, 0.00, 'لا منحة', 0.00, NULL, NULL, NULL, 50000.00, 44, '2026-04-22', '2026-05-22', 1, '2026-04-22', 25000.00, 45, '2026-06-22', '2026-07-22', 0, NULL, 25000.00, 46, '2026-08-22', '2026-09-22', 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, '', '2026-04-22 08:36:25', '2026-04-22 09:20:06', 0.00, 0.00, 50, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -935,8 +930,8 @@ INSERT INTO `fees` (`id`, `student_id`, `academic_year`, `level_name`, `currency
 -- Table structure for table `grading_rules`
 --
 
-CREATE TABLE IF NOT EXISTS `grading_rules` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `grading_rules` (
+  `id` int(11) NOT NULL,
   `rule_type` varchar(30) NOT NULL,
   `program_mode` varchar(20) DEFAULT NULL,
   `label` varchar(255) NOT NULL,
@@ -946,24 +941,18 @@ CREATE TABLE IF NOT EXISTS `grading_rules` (
   `term_calc_mode` enum('percentage','courses') DEFAULT NULL,
   `gpa_max` decimal(4,2) DEFAULT NULL,
   `cumulative_calc_mode` enum('simple_avg','weighted_avg') DEFAULT NULL,
-  `sort_order` int(11) NOT NULL DEFAULT '0',
+  `sort_order` int(11) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
-  `faculty_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_grading_rules_faculty` (`faculty_id`),
-  KEY `idx_grading_rules_faculty_id` (`faculty_id`),
-  KEY `idx_grading_rules_rule_type` (`rule_type`),
-  KEY `idx_grading_rules_faculty_id_rule_type` (`faculty_id`,`rule_type`),
-  KEY `idx_grd_fac_type` (`faculty_id`,`rule_type`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=196 ;
+  `faculty_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `grading_rules`
 --
 
 INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_value`, `max_value`, `points`, `term_calc_mode`, `gpa_max`, `cumulative_calc_mode`, `sort_order`, `created_at`, `updated_at`, `faculty_id`) VALUES
-(53, 'gpa_settings', NULL, '{"total_mark":100,"final_exam_max":60,"coursework_max":40,"rounding_decimals":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
+(53, 'gpa_settings', NULL, '{\"total_mark\":100,\"final_exam_max\":60,\"coursework_max\":40,\"rounding_decimals\":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
 (56, 'grade_scale', NULL, 'A', 80.00, 100.00, 4.00, NULL, NULL, NULL, 1, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
 (59, 'grade_scale', NULL, 'B+', 75.00, 79.99, 3.50, NULL, NULL, NULL, 2, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
 (62, 'grade_scale', NULL, 'B', 70.00, 74.99, 3.00, NULL, NULL, NULL, 3, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
@@ -979,7 +968,7 @@ INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_va
 (108, 'gpa_classification', 'general', 'جيد جداً', 3.00, 3.49, NULL, NULL, NULL, NULL, 2, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
 (111, 'gpa_classification', 'general', 'جيد', 2.50, 2.99, NULL, NULL, NULL, NULL, 3, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
 (114, 'gpa_classification', 'general', 'مقبول', 2.00, 2.49, NULL, NULL, NULL, NULL, 4, '2025-12-28 13:29:04', '2025-12-28 13:29:04', 2),
-(148, 'gpa_settings', NULL, '{"total_mark":100,"final_exam_max":60,"coursework_max":40,"rounding_decimals":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
+(148, 'gpa_settings', NULL, '{\"total_mark\":100,\"final_exam_max\":60,\"coursework_max\":40,\"rounding_decimals\":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
 (149, 'grade_scale', NULL, 'A', 85.00, 100.00, 4.00, NULL, NULL, NULL, 1, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
 (150, 'grade_scale', NULL, 'B+', 75.00, 85.00, 3.50, NULL, NULL, NULL, 2, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
 (151, 'grade_scale', NULL, 'B', 65.00, 75.00, 3.00, NULL, NULL, NULL, 3, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
@@ -995,7 +984,7 @@ INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_va
 (161, 'gpa_classification', 'general', 'جيد جداً', 3.00, 3.49, NULL, NULL, NULL, NULL, 2, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
 (162, 'gpa_classification', 'general', 'جيد', 2.50, 2.99, NULL, NULL, NULL, NULL, 3, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
 (163, 'gpa_classification', 'general', 'مقبول', 2.00, 2.49, NULL, NULL, NULL, NULL, 4, '2026-02-03 13:58:46', '2026-02-03 13:58:46', 1),
-(164, 'gpa_settings', NULL, '{"total_mark":100,"final_exam_max":60,"coursework_max":40,"rounding_decimals":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
+(164, 'gpa_settings', NULL, '{\"total_mark\":100,\"final_exam_max\":60,\"coursework_max\":40,\"rounding_decimals\":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
 (165, 'grade_scale', NULL, 'A', 85.00, 100.00, 4.00, NULL, NULL, NULL, 1, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
 (166, 'grade_scale', NULL, 'B+', 75.00, 85.00, 3.50, NULL, NULL, NULL, 2, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
 (167, 'grade_scale', NULL, 'B', 65.00, 75.00, 3.00, NULL, NULL, NULL, 3, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
@@ -1011,7 +1000,7 @@ INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_va
 (177, 'gpa_classification', 'general', 'جيد جداً', 3.00, 3.49, NULL, NULL, NULL, NULL, 2, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
 (178, 'gpa_classification', 'general', 'جيد', 2.50, 2.99, NULL, NULL, NULL, NULL, 3, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
 (179, 'gpa_classification', 'general', 'مقبول', 2.00, 2.49, NULL, NULL, NULL, NULL, 4, '2026-02-07 17:47:20', '2026-02-07 17:47:20', 4),
-(180, 'gpa_settings', NULL, '{"total_mark":100,"final_exam_max":60,"coursework_max":40,"rounding_decimals":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-03-02 13:27:46', '2026-03-02 13:27:46', 3),
+(180, 'gpa_settings', NULL, '{\"total_mark\":100,\"final_exam_max\":60,\"coursework_max\":40,\"rounding_decimals\":2}', 0.00, 0.00, NULL, 'courses', 4.00, 'weighted_avg', 0, '2026-03-02 13:27:46', '2026-03-02 13:27:46', 3),
 (181, 'grade_scale', NULL, 'A', 80.00, 100.00, 4.00, NULL, NULL, NULL, 1, '2026-03-02 13:27:46', '2026-03-02 13:27:46', 3),
 (182, 'grade_scale', NULL, 'B+', 75.00, 79.99, 3.50, NULL, NULL, NULL, 2, '2026-03-02 13:27:46', '2026-03-02 13:27:46', 3),
 (183, 'grade_scale', NULL, 'B', 70.00, 74.99, 3.00, NULL, NULL, NULL, 3, '2026-03-02 13:27:46', '2026-03-02 13:27:46', 3),
@@ -1031,72 +1020,33 @@ INSERT INTO `grading_rules` (`id`, `rule_type`, `program_mode`, `label`, `min_va
 -- --------------------------------------------------------
 
 --
--- Table structure for table `payment`
+-- Table structure for table `payments`
 --
 
-CREATE TABLE IF NOT EXISTS `payment` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `university_id` varchar(50) CHARACTER SET utf8 NOT NULL,
-  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
-  `level_name` varchar(60) CHARACTER SET utf8 NOT NULL,
-  `installment_number` tinyint(4) NOT NULL,
+CREATE TABLE `payments` (
+  `id` int(11) NOT NULL,
+  `university_id` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `academic_year` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `level_name` varchar(60) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `term_name` varchar(60) DEFAULT NULL,
   `amount_paid` decimal(12,2) NOT NULL,
   `payment_date` datetime NOT NULL,
-  `transaction_id` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT '0',
-  `currency` varchar(10) CHARACTER SET utf8 DEFAULT 'SDG',
-  `notes` text CHARACTER SET utf8,
-  `received_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_confirmed` tinyint(1) DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `idx_university_year` (`university_id`,`academic_year`),
-  KEY `idx_installment` (`university_id`,`academic_year`,`installment_number`),
-  KEY `idx_status` (`status`),
-  KEY `idx_received` (`received_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=38 ;
+  `transaction_id` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `bank_ref` varchar(100) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 0,
+  `currency` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT 'SDG',
+  `notes` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `received_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_confirmed` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `payment`
+-- Dumping data for table `payments`
 --
 
-INSERT INTO `payment` (`id`, `university_id`, `academic_year`, `level_name`, `installment_number`, `amount_paid`, `payment_date`, `transaction_id`, `status`, `currency`, `notes`, `received_at`, `is_confirmed`) VALUES
-(1, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-02 07:34:56', 'TXN-1775115296625', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:34:56', 0),
-(2, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-02 07:35:59', 'TXN-1775115359353', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 07:35:59', 0),
-(3, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-02 10:06:33', 'TXN-1775124393111', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:06:33', 0),
-(4, '2500004', '2025/2026', 'المستوى الأول', 1, 17000.00, '2026-04-02 10:10:32', 'TXN-1775124632837', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:10:32', 0),
-(5, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-02 10:17:14', 'TXN-1775125034996', 1, 'SDG', 'تم الدفع عبر المحاكي', '2026-04-02 10:17:15', 0),
-(6, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:21:20', 'SIM-1775301680112', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:20', 0),
-(7, '2026/00001', '2026/2027', 'المستوى الأول', 2, 17500.00, '2026-04-04 11:21:23', 'SIM-1775301683676', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:23', 0),
-(8, '2026/00001', '2026/2027', 'المستوى الأول', 3, 17500.00, '2026-04-04 11:21:27', 'SIM-1775301687091', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 11:21:27', 0),
-(9, '2026/00001', '2026/2027', 'المستوى الأول', 1, 17500.00, '2026-04-04 11:24:09', 'SIM-1775301849840', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 11:24:09', 0),
-(10, '2500004', '2025/2026', 'المستوى الأول', 2, 5666.67, '2026-04-04 12:40:23', 'SIM-1775306423728', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 12:40:23', 0),
-(11, '2026/00001', '2026/2027', 'المستوى الأول', 2, 26250.00, '2026-04-04 13:12:53', 'SIM-1775308373181', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:12:53', 0),
-(12, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 13:19:48', 'SIM-1775308788767', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 13:19:48', 0),
-(13, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:10:56', 'SIM-1775311856493', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:10:56', 0),
-(14, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:06', 'SIM-1775311926965', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:06', 0),
-(15, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:09', 'SIM-1775311929234', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-04 14:12:09', 0),
-(16, '2026/260005', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-04 14:12:45', 'SIM-1775311965942', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:45', 0),
-(17, '2026/260005', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-04 14:12:49', 'SIM-1775311969686', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-04 14:12:49', 0),
-(18, '240003', '2026/2027', 'المستوى الثاني', 1, 8375.00, '2026-04-08 10:39:13', 'SIM-1775644753640', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 10:39:13', 0),
-(19, '240003', '2026/2027', 'المستوى الثاني', 1, 8375.00, '2026-04-08 10:41:42', 'SIM-1775644902732', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 10:41:42', 0),
-(20, '240003', '2026/2027', 'المستوى الثاني', 2, 8375.00, '2026-04-08 10:42:17', 'SIM-1775644937465', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 10:42:17', 0),
-(21, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 11:44:50', 'SIM-1775648690757', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 11:44:50', 0),
-(22, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 11:45:09', 'SIM-1775648709097', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 11:45:09', 0),
-(23, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 12:21:46', 'SIM-1775650906443', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 12:21:46', 0),
-(24, '258963/26', '2025/2026', 'المستوى الأول', 2, 40000.00, '2026-04-08 12:39:18', 'SIM-1775651958415', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 12:39:18', 0),
-(25, '258963/26', '2025/2026', 'المستوى الأول', 2, 40000.00, '2026-04-08 12:40:07', 'SIM-1775652007308', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 12:40:07', 0),
-(26, '258963/26', '2025/2026', 'المستوى الأول', 1, 40000.00, '2026-04-08 12:40:11', 'SIM-1775652011753', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 12:40:11', 0),
-(27, '147852/26', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-08 13:22:38', 'SIM-1775654558104', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:22:38', 0),
-(28, '147852/26', '2026/2027', 'المستوى الأول', 1, 23333.34, '2026-04-08 13:23:02', 'SIM-1775654582069', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:23:02', 1),
-(29, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:13', 'SIM-1775654893630', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:28:13', 0),
-(30, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:19', 'SIM-1775654899439', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:28:19', 1),
-(31, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:28:25', 'SIM-1775654905440', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:28:25', 1),
-(32, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:17', 'SIM-1775656157121', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:17', 1),
-(33, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:21', 'SIM-1775656161511', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:49:21', 1),
-(34, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:24', 'SIM-1775656164725', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:24', 1),
-(35, '147852/26', '2026/2027', 'المستوى الأول', 2, 23333.33, '2026-04-08 13:49:28', 'SIM-1775656168273', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:28', 1),
-(36, '147852/26', '2026/2027', 'المستوى الأول', 3, 23333.33, '2026-04-08 13:49:32', 'SIM-1775656172969', 1, 'SDG', 'عملية ناجحة عبر المحاكي', '2026-04-08 13:49:32', 0),
-(37, '147852/26', '2026/2027', 'المستوى الأول', 3, 23333.33, '2026-04-08 13:49:37', 'SIM-1775656177034', 0, 'SDG', 'عملية ملغاة من قبل المستخدم', '2026-04-08 13:49:37', 1);
+INSERT INTO `payments` (`id`, `university_id`, `academic_year`, `level_name`, `term_name`, `amount_paid`, `payment_date`, `transaction_id`, `bank_ref`, `status`, `currency`, `notes`, `received_at`, `is_confirmed`) VALUES
+(9, '2025220004', '2025/2026', 'المستوى الأول', NULL, 16333.34, '2026-04-22 08:34:09', '33', 'BANK-REF-XKFNEB31B', 1, 'SDG', '', '2026-04-22 08:33:55', 0),
+(11, '321456', '2025/2026', NULL, 'الفصل الأول', 50000.00, '2026-04-22 09:20:30', '44', 'BANK-REF-N7HM7IH26', 1, 'SDG', '', '2026-04-22 08:37:34', 0);
 
 -- --------------------------------------------------------
 
@@ -1104,14 +1054,11 @@ INSERT INTO `payment` (`id`, `university_id`, `academic_year`, `level_name`, `in
 -- Table structure for table `rooms`
 --
 
-CREATE TABLE IF NOT EXISTS `rooms` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `rooms` (
+  `id` int(11) NOT NULL,
   `room_name` varchar(100) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_room_name` (`room_name`),
-  KEY `room_name` (`room_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=5 ;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `rooms`
@@ -1129,8 +1076,8 @@ INSERT INTO `rooms` (`id`, `room_name`, `created_at`) VALUES
 -- Table structure for table `staff_members`
 --
 
-CREATE TABLE IF NOT EXISTS `staff_members` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `staff_members` (
+  `id` int(11) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `staff_code` varchar(50) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
@@ -1140,14 +1087,9 @@ CREATE TABLE IF NOT EXISTS `staff_members` (
   `academic_rank` varchar(100) DEFAULT NULL,
   `specialization` varchar(255) DEFAULT NULL,
   `status` enum('active','inactive') NOT NULL DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_staff_code` (`staff_code`),
-  UNIQUE KEY `uq_staff_email` (`email`),
-  KEY `idx_staff_faculty` (`faculty_id`),
-  KEY `idx_staff_department` (`department_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=12 ;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `staff_members`
@@ -1171,39 +1113,29 @@ INSERT INTO `staff_members` (`id`, `full_name`, `staff_code`, `email`, `phone`, 
 -- Table structure for table `students`
 --
 
-CREATE TABLE IF NOT EXISTS `students` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `first_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `second_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `third_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `fourth_name` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `full_name` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `nationality` varchar(100) CHARACTER SET utf8 DEFAULT NULL COMMENT 'الجنسية',
-  `gender` enum('male','female') CHARACTER SET utf8 DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8 NOT NULL DEFAULT 'active',
-  `university_id` varchar(30) CHARACTER SET utf8 NOT NULL DEFAULT '0',
-  `phone` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-  `receipt_number` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
+CREATE TABLE `students` (
+  `id` int(11) NOT NULL,
+  `first_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `second_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `third_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `fourth_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `full_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `nationality` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'الجنسية',
+  `gender` enum('male','female') CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `status` enum('active','inactive') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'active',
+  `university_id` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '0',
+  `phone` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `receipt_number` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `department_id` int(11) DEFAULT NULL,
-  `college` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `level` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `academic_year` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-  `academic_status` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `registration_status` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `notes` text CHARACTER SET utf8,
-  `registrar` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_students_university_id_unique` (`university_id`),
-  UNIQUE KEY `uniq_students_full_name` (`full_name`),
-  KEY `fk_students_department` (`department_id`),
-  KEY `idx_students_university_id` (`university_id`),
-  KEY `idx_std_univ_name` (`university_id`,`full_name`),
-  KEY `idx_std_dept_name` (`department_id`,`full_name`),
-  KEY `idx_std_univ_dept` (`university_id`,`department_id`),
-  KEY `idx_students_dept_status` (`department_id`,`academic_status`),
-  KEY `idx_student_id` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=106 ;
+  `college` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `level` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `academic_year` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `academic_status` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `registration_status` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `registrar` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `students`
@@ -1212,7 +1144,7 @@ CREATE TABLE IF NOT EXISTS `students` (
 INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth_name`, `full_name`, `nationality`, `gender`, `status`, `university_id`, `phone`, `receipt_number`, `department_id`, `college`, `level`, `academic_year`, `academic_status`, `registration_status`, `notes`, `registrar`, `created_at`) VALUES
 (1, NULL, NULL, NULL, NULL, 'أحمد محمد', NULL, 'male', 'active', '240001', '0978901234', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
 (2, NULL, NULL, NULL, NULL, 'سارة علي', NULL, 'female', 'active', '240002', '0945678901', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
-(3, NULL, NULL, NULL, NULL, 'عمر حسن', 'سوداني', 'male', 'active', '240003', '0912345678', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
+(3, 'عمر', 'حسن', 'احمد', 'ابراهيم', 'عمر حسن احمد ابراهيم', 'سوداني', 'male', 'active', '240003', '0912345678', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
 (4, NULL, NULL, NULL, NULL, 'مريم عثمان', NULL, 'female', 'active', '240004', '0989012345', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
 (5, NULL, NULL, NULL, NULL, 'خالد يوسف', NULL, 'male', 'active', '240005', '0956789012', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
 (6, NULL, NULL, NULL, NULL, 'هبة أحمد', NULL, 'female', 'active', '240006', '0923456789', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 11:20:32'),
@@ -1289,7 +1221,7 @@ INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth
 (78, NULL, NULL, NULL, NULL, 'وليد', NULL, NULL, 'active', '260004', '3346658', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:12:01'),
 (79, NULL, NULL, NULL, NULL, 'عواطف عاطف', NULL, NULL, 'active', '250007', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:14:58'),
 (80, NULL, NULL, NULL, NULL, 'ابتهال عاطف', NULL, NULL, 'active', '250008', '325', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:16:48'),
-(81, NULL, NULL, NULL, NULL, 'هاله', NULL, NULL, 'active', '260002', '952352', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:17:57'),
+(81, 'هاله', 'حسن', 'احمد', 'ابراهيم', 'هاله حسن احمد ابراهيم', 'سوداني', 'female', 'active', '260002', '0111478552', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:17:57'),
 (82, NULL, NULL, NULL, NULL, 'عاليه', NULL, NULL, 'active', '357000', '542864', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, 'المسجل', '2026-02-14 12:21:47'),
 (83, NULL, NULL, NULL, NULL, 'احمد محمد', NULL, NULL, 'active', '2500001', '09052487', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-02 14:06:34'),
 (84, NULL, NULL, NULL, NULL, 'خالد احمد', NULL, NULL, 'active', '2500002', '0904580950', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-04 08:44:27'),
@@ -1313,7 +1245,30 @@ INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth
 (102, 'محمد', 'خالد', 'حسن', 'ابراهيم', 'محمد خالد حسن ابراهيم', 'سوداني', 'male', '', '3258877/26', '0945213699', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-06 08:35:55'),
 (103, 'حامد', 'محمد', 'خالد', 'حسن', 'حامد محمد خالد حسن', 'يمني', 'male', '', '55587/26', '0987456321', NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-06 08:54:53'),
 (104, 'عابده', 'خالد', 'حسن', 'محمداحمد', 'عابده خالد حسن محمداحمد', NULL, NULL, '', '258963/26', '0125874963', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-07 07:26:47'),
-(105, 'هالة', 'محمدعلي', 'خالد', 'حسن', 'هالة محمدعلي خالد حسن', 'سوداني', 'female', '', '147852/26', '0114785236', NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-08 11:26:05');
+(105, 'هالة', 'محمدعلي', 'خالد', 'حسن', 'هالة محمدعلي خالد حسن', 'سوداني', 'female', '', '147852/26', '0114785236', NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-08 11:26:05'),
+(106, 'خالدة', 'ابراهيم', 'محمد علي', 'احمد', 'خالدة ابراهيم محمد علي احمد', 'سوداني', 'female', '', '369852/26', '0147852369', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-09 07:59:03'),
+(107, 'زينب', 'يوسف', 'محمد', 'خالد', 'زينب يوسف محمد خالد', 'سوداني', 'female', '', '852147', '0114785222', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-14 13:00:38'),
+(108, 'حسن', 'محمد', 'حسن', 'ابراهيم', 'حسن محمد حسن ابراهيم', 'سوداني', 'male', '', '3652', '0148555522', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-15 07:32:18'),
+(109, 'مهاب', 'علي', 'حسن', 'ابراهيم', 'مهاب علي حسن ابراهيم', 'سوداني', 'male', '', '789654', '0114444444', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-15 08:08:46'),
+(110, 'ابتسام', 'محمد احمد', 'علي', 'كرار', 'ابتسام محمد احمد علي كرار', 'سوداني', 'female', 'inactive', '2025147852', '0114785555', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 08:55:37'),
+(111, 'منهل', 'خالد', 'ادريس', 'ابكر', 'منهل  خالد ادريس ابكر', 'سوداني', 'female', 'active', '2025369852', '0114523666', NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 09:24:25'),
+(112, 'بلقيس', 'حسن', 'فرح', 'همد', 'بلقيس حسن فرح همد', 'سوداني', 'female', 'active', '2025258963', '0114523666', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 09:47:54'),
+(113, 'ابتسام', 'محمد احمد', 'حسن', 'محمد احمد', 'ابتسام محمد احمد حسن محمد احمد', 'سوداني', 'female', 'active', '2025258741', '0111478888', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 10:05:08'),
+(114, 'مهاب', 'محمد احمد', 'علي', 'خالد', 'مهاب محمد احمد علي خالد', 'سوري', 'male', 'active', '2025987456', '0114525555', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 10:11:58'),
+(115, 'عبق', 'احمد', 'علي', 'حسن', 'عبق احمد علي حسن', NULL, NULL, '', '321456', '0114445552', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 10:36:20'),
+(116, 'همس', 'عبدالمنعم', 'محمد', 'عبدالمنعم', 'همس عبدالمنعم محمد عبدالمنعم', 'سوداني', 'female', 'active', '2025785412', '0114888555', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 10:38:31'),
+(117, 'احمد', 'محمد', 'عبدالجليل', 'محمد', 'احمد محمد عبدالجليل محمد', 'سوداني', 'male', 'active', '20258280', '0114703895', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 10:40:16'),
+(118, 'محمد', 'ابراهيم', 'حسن', 'محمد', 'محمد ابراهيم حسن محمد', NULL, NULL, 'active', '2025220000', '0114709597', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 11:33:44'),
+(119, 'ايه', 'حمزة', 'خالد', 'حسن', 'ايه حمزة خالد حسن', 'سوداني', 'female', 'active', '2025220001', '0114523698', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 12:54:22'),
+(120, 'خنساء', 'احمد', 'ابراهيم', 'علي', 'خنساء احمد ابراهيم علي', 'سوداني', 'female', 'active', '2025220003', '0114777888', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 15:25:01'),
+(121, 'mohammed', 'ali', 'ahmed', 'ali', 'mohammed ali ahmed ali', 'سوداني', 'male', 'active', '2025220004', '0111144455', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-18 15:27:42'),
+(122, 'ali', 'ahmed', 'abdo', 'adam', 'ali ahmed abdo adam', 'سوداني', 'male', 'active', '2025220008', '0114789563', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-19 08:40:30'),
+(123, 'هاله', 'محمد', 'خالد', 'حسن', 'هاله محمد خالد حسن', 'سوداني', 'female', 'active', '2025170001', '0114505544', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-19 09:00:59'),
+(124, 'هاله', 'عبدالمنعم', 'محمد', 'خالد', 'هاله عبدالمنعم محمد خالد', 'سوداني', 'female', 'active', '202500044', '0114709597', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-21 06:49:48'),
+(125, 'انسام', 'عبدالله', 'خالد', 'محمد', 'انسام عبدالله خالد محمد', 'سوداني', 'female', 'active', '202500077', '0114778888', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-21 06:59:50'),
+(126, 'خالده', 'حسن', 'محمد احمد', 'حسن', 'خالده حسن محمد احمد حسن', 'سوداني', 'female', 'active', '202500088', '0114778855', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-21 08:42:18'),
+(127, 'علاء', 'خالد', 'عبدالله', 'ازهري', 'علاء خالد عبدالله ازهري', 'سوداني', 'female', 'active', '202500024', '0114789666', NULL, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-21 11:45:55'),
+(128, 'ابراهيم', 'ازهري', 'محمد', 'علي', 'ابراهيم ازهري محمد علي', 'سوداني', 'male', 'active', '202500059', '0114777888', NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-22 09:46:50');
 
 -- --------------------------------------------------------
 
@@ -1321,48 +1276,25 @@ INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth
 -- Table structure for table `student_registrations`
 --
 
-CREATE TABLE IF NOT EXISTS `student_registrations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `student_registrations` (
+  `id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
-  `academic_year` varchar(20) CHARACTER SET utf8 NOT NULL,
-  `level_name` varchar(100) CHARACTER SET utf8 NOT NULL,
-  `term_name` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-  `academic_status` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT 'منتظم',
-  `registration_status` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT 'NUll',
-  `receipt_number` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
-  `notes` text CHARACTER SET utf8,
-  `repeated_courses` text CHARACTER SET utf8,
-  `registrar` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `academic_year` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `level_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `term_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `academic_status` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'منتظم',
+  `registration_status` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'NUll',
+  `receipt_number` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `repeated_courses` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `registrar` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `result_status` tinyint(1) DEFAULT NULL COMMENT '1 = ناجح, 0 = راسب',
-  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 NOT NULL DEFAULT 'bachelor',
-  `postgraduate_data` longtext CHARACTER SET utf8,
-  `postgraduate_program` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `repeat_count` int(11) DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `fk_reg_student` (`student_id`),
-  KEY `idx_student_registrations_student_id` (`student_id`),
-  KEY `idx_student_registrations_academic_year` (`academic_year`),
-  KEY `idx_student_registrations_level_name` (`level_name`),
-  KEY `idx_student_registrations_term_name` (`term_name`),
-  KEY `idx_student_registrations_program_type` (`program_type`),
-  KEY `idx_student_registrations_postgraduate_program` (`postgraduate_program`(191)),
-  KEY `idx_student_registrations_registration_status` (`registration_status`),
-  KEY `idx_reg_student` (`student_id`),
-  KEY `idx_reg_year` (`academic_year`),
-  KEY `idx_reg_level` (`level_name`),
-  KEY `idx_reg_term` (`term_name`),
-  KEY `idx_reg_prog` (`program_type`),
-  KEY `idx_reg_pg` (`postgraduate_program`(191)),
-  KEY `idx_reg_status` (`registration_status`),
-  KEY `idx_reg_std_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
-  KEY `idx_reg_prog_pg` (`program_type`,`postgraduate_program`(191)),
-  KEY `idx_reg_year_prog` (`academic_year`,`program_type`,`postgraduate_program`(191)),
-  KEY `idx_reg_status_year` (`registration_status`,`academic_year`),
-  KEY `idx_reg_std_yr_lvl` (`student_id`,`academic_year`,`level_name`),
-  KEY `idx_reg_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
-  KEY `idx_registrations_student_year_level_term` (`student_id`,`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=291 ;
+  `program_type` enum('diploma','bachelor','postgraduate') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'bachelor',
+  `postgraduate_data` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `postgraduate_program` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `repeat_count` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `student_registrations`
@@ -1384,7 +1316,7 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (13, 13, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', 'REG-2025013', NULL, NULL, 'seed', '2025-12-28 09:20:32', 1, 'bachelor', NULL, NULL, 0),
 (14, 14, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', 'REG-2025014', NULL, NULL, 'seed', '2025-12-28 09:20:32', 1, 'bachelor', NULL, NULL, 0),
 (15, 15, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', 'REG-2025015', NULL, NULL, 'seed', '2025-12-28 09:20:32', NULL, 'bachelor', NULL, NULL, 0),
-(16, 16, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'مجمّد', 'مسجّل', NULL, NULL, NULL, 'admin', '2025-12-31 11:50:37', NULL, 'postgraduate', '{"prev_degree":"بكالوريوس","prev_university":"السودان","prev_grad_year":"2025","study_type":"بالبحث"}', 'ماجستير البرمجيات المدمجة', 0),
+(16, 16, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'مجمّد', 'مسجّل', NULL, NULL, NULL, 'admin', '2025-12-31 11:50:37', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"السودان\",\"prev_grad_year\":\"2025\",\"study_type\":\"بالبحث\"}', 'ماجستير البرمجيات المدمجة', 0),
 (32, 12, '2025/2026', 'المستوى الثاني', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'admin', '2026-02-01 08:36:31', NULL, 'bachelor', NULL, NULL, 0),
 (33, 13, '2025/2026', 'المستوى الثاني', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'admin', '2026-02-01 08:36:31', NULL, 'bachelor', NULL, NULL, 0),
 (34, 14, '2025/2026', 'المستوى الثاني', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'admin', '2026-02-01 08:36:31', NULL, 'bachelor', NULL, NULL, 0),
@@ -1580,14 +1512,14 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (270, 90, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-12 10:12:48', NULL, 'bachelor', NULL, NULL, 0),
 (271, 91, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-12 13:36:27', NULL, 'diploma', NULL, NULL, 0),
 (272, 92, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-15 14:32:16', NULL, 'bachelor', NULL, NULL, 0),
-(273, 93, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-15 14:59:53', NULL, 'bachelor', NULL, NULL, 0),
-(274, 94, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-30 07:56:17', NULL, 'bachelor', NULL, NULL, 0),
+(273, 93, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-03-15 14:59:53', NULL, 'bachelor', NULL, NULL, 0),
+(274, 94, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-03-30 07:56:17', NULL, 'bachelor', NULL, NULL, 0),
 (275, 95, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-03-31 08:07:03', NULL, 'bachelor', NULL, NULL, 0),
 (276, 96, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 07:19:45', NULL, 'bachelor', NULL, NULL, 0),
 (277, 97, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 07:47:52', NULL, 'bachelor', NULL, NULL, 0),
 (278, 98, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-01 08:10:12', NULL, 'bachelor', NULL, NULL, 0),
 (279, 99, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-04 13:16:44', NULL, 'bachelor', NULL, NULL, 0),
-(280, 100, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'xxyy', '2026-04-05 07:58:48', NULL, 'postgraduate', '{"prev_degree":"بكالوريوس","prev_university":"الاهليه","prev_grad_year":"2024","study_type":"بالبحث"}', 'ماجستير ادارة الاعمال', 0),
+(280, 100, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'xxyy', '2026-04-05 07:58:48', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"الاهليه\",\"prev_grad_year\":\"2024\",\"study_type\":\"بالبحث\"}', 'ماجستير ادارة الاعمال', 0),
 (281, 101, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'mohmmed', '2026-04-05 12:01:57', NULL, 'bachelor', NULL, NULL, 0),
 (282, 102, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 08:35:55', NULL, 'bachelor', NULL, NULL, 0),
 (283, 103, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 08:54:53', NULL, 'bachelor', NULL, NULL, 0),
@@ -1596,7 +1528,34 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (286, 103, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-06 13:10:20', NULL, 'bachelor', NULL, NULL, 0),
 (288, 104, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-07 07:38:24', NULL, 'bachelor', NULL, NULL, 0),
 (289, 101, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-07 13:13:18', NULL, 'bachelor', NULL, NULL, 0),
-(290, 105, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-08 11:26:05', NULL, 'bachelor', NULL, NULL, 0);
+(290, 105, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-08 11:26:05', NULL, 'bachelor', NULL, NULL, 0),
+(291, 106, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-09 07:59:03', NULL, 'bachelor', NULL, NULL, 0),
+(292, 107, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-14 13:00:38', NULL, 'bachelor', NULL, NULL, 0),
+(293, 94, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-14 13:26:54', NULL, 'bachelor', NULL, NULL, 0),
+(294, 108, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-15 07:32:18', NULL, 'bachelor', NULL, NULL, 0),
+(295, 109, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-15 08:08:46', NULL, 'bachelor', NULL, NULL, 0),
+(296, 110, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 08:55:37', NULL, 'bachelor', NULL, NULL, 0),
+(297, 111, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 09:24:25', NULL, 'bachelor', NULL, NULL, 0),
+(298, 112, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 09:47:54', NULL, 'bachelor', NULL, NULL, 0),
+(299, 113, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 10:05:08', NULL, 'bachelor', NULL, NULL, 0),
+(300, 114, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 10:11:58', NULL, 'bachelor', NULL, NULL, 0),
+(301, 115, '2025/2026', 'الدفعة الأولى', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 10:36:20', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"جامعه البحر الاحمر\",\"prev_grad_year\":\"2025\",\"study_type\":\"بالكورسات\"}', 'ماجستير ادارة الاعمال', 0),
+(302, 116, '2025/2026', 'الدفعة الأولى', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 10:38:31', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"كلية الشرق\",\"prev_grad_year\":\"2025\",\"study_type\":\"بالكورسات\"}', 'ماجستير ادارة الاعمال', 0),
+(303, 117, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 10:40:16', NULL, 'bachelor', NULL, NULL, 0),
+(304, 118, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, '', '2026-04-18 11:33:45', NULL, 'bachelor', NULL, NULL, 0),
+(305, 119, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 12:54:22', NULL, 'bachelor', NULL, NULL, 0),
+(306, 120, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 15:25:02', NULL, 'bachelor', NULL, NULL, 0),
+(307, 121, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-18 15:27:42', NULL, 'bachelor', NULL, NULL, 0),
+(308, 93, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-19 08:38:52', NULL, 'bachelor', NULL, NULL, 0),
+(309, 122, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-19 08:40:31', NULL, 'bachelor', NULL, NULL, 0),
+(310, 123, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-19 09:01:00', NULL, 'bachelor', NULL, NULL, 0),
+(311, 7, '2028/2029', 'المستوى الرابع', 'الفصل الأول', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-20 10:07:39', 1, 'bachelor', NULL, NULL, 0),
+(312, 7, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'منتظم', 'مسجّل', NULL, NULL, NULL, 'kian', '2026-04-20 10:09:50', 1, 'bachelor', NULL, NULL, 0),
+(313, 124, '2025/2026', 'الدفعة الأولى', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-21 06:49:49', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"كليه الشرق\",\"prev_grad_year\":\"2025\",\"study_type\":\"بالكورسات\"}', 'ماجستير ادارة الاعمال', 0),
+(314, 125, '2025/2026', 'الدفعة الأولى', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-21 06:59:51', NULL, 'postgraduate', '{\"prev_degree\":\"بكالوريوس\",\"prev_university\":\"جامعه السودان\",\"prev_grad_year\":\"2025\",\"study_type\":\"بالكورسات\"}', 'ماجستير ادارة الاعمال', 0),
+(315, 126, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-21 08:42:18', NULL, 'bachelor', NULL, NULL, 0),
+(316, 127, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-21 11:45:55', NULL, 'bachelor', NULL, NULL, 0),
+(317, 128, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-04-22 09:46:50', NULL, 'bachelor', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1604,8 +1563,8 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 -- Table structure for table `term_results`
 --
 
-CREATE TABLE IF NOT EXISTS `term_results` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `term_results` (
+  `id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
   `faculty_id` int(11) NOT NULL,
   `department_id` int(11) NOT NULL,
@@ -1619,17 +1578,13 @@ CREATE TABLE IF NOT EXISTS `term_results` (
   `term_total_points` decimal(10,2) DEFAULT NULL,
   `term_total_hours` decimal(10,2) DEFAULT NULL,
   `classification_label` varchar(255) DEFAULT NULL,
-  `courses_count` int(11) DEFAULT '0',
-  `completed_courses` int(11) DEFAULT '0',
-  `missing_courses` int(11) DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `courses_count` int(11) DEFAULT 0,
+  `completed_courses` int(11) DEFAULT 0,
+  `missing_courses` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `postgraduate_program` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_term_result` (`student_id`,`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`,`program_mode`),
-  KEY `idx_term_results_student` (`student_id`),
-  KEY `idx_res_std_period` (`student_id`,`academic_year`,`level_name`,`term_name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=58 ;
+  `postgraduate_program` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `term_results`
@@ -1642,11 +1597,11 @@ INSERT INTO `term_results` (`id`, `student_id`, `faculty_id`, `department_id`, `
 (13, 9, 2, 5, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', 'honors', 3.00, 3.00, 18.00, 6.00, 'مرتبة الشرف الثانية (القسم الأول)', 2, 2, 0, '2026-01-17 12:05:10', '0000-00-00 00:00:00', NULL),
 (14, 10, 2, 5, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', 'honors', 2.50, 2.50, 15.00, 6.00, 'مرتبة الشرف الثانية (القسم الثاني)', 2, 2, 0, '2026-01-17 12:05:10', '0000-00-00 00:00:00', NULL),
 (15, 11, 2, 5, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', 'honors', 1.75, 1.75, 10.50, 6.00, NULL, 2, 2, 0, '2026-01-17 12:05:10', '0000-00-00 00:00:00', NULL),
-(16, 8, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 3.42, 3.21, 44.50, 13.00, 'مرتبة الشرف الثانية (القسم الأول)', 4, 4, 0, '2026-01-18 14:29:54', '2026-02-05 11:24:47', NULL),
-(17, 1, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.38, 2.66, 31.00, 13.00, 'مرتبة الشرف الثالثة', 4, 4, 0, '2026-01-18 14:29:54', '2026-02-05 11:24:47', NULL),
-(18, 3, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.73, 2.56, 35.50, 13.00, 'مرتبة الشرف الثانية (القسم الثاني)', 4, 4, 0, '2026-01-18 14:29:54', '2026-02-05 11:24:47', NULL),
-(19, 7, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 3.42, 3.37, 44.50, 13.00, 'مرتبة الشرف الثانية (القسم الأول)', 4, 4, 0, '2026-01-18 14:29:54', '2026-02-05 11:24:47', NULL),
-(20, 4, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.62, 2.89, 34.00, 13.00, 'مرتبة الشرف الثانية (القسم الثاني)', 4, 4, 0, '2026-01-18 14:29:54', '2026-02-05 11:24:47', NULL),
+(16, 8, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 3.42, 3.22, 44.50, 13.00, 'مرتبة الشرف الثانية (القسم الأول)', 4, 4, 0, '2026-01-18 14:29:54', '2026-04-20 12:22:12', NULL),
+(17, 1, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.38, 2.40, 31.00, 13.00, 'مرتبة الشرف الثالثة', 4, 4, 0, '2026-01-18 14:29:54', '2026-04-20 12:22:12', NULL),
+(18, 3, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.73, 2.84, 35.50, 13.00, 'مرتبة الشرف الثانية (القسم الثاني)', 4, 4, 0, '2026-01-18 14:29:54', '2026-04-20 12:22:12', NULL),
+(19, 7, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 3.42, 3.07, 44.50, 13.00, 'مرتبة الشرف الثانية (القسم الأول)', 4, 4, 0, '2026-01-18 14:29:54', '2026-04-20 12:22:12', NULL),
+(20, 4, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', 'honors', 2.62, 2.43, 34.00, 13.00, 'مرتبة الشرف الثانية (القسم الثاني)', 4, 4, 0, '2026-01-18 14:29:54', '2026-04-20 12:22:12', NULL),
 (23, 8, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', 'honors', 2.75, 3.21, 16.50, 6.00, 'مرتبة الشرف الثانية (القسم الثاني)', 2, 2, 0, '2026-02-05 08:16:16', '2026-02-05 11:25:45', NULL),
 (24, 1, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', 'honors', 3.25, 2.66, 19.50, 6.00, 'مرتبة الشرف الثانية (القسم الأول)', 2, 2, 0, '2026-02-05 08:16:16', '2026-02-05 11:25:45', NULL),
 (25, 3, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', 'honors', 3.50, 2.97, 21.00, 6.00, 'مرتبة الشرف الأولى', 2, 2, 0, '2026-02-05 08:16:16', '2026-02-05 11:25:45', NULL),
@@ -1681,7 +1636,9 @@ INSERT INTO `term_results` (`id`, `student_id`, `faculty_id`, `department_id`, `
 (54, 1, 1, 2, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', 'honors', 2.00, 2.40, 12.00, 6.00, 'مرتبة الشرف الثالثة', 2, 2, 0, '2026-03-09 12:00:35', '2026-03-14 16:38:28', NULL),
 (55, 3, 1, 2, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', 'honors', 3.50, 2.84, 21.00, 6.00, 'مرتبة الشرف الأولى', 2, 2, 0, '2026-03-09 12:00:35', '2026-03-14 16:38:28', NULL),
 (56, 7, 1, 2, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', 'honors', 2.25, 2.88, 13.50, 6.00, 'مرتبة الشرف الثالثة', 2, 2, 0, '2026-03-09 12:00:35', '2026-03-14 16:38:28', NULL),
-(57, 4, 1, 2, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', 'honors', 1.50, 2.43, 9.00, 6.00, NULL, 2, 2, 0, '2026-03-09 12:00:35', '2026-03-14 16:38:28', NULL);
+(57, 4, 1, 2, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', 'honors', 1.50, 2.43, 9.00, 6.00, NULL, 2, 2, 0, '2026-03-09 12:00:35', '2026-03-14 16:38:28', NULL),
+(58, 7, 1, 2, '2028/2029', 'المستوى الرابع', 'الفصل الأول', 'bachelor', 'honors', 3.50, 3.07, 21.00, 6.00, 'مرتبة الشرف الأولى', 2, 2, 0, '2026-04-20 10:11:02', '0000-00-00 00:00:00', NULL),
+(59, 7, 1, 2, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', 'honors', 4.00, 3.07, 24.00, 6.00, 'مرتبة الشرف الأولى', 2, 2, 0, '2026-04-20 10:11:08', '0000-00-00 00:00:00', NULL);
 
 -- --------------------------------------------------------
 
@@ -1689,8 +1646,8 @@ INSERT INTO `term_results` (`id`, `student_id`, `faculty_id`, `department_id`, `
 -- Table structure for table `timetable_sessions`
 --
 
-CREATE TABLE IF NOT EXISTS `timetable_sessions` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `timetable_sessions` (
+  `id` int(11) NOT NULL,
   `faculty_id` int(11) NOT NULL,
   `department_id` int(11) NOT NULL,
   `academic_year` varchar(20) NOT NULL,
@@ -1705,16 +1662,8 @@ CREATE TABLE IF NOT EXISTS `timetable_sessions` (
   `day_of_week` varchar(20) NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_room_day_time` (`room_id`,`day_of_week`,`start_time`,`end_time`),
-  KEY `idx_instructor_day_time` (`instructor_staff_id`,`day_of_week`,`start_time`,`end_time`),
-  KEY `idx_scope` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`),
-  KEY `idx_ts_room_time` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`room_id`,`start_time`,`end_time`),
-  KEY `idx_ts_instructor_time` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`instructor_staff_id`,`start_time`,`end_time`),
-  KEY `idx_ts_dept_time` (`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`start_time`,`end_time`),
-  KEY `idx_instructor_time` (`instructor_staff_id`,`academic_year`,`term_name`,`program_type`,`day_of_week`,`start_time`,`end_time`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=23 ;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `timetable_sessions`
@@ -1730,15 +1679,15 @@ INSERT INTO `timetable_sessions` (`id`, `faculty_id`, `department_id`, `academic
 (17, 3, 8, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, 10, NULL, 'أ. ريم عمر', 1, 'السبت', '12:00:00', '14:00:00', '2026-01-13 08:24:23'),
 (19, 1, 3, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'postgraduate', 'ماجستير البرمجيات المدمجة', 12, NULL, NULL, 1, 'الأحد', '09:00:00', '10:00:00', '2026-01-17 14:27:31'),
 (21, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, 15, NULL, 'د. علي الطيب', 2, 'السبت', '10:00:00', '12:00:00', '2026-02-05 12:46:29'),
-(22, 3, 8, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, 10, NULL, 'أ. ريم عمر', 2, 'السبت', '14:00:00', '15:00:00', '2026-02-09 12:20:44');
+(22, 3, 8, '2025/2026', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, 10, NULL, 'أ. ريم عمر', 2, 'السبت', '14:00:00', '15:00:00', '2026-02-09 12:20:44'),
+(23, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, 1, NULL, 'د. محمد عادل', 1, 'السبت', '14:00:00', '15:00:00', '2026-04-20 12:49:34'),
+(24, 1, 2, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, 3, NULL, 'د. سارة نبيل', 2, 'الاثنين', '08:00:00', '10:00:00', '2026-04-20 12:50:52');
 
 --
 -- Triggers `timetable_sessions`
 --
-DROP TRIGGER IF EXISTS `trg_timetable_no_conflicts`;
-DELIMITER //
-CREATE TRIGGER `trg_timetable_no_conflicts` BEFORE INSERT ON `timetable_sessions`
- FOR EACH ROW BEGIN
+DELIMITER $$
+CREATE TRIGGER `trg_timetable_no_conflicts` BEFORE INSERT ON `timetable_sessions` FOR EACH ROW BEGIN
     -- 1. Instructor conflict → مقيد بالسنة الدراسية فقط (بدون term_name)
     IF NEW.instructor_name IS NOT NULL THEN
         IF EXISTS (
@@ -1784,12 +1733,10 @@ CREATE TRIGGER `trg_timetable_no_conflicts` BEFORE INSERT ON `timetable_sessions
     END IF;
 
 END
-//
+$$
 DELIMITER ;
-DROP TRIGGER IF EXISTS `trg_timetable_no_conflicts_update`;
-DELIMITER //
-CREATE TRIGGER `trg_timetable_no_conflicts_update` BEFORE UPDATE ON `timetable_sessions`
- FOR EACH ROW BEGIN
+DELIMITER $$
+CREATE TRIGGER `trg_timetable_no_conflicts_update` BEFORE UPDATE ON `timetable_sessions` FOR EACH ROW BEGIN
     -- 1. Instructor conflict 
     IF NEW.instructor_name IS NOT NULL THEN
         IF EXISTS (
@@ -1838,7 +1785,7 @@ CREATE TRIGGER `trg_timetable_no_conflicts_update` BEFORE UPDATE ON `timetable_s
     END IF;
 
 END
-//
+$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -1847,26 +1794,23 @@ DELIMITER ;
 -- Table structure for table `users`
 --
 
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
   `username` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `full_name` varchar(150) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL,
   `department` varchar(100) DEFAULT NULL,
   `role` varchar(50) DEFAULT 'user',
-  `is_active` tinyint(1) DEFAULT '1',
-  `allowed_pages` text,
-  `allowed_program_types` text,
-  `allowed_faculties` text,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_active` tinyint(1) DEFAULT 1,
+  `allowed_pages` text DEFAULT NULL,
+  `allowed_program_types` text DEFAULT NULL,
+  `allowed_faculties` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `last_login` datetime DEFAULT NULL,
-  `registration_tab_permissions` text NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  KEY `idx_users_username` (`username`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20 ;
+  `registration_tab_permissions` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `users`
@@ -1874,7 +1818,350 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `department`, `role`, `is_active`, `allowed_pages`, `allowed_program_types`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
 (9, 'kian', '$2b$10$i5t0EynzIA5dqbyDCabISe0qh4CNQi6yWQsxUzrItLwjFri/GQ/wq', NULL, NULL, NULL, 'admin', 1, '[]', '[]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
-(18, 'mohmmed', '$2b$10$MfHtzSGDW858s71GNGRhnOTW3nRxZhJjIKIr0wj58mo.Bd0e5nGCe', NULL, NULL, 'شؤون الطلاب', 'user', 1, '["القبول والتسجيل"]', '["bachelor","diploma","postgraduate"]', '[3,6,7,5,2,4,1]', '2026-04-05 10:13:13', '0000-00-00 00:00:00', NULL, '{"single":true,"fees":true,"promotion":true,"failed-courses":true}');
+(18, 'mohmmed', '$2b$10$MfHtzSGDW858s71GNGRhnOTW3nRxZhJjIKIr0wj58mo.Bd0e5nGCe', NULL, NULL, 'شؤون الطلاب', 'user', 1, '[\"القبول والتسجيل\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3]', '2026-04-05 10:13:13', '0000-00-00 00:00:00', NULL, '{\"single\":true,\"fees\":true,\"promotion\":true,\"failed-courses\":true}'),
+(19, 'سهام محمد', '$2b$10$dvtk4OHpPOj7/lNqQHgx.u5bnVkNT4Y4BofG.9ruCVOkRv/22.FlS', NULL, NULL, NULL, 'user', 1, '[\"المكتبة\",\"الجداول الدراسية\",\"القبول والتسجيل\",\"الشهادات\",\"إعدادات النظام الأكاديمي\",\"إدخال الدرجات\",\"حساب النتائج\",\"قوائم الطلاب\",\"أعضاء هيئة التدريس\",\"السجل الأكاديمي\",\"التقارير\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3,6,7,5,2,4,1]', '2026-04-14 07:57:49', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"failed-courses\":true,\"fees\":true}');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `academic_periods`
+--
+ALTER TABLE `academic_periods`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_period` (`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
+  ADD KEY `idx_academic_periods_academic_year` (`academic_year`),
+  ADD KEY `idx_academic_periods_level_name` (`level_name`),
+  ADD KEY `idx_academic_periods_term_name` (`term_name`),
+  ADD KEY `idx_academic_periods_program_type` (`program_type`),
+  ADD KEY `idx_academic_periods_postgraduate_program` (`postgraduate_program`),
+  ADD KEY `idx_academic_periods_program_type_postgraduate_program` (`program_type`,`postgraduate_program`),
+  ADD KEY `idx_ap_year` (`academic_year`),
+  ADD KEY `idx_ap_level` (`level_name`),
+  ADD KEY `idx_ap_term` (`term_name`),
+  ADD KEY `idx_ap_prog_type` (`program_type`),
+  ADD KEY `idx_ap_pg_program` (`postgraduate_program`),
+  ADD KEY `idx_ap_prog_pg` (`program_type`,`postgraduate_program`),
+  ADD KEY `idx_ap_year_prog_pg` (`academic_year`,`program_type`,`postgraduate_program`),
+  ADD KEY `idx_ap_year_level_prog` (`academic_year`,`level_name`,`program_type`),
+  ADD KEY `idx_academic_periods_year_level_term` (`academic_year`,`level_name`,`term_name`);
+
+--
+-- Indexes for table `books`
+--
+ALTER TABLE `books`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_books_faculty` (`faculty_id`);
+
+--
+-- Indexes for table `borrowed_books`
+--
+ALTER TABLE `borrowed_books`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `book_id` (`book_id`);
+
+--
+-- Indexes for table `courses`
+--
+ALTER TABLE `courses`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_courses_filter` (`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`),
+  ADD KEY `fk_courses_department` (`department_id`),
+  ADD KEY `idx_courses_faculty_id` (`faculty_id`),
+  ADD KEY `idx_courses_department_id` (`department_id`),
+  ADD KEY `idx_courses_academic_year` (`academic_year`),
+  ADD KEY `idx_courses_level_name` (`level_name`),
+  ADD KEY `idx_courses_term_name` (`term_name`),
+  ADD KEY `idx_courses_program_type` (`program_type`),
+  ADD KEY `idx_courses_postgraduate_program` (`postgraduate_program`),
+  ADD KEY `idx_courses_course_name` (`course_name`),
+  ADD KEY `idx_crs_faculty` (`faculty_id`),
+  ADD KEY `idx_crs_dept` (`department_id`),
+  ADD KEY `idx_crs_year` (`academic_year`),
+  ADD KEY `idx_crs_level` (`level_name`),
+  ADD KEY `idx_crs_term` (`term_name`),
+  ADD KEY `idx_crs_prog` (`program_type`),
+  ADD KEY `idx_crs_pg` (`postgraduate_program`),
+  ADD KEY `idx_crs_name` (`course_name`),
+  ADD KEY `idx_crs_fac_dept` (`faculty_id`,`department_id`),
+  ADD KEY `idx_crs_period` (`academic_year`,`level_name`,`term_name`),
+  ADD KEY `idx_crs_prog_pg` (`program_type`,`postgraduate_program`),
+  ADD KEY `idx_crs_yr_lvl_term` (`academic_year`,`level_name`,`term_name`),
+  ADD KEY `idx_crs_fac_yr_lvl` (`faculty_id`,`academic_year`,`level_name`);
+
+--
+-- Indexes for table `course_grades`
+--
+ALTER TABLE `course_grades`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_student_course_attempt` (`student_id`,`course_id`,`attempt_number`),
+  ADD KEY `fk_course_grades_student` (`student_id`),
+  ADD KEY `fk_course_grades_course` (`course_id`),
+  ADD KEY `idx_course_grades_student_id` (`student_id`),
+  ADD KEY `idx_course_grades_course_id` (`course_id`),
+  ADD KEY `idx_course_grades_attempt_number` (`attempt_number`),
+  ADD KEY `idx_course_grades_student_id_course_id` (`student_id`,`course_id`),
+  ADD KEY `idx_grd_std_course` (`student_id`,`course_id`),
+  ADD KEY `idx_grd_attempt` (`attempt_number`),
+  ADD KEY `idx_course_grades_student_course` (`student_id`,`course_id`),
+  ADD KEY `idx_course_grades_course` (`course_id`);
+
+--
+-- Indexes for table `departments`
+--
+ALTER TABLE `departments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `faculty_id` (`faculty_id`),
+  ADD KEY `idx_departments_faculty_id` (`faculty_id`),
+  ADD KEY `idx_departments_department_name` (`department_name`);
+
+--
+-- Indexes for table `faculties`
+--
+ALTER TABLE `faculties`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_faculties_faculty_name` (`faculty_name`);
+
+--
+-- Indexes for table `fees`
+--
+ALTER TABLE `fees`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
+  ADD UNIQUE KEY `uq_default_period` (`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`),
+  ADD UNIQUE KEY `installment_1_id` (`installment_1_id`),
+  ADD UNIQUE KEY `installment_2_id` (`installment_2_id`),
+  ADD UNIQUE KEY `installment_3_id` (`installment_3_id`),
+  ADD UNIQUE KEY `installment_4_id` (`installment_4_id`),
+  ADD UNIQUE KEY `installment_5_id` (`installment_5_id`),
+  ADD UNIQUE KEY `installment_6_id` (`installment_6_id`),
+  ADD KEY `fk_fees_student` (`student_id`),
+  ADD KEY `fk_fees_department` (`department_id`),
+  ADD KEY `idx_fees_student_year_level` (`student_id`,`academic_year`,`level_name`),
+  ADD KEY `idx_fees_year_level` (`academic_year`,`level_name`),
+  ADD KEY `idx_fees_dept_year_level` (`department_id`,`academic_year`,`level_name`),
+  ADD KEY `idx_fees_is_synced` (`is_synced`),
+  ADD KEY `idx_fees_student_id` (`student_id`);
+
+--
+-- Indexes for table `grading_rules`
+--
+ALTER TABLE `grading_rules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_grading_rules_faculty` (`faculty_id`),
+  ADD KEY `idx_grading_rules_faculty_id` (`faculty_id`),
+  ADD KEY `idx_grading_rules_rule_type` (`rule_type`),
+  ADD KEY `idx_grading_rules_faculty_id_rule_type` (`faculty_id`,`rule_type`),
+  ADD KEY `idx_grd_fac_type` (`faculty_id`,`rule_type`);
+
+--
+-- Indexes for table `payments`
+--
+ALTER TABLE `payments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `transaction_id` (`transaction_id`),
+  ADD KEY `idx_university_year` (`university_id`,`academic_year`),
+  ADD KEY `idx_installment` (`university_id`,`academic_year`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_received` (`received_at`);
+
+--
+-- Indexes for table `rooms`
+--
+ALTER TABLE `rooms`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_room_name` (`room_name`),
+  ADD KEY `room_name` (`room_name`);
+
+--
+-- Indexes for table `staff_members`
+--
+ALTER TABLE `staff_members`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_staff_code` (`staff_code`),
+  ADD UNIQUE KEY `uq_staff_email` (`email`),
+  ADD KEY `idx_staff_faculty` (`faculty_id`),
+  ADD KEY `idx_staff_department` (`department_id`);
+
+--
+-- Indexes for table `students`
+--
+ALTER TABLE `students`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idx_students_university_id_unique` (`university_id`),
+  ADD UNIQUE KEY `uniq_students_full_name` (`full_name`),
+  ADD KEY `fk_students_department` (`department_id`),
+  ADD KEY `idx_students_university_id` (`university_id`),
+  ADD KEY `idx_std_univ_name` (`university_id`,`full_name`),
+  ADD KEY `idx_std_dept_name` (`department_id`,`full_name`),
+  ADD KEY `idx_std_univ_dept` (`university_id`,`department_id`),
+  ADD KEY `idx_students_dept_status` (`department_id`,`academic_status`),
+  ADD KEY `idx_student_id` (`id`);
+
+--
+-- Indexes for table `student_registrations`
+--
+ALTER TABLE `student_registrations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_reg_student` (`student_id`),
+  ADD KEY `idx_student_registrations_student_id` (`student_id`),
+  ADD KEY `idx_student_registrations_academic_year` (`academic_year`),
+  ADD KEY `idx_student_registrations_level_name` (`level_name`),
+  ADD KEY `idx_student_registrations_term_name` (`term_name`),
+  ADD KEY `idx_student_registrations_program_type` (`program_type`),
+  ADD KEY `idx_student_registrations_postgraduate_program` (`postgraduate_program`(191)),
+  ADD KEY `idx_student_registrations_registration_status` (`registration_status`),
+  ADD KEY `idx_reg_student` (`student_id`),
+  ADD KEY `idx_reg_year` (`academic_year`),
+  ADD KEY `idx_reg_level` (`level_name`),
+  ADD KEY `idx_reg_term` (`term_name`),
+  ADD KEY `idx_reg_prog` (`program_type`),
+  ADD KEY `idx_reg_pg` (`postgraduate_program`(191)),
+  ADD KEY `idx_reg_status` (`registration_status`),
+  ADD KEY `idx_reg_std_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
+  ADD KEY `idx_reg_prog_pg` (`program_type`,`postgraduate_program`(191)),
+  ADD KEY `idx_reg_year_prog` (`academic_year`,`program_type`,`postgraduate_program`(191)),
+  ADD KEY `idx_reg_status_year` (`registration_status`,`academic_year`),
+  ADD KEY `idx_reg_std_yr_lvl` (`student_id`,`academic_year`,`level_name`),
+  ADD KEY `idx_reg_student_period` (`student_id`,`academic_year`,`level_name`,`term_name`),
+  ADD KEY `idx_registrations_student_year_level_term` (`student_id`,`academic_year`,`level_name`,`term_name`);
+
+--
+-- Indexes for table `term_results`
+--
+ALTER TABLE `term_results`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_term_result` (`student_id`,`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`,`program_mode`),
+  ADD KEY `idx_term_results_student` (`student_id`),
+  ADD KEY `idx_res_std_period` (`student_id`,`academic_year`,`level_name`,`term_name`);
+
+--
+-- Indexes for table `timetable_sessions`
+--
+ALTER TABLE `timetable_sessions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_room_day_time` (`room_id`,`day_of_week`,`start_time`,`end_time`),
+  ADD KEY `idx_instructor_day_time` (`instructor_staff_id`,`day_of_week`,`start_time`,`end_time`),
+  ADD KEY `idx_scope` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`),
+  ADD KEY `idx_ts_room_time` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`room_id`,`start_time`,`end_time`),
+  ADD KEY `idx_ts_instructor_time` (`academic_year`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`instructor_staff_id`,`start_time`,`end_time`),
+  ADD KEY `idx_ts_dept_time` (`faculty_id`,`department_id`,`academic_year`,`level_name`,`term_name`,`program_type`,`postgraduate_program`,`day_of_week`,`start_time`,`end_time`),
+  ADD KEY `idx_instructor_time` (`instructor_staff_id`,`academic_year`,`term_name`,`program_type`,`day_of_week`,`start_time`,`end_time`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD KEY `idx_users_username` (`username`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `academic_periods`
+--
+ALTER TABLE `academic_periods`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=372;
+
+--
+-- AUTO_INCREMENT for table `books`
+--
+ALTER TABLE `books`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+
+--
+-- AUTO_INCREMENT for table `borrowed_books`
+--
+ALTER TABLE `borrowed_books`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `courses`
+--
+ALTER TABLE `courses`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+
+--
+-- AUTO_INCREMENT for table `course_grades`
+--
+ALTER TABLE `course_grades`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=190;
+
+--
+-- AUTO_INCREMENT for table `departments`
+--
+ALTER TABLE `departments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
+-- AUTO_INCREMENT for table `faculties`
+--
+ALTER TABLE `faculties`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `fees`
+--
+ALTER TABLE `fees`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+
+--
+-- AUTO_INCREMENT for table `grading_rules`
+--
+ALTER TABLE `grading_rules`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
+
+--
+-- AUTO_INCREMENT for table `payments`
+--
+ALTER TABLE `payments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT for table `rooms`
+--
+ALTER TABLE `rooms`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `staff_members`
+--
+ALTER TABLE `staff_members`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `students`
+--
+ALTER TABLE `students`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+
+--
+-- AUTO_INCREMENT for table `student_registrations`
+--
+ALTER TABLE `student_registrations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=318;
+
+--
+-- AUTO_INCREMENT for table `term_results`
+--
+ALTER TABLE `term_results`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+
+--
+-- AUTO_INCREMENT for table `timetable_sessions`
+--
+ALTER TABLE `timetable_sessions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- Constraints for dumped tables
@@ -1930,6 +2217,7 @@ ALTER TABLE `students`
 --
 ALTER TABLE `student_registrations`
   ADD CONSTRAINT `fk_reg_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`);
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

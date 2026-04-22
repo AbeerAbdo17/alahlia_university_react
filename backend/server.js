@@ -1044,7 +1044,7 @@ app.put("/api/students/:id", async (req, res) => {
     const name = (full_name || "").trim();
     const uniIdRaw = (university_id ?? "").toString().trim();
     const uniId = uniIdRaw === "" ? "0" : uniIdRaw;
-    const finalStatus = (status || "نشط").trim();
+    const finalStatus = (status || "active").trim();
 
     if (uniId && uniId !== "0") {
       const [rows] = await dbp.query(
@@ -1706,7 +1706,7 @@ app.post('/api/students', authMiddleware, (req, res) => {
   const name = (full_name || "").trim();
   const uniIdRaw = (university_id ?? "").toString().trim();
   const uniId = uniIdRaw === "" ? "0" : uniIdRaw;
-  const finalStatus = (status || "نشط").trim();
+  const finalStatus = (status || "active").trim();
 
   // التحقق من تكرار الاسم الكامل
   const checkNameSql = `SELECT id FROM students WHERE full_name = ? LIMIT 1`;
@@ -2006,7 +2006,7 @@ app.get('/api/promotion/candidates', (req, res) => {
       AND (sr.academic_status IS NULL OR sr.academic_status != 'مجمّد')
       
       -- 2. استبعاد حالة الطالب "غير نشط" من جدول الطلاب
-      AND (s.status IS NULL OR s.status != 'غير نشط')
+      AND (s.status IS NULL OR s.status != 'inactive')
 
     ORDER BY s.full_name
   `;
