@@ -441,7 +441,7 @@ const BookListPage = () => {
 
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      showToast(data?.message || "حدث خطأ أثناء حفظ البيانات في الاستضافة", "error");
+      showToast(data?.message || "حدث خطأ أثناء حفظ البيانات  ", "error");
       return;
     }
 

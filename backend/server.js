@@ -1020,7 +1020,7 @@ app.get("/stats", (req, res) => {
 //   }
 // });
 
-app.put("/api/students/:id", async (req, res) => {
+app.put("/api/students/:id",authMiddleware, async (req, res) => {
   try {
     const studentId = req.params.id;
     const { 
@@ -2494,7 +2494,7 @@ app.get("/api/grading-scale/:facultyId", async (req, res) => {
 
 
 //  الدرجات
-app.post("/api/save-grades", async (req, res) => {
+app.post("/api/save-grades", authMiddleware, async (req, res) => {
   const { 
     course_id, 
     grades, 
@@ -2505,12 +2505,14 @@ app.post("/api/save-grades", async (req, res) => {
     postgraduate_program 
   } = req.body;
 
+  const operator = req.user.username || req.user.id || "Unknown";
+
   if (!course_id || !Array.isArray(grades) || grades.length === 0) {
     return res.status(400).json({ error: "البيانات ناقصة (course_id و grades مطلوبين)" });
   }
 
   try {
-    // جيب faculty_id من courses
+    // 1. جيب faculty_id من مادة معينة
     const [courseRows] = await dbp.query(
       "SELECT faculty_id FROM courses WHERE id = ?",
       [course_id]
@@ -2522,66 +2524,55 @@ app.post("/api/save-grades", async (req, res) => {
 
     const faculty_id = courseRows[0].faculty_id;
 
-    //  مقياس الدرجات 
+    // 2. جلب مقياس الدرجات للكلية
     const [scaleRows] = await dbp.query(
-      `SELECT min_value AS min_mark, 
-              max_value AS max_mark, 
-              label AS letter, 
-              points 
+      `SELECT min_value AS min_mark, max_value AS max_mark, label AS letter, points 
        FROM grading_rules 
-       WHERE rule_type = 'grade_scale' 
-         AND faculty_id = ? 
+       WHERE rule_type = 'grade_scale' AND faculty_id = ? 
        ORDER BY min_value DESC`,
       [faculty_id]
     );
 
-    // لكل طالب
     for (const g of grades) {
       const { 
         student_id, 
         coursework_mark, 
-        final_exam_mark 
+        final_exam_mark,
+        is_absent,
+        penalty_type,     
+        suspension_duration
       } = g;
 
-      const cm = Number(coursework_mark) || 0;
-      const fm = Number(final_exam_mark) || 0;
-      const total_mark = cm + fm;
+      const isFailZero = penalty_type === 'fail_zero';
 
-      //  نشيك هل المادة دي إعادة للطالب في الفصل ده؟
+      const cm = is_absent ? 0 : (Number(coursework_mark) || 0);
+      const fm = is_absent ? 0 : (Number(final_exam_mark) || 0);
+      const total_mark = cm + fm;
+      const absent_flag = is_absent ? 1 : 0;
+
+      // 3. فحص هل المادة إعادة
       const [regRows] = await dbp.query(
-        `SELECT repeated_courses 
-         FROM student_registrations 
-         WHERE student_id = ? 
-           AND academic_year = ? 
-           AND level_name = ? 
-           AND term_name = ? 
-           AND program_type = ?
-           AND (postgraduate_program <=> ?)`,
+        `SELECT repeated_courses FROM student_registrations 
+         WHERE student_id = ? AND academic_year = ? AND level_name = ? 
+         AND term_name = ? AND program_type = ? AND (postgraduate_program <=> ?)`,
         [student_id, academic_year, level_name, term_name, program_type, postgraduate_program || null]
       );
 
       let isRepeat = false;
       if (regRows.length > 0) {
         const repeated = regRows[0].repeated_courses || "";
-        // repeated_courses  نشيك لو  
         isRepeat = repeated.split(',').map(id => id.trim()).includes(String(course_id));
       }
 
-      // جيب أكبر attempt_number
-      const [maxAttemptRows] = await dbp.query(
-        `SELECT MAX(attempt_number) AS max_attempt 
-         FROM course_grades 
-         WHERE student_id = ? AND course_id = ?`,
-        [student_id, course_id]
-      );
-
-      const currentMaxAttempt = maxAttemptRows[0].max_attempt || 0;
-
+      // 4. تحديد التقدير والنقاط
       let letter = null;
       let points = null;
 
-      if (isRepeat) {
-        // إعادة: INSERT جديد دايمًا + C* أو F
+      if (is_absent) {
+        letter = "F"; // الطالب الغائب يأخذ F ونقاط 0
+        points = 0.00;
+      } else if (isRepeat) {
+        // حالة الإعادة: لو نجح C* لو رسب F
         if (total_mark >= 50) {
           letter = "C*";
           points = 2.00;
@@ -2590,12 +2581,11 @@ app.post("/api/save-grades", async (req, res) => {
           points = 0.00;
         }
       } else {
-        // عادي: حسب grading_rules
+        // حالة عادية: حساب التقدير من المقياس
         let found = false;
         for (const s of scaleRows) {
           const min = Number(s.min_mark);
           const max = s.max_mark !== null ? Number(s.max_mark) : Infinity;
-
           if (total_mark >= min && total_mark <= max) {
             letter = s.letter;
             points = Number(s.points);
@@ -2603,78 +2593,55 @@ app.post("/api/save-grades", async (req, res) => {
             break;
           }
         }
-
-        if (!found) {
-          letter = "F";
-          points = 0.00;
-        }
+        if (!found) { letter = "F"; points = 0.00; }
       }
 
-      // الحفظ
-      if (!isRepeat) {
-        // عادي: UPDATE على attempt_number = 1
+      // 5. جلب أكبر محاولة للتعامل مع الإدخال
+      const [maxAttemptRows] = await dbp.query(
+        `SELECT MAX(attempt_number) AS max_attempt FROM course_grades WHERE student_id = ? AND course_id = ?`,
+        [student_id, course_id]
+      );
+      const currentMaxAttempt = maxAttemptRows[0].max_attempt || 0;
+
+      // 6. الحفظ (تحديث أو إضافة)
+if (!isRepeat) {
         const [existingRows] = await dbp.query(
-          `SELECT id FROM course_grades 
-           WHERE student_id = ? AND course_id = ? AND attempt_number = 1`,
+          `SELECT id FROM course_grades WHERE student_id = ? AND course_id = ? AND attempt_number = 1`,
           [student_id, course_id]
         );
 
         if (existingRows.length > 0) {
-          const recordId = existingRows[0].id;
           await dbp.query(
             `UPDATE course_grades 
-             SET coursework_mark = ?, 
-                 final_exam_mark = ?, 
-                 total_mark = ?, 
-                 letter = ?, 
-                 points = ?, 
-                 updated_at = CURRENT_TIMESTAMP
+             SET coursework_mark = ?, final_exam_mark = ?, total_mark = ?, 
+                 letter = ?, points = ?, is_absent = ?, 
+                 penalty_type = ?, suspension_duration = ?,
+                 updated_by = ?, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
-            [cm, fm, total_mark, letter, points, recordId]
+            [cm, fm, total_mark, letter, points, absent_flag, penalty_type || 'none', suspension_duration || null, operator, existingRows[0].id]
           );
-
-          console.log(`UPDATE للطالب العادي ${student_id} | مادة ${course_id} | مجموع ${total_mark} → ${letter} (${points})`);
           continue;
         }
-
-        // لو ماف ريكورد  → INSERT أول مرة
       }
 
-      // الإعادة أو أول حفظ عادي → INSERT جديد
+      // إضافة سجل جديد (إعادة أو مادة أول مرة لم تسجل من قبل)
       const newAttempt = currentMaxAttempt + 1;
-
-      await dbp.query(
+await dbp.query(
         `INSERT INTO course_grades 
-         (course_id, student_id, attempt_number, is_repeat, 
-          coursework_mark, final_exam_mark, total_mark, letter, points, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [
-          course_id,
-          student_id,
-          newAttempt,
-          isRepeat ? 1 : 0,
-          cm,
-          fm,
-          total_mark,
-          letter,
-          points
-        ]
+         (course_id, student_id, attempt_number, is_repeat, is_absent,
+          coursework_mark, final_exam_mark, total_mark, letter, points,
+          penalty_type, suspension_duration, 
+          created_by, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [course_id, student_id, newAttempt, isRepeat ? 1 : 0, absent_flag, cm, fm, total_mark, letter, points, penalty_type || 'none', suspension_duration || null, operator]
       );
-
-      console.log(`INSERT جديد - الطالب ${student_id} | مادة ${course_id} | محاولة ${newAttempt} | إعادة؟ ${isRepeat} | مجموع ${total_mark} → ${letter} (${points})`);
     }
 
-    res.json({ 
-      success: true, 
-      message: "تم حفظ الدرجات بنجاح" 
-    });
+    res.json({ success: true, message: "تم حفظ الدرجات بنجاح" });
 
   } catch (err) {
     console.error("SAVE GRADES ERROR:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: "خطأ في السيرفر أو قاعدة البيانات" 
-    });
+    res.status(500).json({ success: false, error: "خطأ في السيرفر أو قاعدة البيانات" });
   }
 });
 
@@ -3257,7 +3224,10 @@ app.get("/api/grade-entry/students", async (req, res) => {
           cg.letter,
           cg.points,
           cg.attempt_number,
+          cg.is_absent,
           cg.is_repeat,
+          cg.penalty_type,      
+          cg.suspension_duration,
           cg.created_at
         FROM course_grades cg
         WHERE cg.student_id = ? AND cg.course_id = ?
@@ -3274,7 +3244,10 @@ app.get("/api/grade-entry/students", async (req, res) => {
         letter: null,
         points: null,
         attempt_number: 1,
+        is_absent: 0, 
         is_repeat: student.is_repeat,
+        penalty_type: 'none',     
+        suspension_duration: null,
         created_at: null
       };
 
@@ -4006,12 +3979,11 @@ app.post("/api/term-results/calculate-save", async (req, res) => {
   const academicYear = (academic_year || "").trim();
   const levelName = (level_name || "").trim();
   const termName = (term_name || "").trim();
- const programType = (program_type || "undergraduate").trim();
-const pgProgram =
-  programType === "postgraduate"
-    ? ((postgraduate_program || "").trim() || null)
-    : null;
-
+  const programType = (program_type || "undergraduate").trim();
+  const pgProgram =
+    programType === "postgraduate"
+      ? ((postgraduate_program || "").trim() || null)
+      : null;
 
   if (!facultyId || !departmentId || !academicYear || !levelName || !termName) {
     return res.status(400).json({ error: "بيانات الفترة ناقصة" });
@@ -4026,14 +3998,14 @@ const pgProgram =
 
     const termVariants = normalizeTermNameVariants(termName);
 
-    //  rules ( classifications + rounding)
+    // rules ( classifications + rounding)
     const rules = await getFacultyRules(conn, facultyId);
     const roundN = Number.isFinite(Number(rules.rounding_decimals)) ? Number(rules.rounding_decimals) : 2;
 
-    //  (honors/general)
+    // (honors/general)
     const programMode = await inferProgramMode(conn, facultyId, programType);
 
-    // 1) مواد الفصل
+    // 1) مواد ال��صل
     const [courses] = await conn.query(
       `
       SELECT id, course_name, credit_hours, term_name, level_name
@@ -4055,13 +4027,13 @@ const pgProgram =
       return res.status(400).json({ error: "لا توجد مواد لهذه الفترة" });
     }
 
-    //  canonical term/level من DB 
+    // canonical term/level من DB 
     const canonicalTermName = (courses[0].term_name || termName).trim();
     const canonicalLevelName = (courses[0].level_name || levelName).trim();
 
     const courseIds = courses.map(c => c.id);
 
-    // 2) الطلاب المسجلين  AND registration_status = 'مسجّل'
+    // 2) الطلاب المسجلين
     const [students] = await conn.query(
       `
       SELECT
@@ -4093,146 +4065,146 @@ const pgProgram =
     const saved = [];
     const skipped = [];
 
-
+    // ✅ دالة حساب التراكمي الصحيح (للفترة المحددة فقط)
     async function calcCumulativeGpa(studentId) {
-  try {
-    // 1.  قائمة المواد المعادة في الفصل الحالي  student_registrations
-    const [regRows] = await conn.query(
-      `
-      SELECT repeated_courses
-      FROM student_registrations
-      WHERE student_id = ?
-        AND academic_year = ?
-        AND level_name = ?
-        AND term_name IN (${termVariants.map(() => "?").join(",")})
-        AND program_type = ?
-        AND (postgraduate_program <=> ?)
-      LIMIT 1
-      `,
-      [studentId, academicYear, canonicalLevelName, ...termVariants, programType, pgProgram]
-    );
+      try {
+        // 1. قائمة المواد المعادة في الفصل الحالي
+        const [regRows] = await conn.query(
+          `
+          SELECT repeated_courses
+          FROM student_registrations
+          WHERE student_id = ?
+            AND academic_year = ?
+            AND level_name = ?
+            AND term_name IN (${termVariants.map(() => "?").join(",")})
+            AND program_type = ?
+            AND (postgraduate_program <=> ?)
+          LIMIT 1
+          `,
+          [studentId, academicYear, canonicalLevelName, ...termVariants, programType, pgProgram]
+        );
 
-    let repeatedIds = [];
-    if (regRows.length > 0 && regRows[0].repeated_courses) {
-      repeatedIds = regRows[0].repeated_courses
-        .split(',')
-        .map(id => Number(id.trim()))
-        .filter(id => Number.isFinite(id));
-    }
+        let repeatedIds = [];
+        if (regRows.length > 0 && regRows[0].repeated_courses) {
+          repeatedIds = regRows[0].repeated_courses
+            .split(',')
+            .map(id => Number(id.trim()))
+            .filter(id => Number.isFinite(id));
+        }
 
-    // 2. جيب كل الدرجات      
-    const [gradeRows] = await conn.query(
-      `
-      SELECT 
-        cg.points,
-        cg.total_mark,
-        c.credit_hours,
-        c.id AS course_id,
-        c.academic_year,
-        c.term_name
-      FROM course_grades cg
-      JOIN courses c ON c.id = cg.course_id
-      WHERE cg.student_id = ?
-        AND cg.points IS NOT NULL
-        AND c.credit_hours IS NOT NULL
-        AND c.faculty_id = ?
-        AND c.department_id = ?
-        AND c.program_type = ?
-        AND (c.postgraduate_program <=> ?)
-      ORDER BY 
-        c.academic_year ASC,
-        CASE 
-          WHEN TRIM(c.term_name) IN ('فصل الأول', 'الفصل الأول') THEN 1
-          WHEN TRIM(c.term_name) IN ('فصل الثاني', 'الفصل الثاني') THEN 2
-          ELSE 0
-        END ASC
-      `,
-      [studentId, facultyId, departmentId, programType, pgProgram]
-    );
+        // 2. جلب كل الدرجات حتى الفترة الحالية فقط
+        const [gradeRows] = await conn.query(
+          `
+          SELECT 
+            cg.points,
+            cg.total_mark,
+            c.credit_hours,
+            c.id AS course_id,
+            c.academic_year,
+            c.term_name
+          FROM course_grades cg
+          JOIN courses c ON c.id = cg.course_id
+          WHERE cg.student_id = ?
+            AND cg.points IS NOT NULL
+            AND c.credit_hours IS NOT NULL
+            AND c.faculty_id = ?
+            AND c.department_id = ?
+            AND c.program_type = ?
+            AND (c.postgraduate_program <=> ?)
+            AND (
+              c.academic_year < ?
+              OR (c.academic_year = ? AND c.level_name <= ? AND FIELD(TRIM(c.term_name), ${termVariants.map(() => "?").join(",")}) > 0)
+            )
+          ORDER BY 
+            c.academic_year ASC,
+            CASE 
+              WHEN TRIM(c.term_name) IN ('فصل الأول', 'الفصل الأول') THEN 1
+              WHEN TRIM(c.term_name) IN ('فصل الثاني', 'الفصل الثاني') THEN 2
+              ELSE 0
+            END ASC
+          `,
+          [
+            studentId, facultyId, departmentId, programType, pgProgram,
+            academicYear, academicYear, canonicalLevelName, ...termVariants
+          ]
+        );
 
-    // 3. تجميع الدرجات حسب course_id
-    const gradesByCourse = new Map();
-    for (const row of gradeRows) {
-      const cid = row.course_id;
-      if (!gradesByCourse.has(cid)) {
-        gradesByCourse.set(cid, []);
-      }
-      gradesByCourse.get(cid).push(row);
-    }
+        // 3. تجميع الدرجات حسب course_id
+        const gradesByCourse = new Map();
+        for (const row of gradeRows) {
+          const cid = row.course_id;
+          if (!gradesByCourse.has(cid)) {
+            gradesByCourse.set(cid, []);
+          }
+          gradesByCourse.get(cid).push(row);
+        }
 
-    let totalPointsHours = 0;   // sum (points * credit_hours)
-    let totalHours = 0;         // sum (credit_hours)
+        let totalPointsHours = 0;
+        let totalHours = 0;
 
-    for (const [courseId, attempts] of gradesByCourse.entries()) {
-      // إذا المادة غير معادة → نجمع كل المحاولات (واحدة)
-      if (!repeatedIds.includes(courseId)) {
-        for (const attempt of attempts) {
-          const p = Number(attempt.points);
-          const h = Number(attempt.credit_hours);
-          if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
-            totalPointsHours += p * h;
-            totalHours += h;
+        for (const [courseId, attempts] of gradesByCourse.entries()) {
+          if (!repeatedIds.includes(courseId)) {
+            for (const attempt of attempts) {
+              const p = Number(attempt.points);
+              const h = Number(attempt.credit_hours);
+              if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
+                totalPointsHours += p * h;
+                totalHours += h;
+              }
+            }
+            continue;
+          }
+
+          attempts.sort((a, b) => {
+            if (a.academic_year !== b.academic_year) {
+              return Number(a.academic_year) - Number(b.academic_year);
+            }
+
+            const termA = (a.term_name || '').trim();
+            const termB = (b.term_name || '').trim();
+
+            const orderA =
+              termA === 'فصل الأول' || termA === 'الفصل الأول' ? 1 :
+              termA === 'فصل الثاني' || termA === 'الفصل الثاني' ? 2 : 0;
+
+            const orderB =
+              termB === 'فصل الأول' || termB === 'الفصل الأول' ? 1 :
+              termB === 'فصل الثاني' || termB === 'الفصل الثاني' ? 2 : 0;
+
+            return orderA - orderB;
+          });
+
+          const latestAttempt = attempts[attempts.length - 1];
+
+          if (latestAttempt && Number(latestAttempt.total_mark) >= 50) {
+            const p = Number(latestAttempt.points);
+            const h = Number(latestAttempt.credit_hours);
+            if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
+              totalPointsHours += p * h;
+              totalHours += h;
+            }
+          } else {
+            for (const attempt of attempts) {
+              const p = Number(attempt.points);
+              const h = Number(attempt.credit_hours);
+              if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
+                totalPointsHours += p * h;
+                totalHours += h;
+              }
+            }
           }
         }
-        continue;
-      }
 
-      //  مادة معادة 
-      // نرتب المحاولات حسب السنة ثم الفصل
-      attempts.sort((a, b) => {
-        if (a.academic_year !== b.academic_year) {
-          return Number(a.academic_year) - Number(b.academic_year);
-        }
+        if (totalHours === 0) return null;
 
-        const termA = (a.term_name || '').trim();
-        const termB = (b.term_name || '').trim();
-
-        const orderA =
-          termA === 'فصل الأول' || termA === 'الفصل الأول' ? 1 :
-          termA === 'فصل الثاني' || termA === 'الفصل الثاني' ? 2 : 0;
-
-        const orderB =
-          termB === 'فصل الأول' || termB === 'الفصل الأول' ? 1 :
-          termB === 'فصل الثاني' || termB === 'الفصل الثاني' ? 2 : 0;
-
-        return orderA - orderB;
-      });
-
-      // آخر محاولة (الأحدث)
-      const latestAttempt = attempts[attempts.length - 1];
-
-      // لو نجح في آخر محاولة → نأخذها فقط (نستبعد الرسوب القديم)
-      if (latestAttempt && Number(latestAttempt.total_mark) >= 50) {
-        const p = Number(latestAttempt.points);
-        const h = Number(latestAttempt.credit_hours);
-        if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
-          totalPointsHours += p * h;
-          totalHours += h;
-        }
-      } else {
-        // لو ما نجحش في آخر محاولة → نجمع كل المحاولات (كلها رسوب)
-        for (const attempt of attempts) {
-          const p = Number(attempt.points);
-          const h = Number(attempt.credit_hours);
-          if (Number.isFinite(p) && Number.isFinite(h) && h > 0) {
-            totalPointsHours += p * h;
-            totalHours += h;
-          }
-        }
+        const cumulativeGpa = totalPointsHours / totalHours;
+        return Number(cumulativeGpa.toFixed(roundN || 2));
+      } catch (err) {
+        console.error("Error in calcCumulativeGpa:", err);
+        return null;
       }
     }
 
-    // 4. الحساب النهائي
-    if (totalHours === 0) return null;
-
-    const cumulativeGpa = totalPointsHours / totalHours;
-    return Number(cumulativeGpa.toFixed(roundN || 2));
-  } catch (err) {
-    console.error("Error in calcCumulativeGpa:", err);
-    return null;
-  }
-}
-    
     for (const st of students) {
       const studentId = Number(st.student_id);
 
@@ -4253,6 +4225,7 @@ const pgProgram =
       let missing = 0;
       let termSumPH = 0;
       let termSumH = 0;
+      let failedHours = 0;  // ✅ إضافة متغير لحساب ساعات الرسوب
 
       for (const c of courses) {
         const g = gradeMap.get(Number(c.id));
@@ -4269,6 +4242,11 @@ const pgProgram =
         completed++;
         termSumPH += p * h;
         termSumH += h;
+
+        // ✅ حساب ساعات الرسوب (الدرجة < 60)
+        if (Number(g.total_mark) < 49) {
+          failedHours += h;
+        }
       }
 
       const coursesCount = courses.length;
@@ -4287,120 +4265,104 @@ const pgProgram =
       }
 
       const termGpa = termSumH === 0 ? null : Number((termSumPH / termSumH).toFixed(roundN));
-      let resultStatus = 0;  //  رسوب
+      let resultStatus = 0;
 
-if (termGpa !== null) {
-    if (termGpa >= 2.0) {        
-        resultStatus = 1;          // نجاح
-    }
-  }
-  await conn.query(
-    `
-    UPDATE student_registrations
-       SET result_status = ?
-     WHERE student_id = ?
-       AND academic_year = ?
-       AND level_name    = ?
-       AND term_name     = ?
-       AND program_type  = ?
-       AND (postgraduate_program <=> ?)
-    `,
-    [
-        resultStatus,
-        studentId,
-        academicYear,
-        canonicalLevelName,
-        canonicalTermName,
-        programType,
-        pgProgram
-    ]
-);
+      if (termGpa !== null) {
+        if (termGpa >= 2.0) {        
+          resultStatus = 1;
+        }
+      }
 
-  await conn.query(
-    `
-    UPDATE student_registrations
-       SET result_status = ?
-     WHERE student_id = ?
-       AND academic_year = ?
-       AND level_name    = ?
-       AND term_name     = ?
-       AND program_type  = ?
-       AND (postgraduate_program <=> ?)
-    `,
-    [
-        resultStatus,
-        studentId,
-        academicYear,
-        canonicalLevelName,
-        canonicalTermName,
-        programType,
-        pgProgram
-    ]
-);
+      // ✅ تحديث حالة النتيجة
+      await conn.query(
+        `
+        UPDATE student_registrations
+           SET result_status = ?
+         WHERE student_id = ?
+           AND academic_year = ?
+           AND level_name    = ?
+           AND term_name     = ?
+           AND program_type  = ?
+           AND (postgraduate_program <=> ?)
+        `,
+        [
+          resultStatus,
+          studentId,
+          academicYear,
+          canonicalLevelName,
+          canonicalTermName,
+          programType,
+          pgProgram
+        ]
+      );
 
+      // ✅ حساب التراكمي الصحيح
       const cumulativeGpa = await calcCumulativeGpa(studentId);
 
       const classificationLabel = pickClassificationLabel(termGpa, programMode, rules.classifications);
 
-const [existing] = await conn.query(
-  `SELECT id FROM term_results 
-   WHERE student_id = ? 
-     AND academic_year = ? 
-     AND level_name = ? 
-     AND term_name = ? 
-     AND program_type = ? 
-     AND (postgraduate_program <=> ?)`,
-  [studentId, academicYear, canonicalLevelName, canonicalTermName, programType, pgProgram]
-);
-
-if (existing.length > 0) {
-  await conn.query(
-    `UPDATE term_results SET 
-       term_gpa = ?, cumulative_gpa = ?, 
-       term_total_points = ?, term_total_hours = ?,
-       classification_label = ?, 
-       courses_count = ?, completed_courses = ?, missing_courses = ?,
-       updated_at = NOW()
-     WHERE id = ?`,
-    [termGpa, cumulativeGpa, termSumPH, termSumH, classificationLabel,
-     coursesCount, completed, missing, existing[0].id]
-  );
-} else {
-
-      await conn.query(
-        `
-        INSERT INTO term_results
-          (student_id, faculty_id, department_id,
-           academic_year, level_name, term_name,
-           program_type, postgraduate_program, program_mode,
-           term_gpa, cumulative_gpa,
-           term_total_points, term_total_hours,
-           classification_label,
-           courses_count, completed_courses, missing_courses)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-           term_gpa = VALUES(term_gpa),
-           cumulative_gpa = VALUES(cumulative_gpa),
-           term_total_points = VALUES(term_total_points),
-           term_total_hours = VALUES(term_total_hours),
-           classification_label = VALUES(classification_label),
-           courses_count = VALUES(courses_count),
-           completed_courses = VALUES(completed_courses),
-           missing_courses = VALUES(missing_courses),
-           program_mode = VALUES(program_mode),
-           updated_at = NOW()
-        `,
-        [
-          studentId, facultyId, departmentId,
-          academicYear, canonicalLevelName, canonicalTermName,
-          programType, pgProgram, programMode,
-          termGpa, cumulativeGpa,
-          termSumPH, termSumH,
-          classificationLabel,
-          coursesCount, completed, missing
-        ]
+      const [existing] = await conn.query(
+        `SELECT id FROM term_results 
+         WHERE student_id = ? 
+           AND academic_year = ? 
+           AND level_name = ? 
+           AND term_name = ? 
+           AND program_type = ? 
+           AND (postgraduate_program <=> ?)`,
+        [studentId, academicYear, canonicalLevelName, canonicalTermName, programType, pgProgram]
       );
-    }
+
+      if (existing.length > 0) {
+        // ✅ تحديث النتيجة مع failed_hours المحسوبة بشكل صحيح
+        await conn.query(
+          `UPDATE term_results SET 
+             term_gpa = ?, cumulative_gpa = ?, 
+             term_total_points = ?, term_total_hours = ?,
+             failed_hours = ?,
+             classification_label = ?, 
+             courses_count = ?, completed_courses = ?, missing_courses = ?,
+             updated_at = NOW()
+           WHERE id = ?`,
+          [termGpa, cumulativeGpa, termSumPH, termSumH, failedHours, classificationLabel,
+           coursesCount, completed, missing, existing[0].id]
+        );
+      } else {
+        // ✅ إدراج نتيجة جديدة مع failed_hours
+        await conn.query(
+          `
+          INSERT INTO term_results
+            (student_id, faculty_id, department_id,
+             academic_year, level_name, term_name,
+             program_type, postgraduate_program, program_mode,
+             term_gpa, cumulative_gpa,
+             term_total_points, term_total_hours, failed_hours,
+             classification_label,
+             courses_count, completed_courses, missing_courses)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+             term_gpa = VALUES(term_gpa),
+             cumulative_gpa = VALUES(cumulative_gpa),
+             term_total_points = VALUES(term_total_points),
+             term_total_hours = VALUES(term_total_hours),
+             failed_hours = VALUES(failed_hours),
+             classification_label = VALUES(classification_label),
+             courses_count = VALUES(courses_count),
+             completed_courses = VALUES(completed_courses),
+             missing_courses = VALUES(missing_courses),
+             program_mode = VALUES(program_mode),
+             updated_at = NOW()
+          `,
+          [
+            studentId, facultyId, departmentId,
+            academicYear, canonicalLevelName, canonicalTermName,
+            programType, pgProgram, programMode,
+            termGpa, cumulativeGpa,
+            termSumPH, termSumH, failedHours,
+            classificationLabel,
+            coursesCount, completed, missing
+          ]
+        );
+      }
 
       const [regRow] = await conn.query(
         `
@@ -4430,10 +4392,9 @@ if (existing.length > 0) {
         classification_label: classificationLabel,
         term_total_points: termSumPH,
         term_total_hours: termSumH,
+        failed_hours: failedHours,
       });
-
     }
-    
 
     await conn.commit();
     return res.json({
@@ -4444,7 +4405,7 @@ if (existing.length > 0) {
   } catch (e) {
     await conn.rollback();
     console.error("TERM RESULTS CALC/SAVE ERROR:", e);
-    return res.status(500).json({ error: "Database error" });
+    return res.status(500).json({ error: "Database error", details: e.message });
   } finally {
     conn.release();
   }
@@ -4489,6 +4450,7 @@ const [rows] = await dbp.query(
     tr.classification_label,
     tr.term_total_points,
     tr.term_total_hours,
+    tr.failed_hours,
     tr.courses_count,
     tr.completed_courses,
     tr.missing_courses
@@ -4525,8 +4487,7 @@ const [rows] = await dbp.query(
 app.get("/api/term-students", async (req, res) => {
   try {
     const deptId = Number(req.query.department_id);
-    // تأكدي أن الاسم هنا academicYear
-    const academicYear = (req.query.academic_year || "").trim(); 
+    const academicYear = (req.query.academic_year || "").trim();
     const levelName = (req.query.level_name || "").trim();
     const termName = (req.query.term_name || "").trim();
 
@@ -4534,7 +4495,6 @@ app.get("/api/term-students", async (req, res) => {
     const pgRaw = (req.query.postgraduate_program || "").trim();
     const pgProgram = programType === "postgraduate" ? (pgRaw || null) : null;
 
-    // التصحيح هنا: استخدمنا academicYear بدلاً من academic_year
     if (!deptId || !academicYear || !levelName || !termName) {
       return res.status(400).json({ error: "بيانات ناقصة" });
     }
@@ -4545,7 +4505,10 @@ app.get("/api/term-students", async (req, res) => {
         s.id AS student_id,
         s.full_name,
         s.university_id,
-        sr.academic_status,
+        sr.academic_status, 
+        COALESCE(f.scholarship_type, 'لا يوجد') AS scholarship_type, 
+        COALESCE(f.scholarship_percentage, 0) AS scholarship_percentage, 
+        -- جلب حالات دفع الأقساط لاستخدامها في الحساب البرمجي
         COALESCE(f.installment_1_paid, 0) as inst1,
         COALESCE(f.installment_2_paid, 0) as inst2,
         COALESCE(f.installment_3_paid, 0) as inst3,
@@ -4567,38 +4530,43 @@ app.get("/api/term-students", async (req, res) => {
     );
 
     const processedRows = rows.map(row => {
-      let calcStatus = "غير مسجل";
+      let registrationStatus = "غير مسجل";
       const isFirstTerm = termName.includes("الأول");
       const isSecondTerm = termName.includes("الثاني");
 
-      if (isFirstTerm && row.inst1 == 1) {
-        calcStatus = "مسجل";
+      // 1. إذا كانت المنحة 100% يعتبر مسجل تلقائياً
+      if (Number(row.scholarship_percentage) === 100) {
+        registrationStatus = "مسجل";
       } 
+      // 2. منطق الترم الأول: يكفي دفع القسط الأول
+      else if (isFirstTerm && row.inst1 == 1) {
+        registrationStatus = "مسجل";
+      } 
+      // 3. منطق الترم الثاني: يجب دفع جميع الأقساط (1 إلى 6)
       else if (isSecondTerm) {
-        // التحقق من الأقساط الستة
-        const allPaid = (
-          row.inst1 == 1 && row.inst2 == 1 && row.inst3 == 1 && 
-          row.inst4 == 1 && row.inst5 == 1 && row.inst6 == 1
-        );
-        
+        const allPaid = [row.inst1, row.inst2, row.inst3, row.inst4, row.inst5, row.inst6]
+                        .every(inst => inst == 1);
         if (allPaid) {
-          calcStatus = "مسجل";
+          registrationStatus = "مسجل";
         }
       }
 
+      // إرجاع الكائن النهائي مع كافة الحقول المطلوبة
       return {
         student_id: row.student_id,
         full_name: row.full_name,
         university_id: row.university_id,
-        academic_status: row.academic_status,
-        registration_status: calcStatus
+        academic_status: row.academic_status, // الموقف الأكاديمي
+        scholarship_type: row.scholarship_type, // نوع المنحة
+        scholarship_percentage: row.scholarship_percentage, // نسبة المنحة
+        registration_status: registrationStatus // حالة التسجيل (بناءً على الحسابات أعلاه)
       };
     });
 
     return res.json(processedRows);
   } catch (e) {
     console.error("TERM STUDENTS ERROR:", e);
-    return res.status(500).json({ error: "Database error" });
+    return res.status(500).json({ error: "حدث خطأ في قاعدة البيانات" });
   }
 });
 
@@ -5804,7 +5772,7 @@ app.post("/api/login", async (req, res) => {
         role: user.role
       },
       JWT_SECRET,
-      { expiresIn: "8h" }
+      { expiresIn: "1h" }
     );
 
     // تحويل allowed_pages من text إلى array
@@ -5868,56 +5836,56 @@ try {
 
 
 // تسجيل مستخدم جديد (Sign Up)
-app.post("/api/register", async (req, res) => {
-  const { username, password, full_name, email, role = 'user' } = req.body;
+// app.post("/api/register", async (req, res) => {
+//   const { username, password, full_name, email, role = 'user' } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبين" });
-  }
+//   if (!username || !password) {
+//     return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبين" });
+//   }
 
-  if (role === 'admin') {
-    return res.status(403).json({ error: "لا يمكن اختيار دور الإداري هنا" });
-  }
+//   if (role === 'admin') {
+//     return res.status(403).json({ error: "لا يمكن اختيار دور الإداري هنا" });
+//   }
 
-  try {
-    // تحقق إذا اليوزر موجود بالفعل
-    const [existing] = await dbp.query(
-      "SELECT id FROM users WHERE username = ?",
-      [username]
-    );
+//   try {
+//     // تحقق إذا اليوزر موجود بالفعل
+//     const [existing] = await dbp.query(
+//       "SELECT id FROM users WHERE username = ?",
+//       [username]
+//     );
 
-    if (existing.length > 0) {
-      return res.status(409).json({ error: "اسم المستخدم مستخدم بالفعل" });
-    }
+//     if (existing.length > 0) {
+//       return res.status(409).json({ error: "اسم المستخدم مستخدم بالفعل" });
+//     }
 
-    const hash = await bcrypt.hash(password, 10);
+//     const hash = await bcrypt.hash(password, 10);
 
-    const defaultAllowedPages = JSON.stringify([]); 
+//     const defaultAllowedPages = JSON.stringify([]); 
 
-    const [result] = await dbp.query(
-      `INSERT INTO users 
-       (username, password_hash, full_name, email, role, is_active, allowed_pages, created_at)
-       VALUES (?, ?, ?, ?, ?, 1, ?, NOW())`,
-      [username, hash, full_name || null, email || null, role, defaultAllowedPages]
-    );
+//     const [result] = await dbp.query(
+//       `INSERT INTO users 
+//        (username, password_hash, full_name, email, role, is_active, allowed_pages, created_at)
+//        VALUES (?, ?, ?, ?, ?, 1, ?, NOW())`,
+//       [username, hash, full_name || null, email || null, role, defaultAllowedPages]
+//     );
 
-    res.status(201).json({
-      id: result.insertId,
-      username,
-      full_name: full_name || null,
-      email: email || null,
-      role,
-      message: "تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول الآن"
-    });
+//     res.status(201).json({
+//       id: result.insertId,
+//       username,
+//       full_name: full_name || null,
+//       email: email || null,
+//       role,
+//       message: "تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول الآن"
+//     });
 
-  } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: "اسم المستخدم مستخدم بالفعل" });
-    }
-    res.status(500).json({ error: "خطأ في السيرفر أثناء التسجيل" });
-  }
-});
+//   } catch (err) {
+//     console.error("REGISTER ERROR:", err);
+//     if (err.code === 'ER_DUP_ENTRY') {
+//       return res.status(409).json({ error: "اسم المستخدم مستخدم بالفعل" });
+//     }
+//     res.status(500).json({ error: "خطأ في السيرفر أثناء التسجيل" });
+//   }
+// });
 
 
 // بحث عن طالب
@@ -7059,7 +7027,7 @@ if (program_type !== 'postgraduate') {
 );
 
 if (feeRows.length === 0) {
-  results.failed.push({ student_id: studentId, full_name: fullName, reason: 'لا يوجد سجل مالي (Fees) لهذا العام' });
+  results.failed.push({ student_id: studentId, full_name: fullName, reason: 'لا يوجد سجل مالي  لهذا العام' });
   continue;
 }
 
@@ -7068,10 +7036,12 @@ const isMovingToNextLevel = (current_level_name !== new_level_name);
 
 if (!isMovingToNextLevel) {
   // حالة: انتقال داخل المستوى (فصل أول -> ثاني) -> شرط القسط الأول
-  if (fee.installment_1_paid !== 1) {
-    results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد القسط الأول للانتقال للفصل الثاني' });
-    continue;
-  }
+const hasNoInstallments = [1,2,3,4,5,6].every(i => !fee[`installment_${i}`] || fee[`installment_${i}`] == 0);
+
+if (!hasNoInstallments && fee.installment_1_paid !== 1 && fee.scholarship_percentage !== 100) {
+  results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد القسط الأول للانتقال للفصل الثاني' });
+  continue;
+}
 } else {
   // حالة: انتقال لمستوى جديد -> شرط سداد كل الأقساط المطلوبة (التي تحتوي على مبلغ)
   let allPaid = true;
@@ -7083,10 +7053,10 @@ if (!isMovingToNextLevel) {
       break;
     }
   }
-  if (!allPaid) {
-    results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد الأقساط المتبقية للانتقال للمستوى الجديد' });
-    continue;
-  }
+if (!allPaid && fee.scholarship_percentage !== 100) {
+  results.failed.push({ student_id: studentId, full_name: fullName, reason: 'يجب سداد الأقساط المتبقية للانتقال للمستوى الجديد' });
+  continue;
+}
 }
 
       // 1. موجود مسبقًا في الفترة الجديدة؟
@@ -8517,52 +8487,55 @@ app.post("/api/student-fees", async (req, res) => {
     }
 
     // ====================== إرسال للنظام المالي ======================
-//     const financialResponse = await sendToFinancialSystem(student_id, req.body, finalInstIds);
+// إذا كانت نسبة المنحة 100% وجميع الأقساط صفر، لا نرسل للنظام المالي
+const totalInstallments = [
+  amounts[1], amounts[2], amounts[3],
+  amounts[4], amounts[5], amounts[6]
+].reduce((sum, a) => sum + (Number(a) || 0), 0);
 
-//     if (financialResponse.success && feeId) {
-//       await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [feeId]);
-//     }
+const isFullScholarshipZeroFees = 
+  Number(scholarship_percentage) === 100 && totalInstallments === 0;
 
-//     return res.json({
-//       success: true,
-//       is_synced: financialResponse.success,
-//       message: financialResponse.success 
-//         ? "تم حفظ الرسوم ومزامنتها بنجاح مع النظام المالي"
-//         : "تم حفظ الرسوم أكاديمياً - فشلت المزامنة: " + (financialResponse.msg || "")
-//     });
+if (isFullScholarshipZeroFees) {
+  await dbp.query(
+    `UPDATE student_registrations SET registration_status = 'مسجّل' 
+        WHERE student_id = ? AND academic_year = ? AND level_name = ?`,
+    [student_id, academic_year, level_name]
+  );
+  return res.json({
+    success: true,
+    is_synced: false,
+    financial_code: null,
+    message: "تم الحفظ أكاديمياً - منحة 100% ولا توجد أقساط، لم يتم الإرسال للنظام المالي"
+  });
+}
 
-//   } catch (err) {
-//     console.error("Student fees error:", err);
-//     res.status(500).json({ error: "خطأ في حفظ الرسوم: " + err.message });
-//   }
-// });
-// 1. استدعاء الدالة (تأكدي أن الدالة نفسها ترجع الـ code والـ msg كما عدلناها سابقاً)
+// 1. استدعاء الدالة 
     const financialResponse = await sendToFinancialSystem(student_id, req.body, finalInstIds);
 
-    // 2. التحقق من كود النجاح (1000) بناءً على الصورة التي أرفقتيها
-    // بدلاً من فحص success فقط، سنفحص الكود 1000
     const isActuallySynced = financialResponse.code === 1000;
 
-    if (isActuallySynced && feeId) {
-      // تحديث حالة المزامنة في جدولك فقط إذا كان الرد "نجاح العملية"
-      await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [feeId]);
-    }
+if (isActuallySynced && feeId) {
+  await dbp.query("UPDATE fees SET is_synced = 1 WHERE id = ?", [feeId]);
+  await dbp.query(
+    `UPDATE student_registrations SET registration_status = 'مسجّل' 
+     WHERE student_id = ? AND academic_year = ? AND level_name = ?`,
+    [student_id, academic_year, level_name]
+  );
+}
 
-    // 3. بناء رسالة الرد النهائية للمستخدم
     let userMessage = "";
     
     if (isActuallySynced) {
       userMessage = "تم حفظ الرسوم ومزامنتها بنجاح مع النظام المالي";
     } else {
-      // هنا نستخدم الـ msg القادم من الصور (مثلاً: "رقم الطالب غير موجود" أو "لا يمكن التعديل")
-      // ونضيف الكود للتوثيق
       userMessage = `تم الحفظ أكاديمياً، ولكن النظام المالي رفض المزامنة: (كود ${financialResponse.code}: ${financialResponse.msg || 'خطأ غير معروف'})`;
     }
 
     return res.json({
       success: true, // نجح الحفظ في نظامك الأكاديمي
       is_synced: isActuallySynced,
-      financial_code: financialResponse.code, // نرسل الكود للـ Frontend إذا احتجنا لعرض أيقونة معينة
+      financial_code: financialResponse.code,
       message: userMessage
     });
 
@@ -9072,6 +9045,7 @@ app.get("/api/fees-report", async (req, res) => {
     student_id = "",
     academic_year = "",
     level_name = "",
+    postgraduate_program = "", 
   } = req.query;
 
   if (!academic_year || !level_name) {
@@ -9262,6 +9236,40 @@ app.get("/api/fees-report", async (req, res) => {
       };
     }
 
+    // 5.برنامج دراسات عليا معين
+    // 5. تقرير برنامج دراسات عليا معين
+else if (scope === "postgrad_program") {
+  if (!postgraduate_program) {
+    return res.status(400).json({ error: "يجب تحديد اسم برنامج الدراسات العليا" });
+  }
+
+  result.by_currency = await calculateByCurrency(`
+    SELECT 
+      f.currency,
+      CONCAT(st.university_id, ' — ', st.full_name) AS name,
+      SUM(COALESCE(f.installment_1,0) + COALESCE(f.installment_2,0) + COALESCE(f.installment_3,0) +
+          COALESCE(f.installment_4,0) + COALESCE(f.installment_5,0) + COALESCE(f.installment_6,0)) AS total_due,
+      SUM(
+        CASE WHEN f.installment_1_paid = 1 THEN COALESCE(f.installment_1,0) ELSE 0 END +
+        CASE WHEN f.installment_2_paid = 1 THEN COALESCE(f.installment_2,0) ELSE 0 END +
+        CASE WHEN f.installment_3_paid = 1 THEN COALESCE(f.installment_3,0) ELSE 0 END +
+        CASE WHEN f.installment_4_paid = 1 THEN COALESCE(f.installment_4,0) ELSE 0 END +
+        CASE WHEN f.installment_5_paid = 1 THEN COALESCE(f.installment_5,0) ELSE 0 END +
+        CASE WHEN f.installment_6_paid = 1 THEN COALESCE(f.installment_6,0) ELSE 0 END
+      ) AS total_paid
+    FROM fees f
+    JOIN students st ON f.student_id = st.id
+    WHERE f.academic_year = ? 
+      AND f.level_name = ? 
+      -- التعديل هنا: استخدام f وليس st لأن الحقول في جدول الـ fees
+      AND f.program_type = 'postgraduate' 
+      AND f.postgraduate_program = ?
+    GROUP BY f.currency, st.id, st.full_name, st.university_id
+  `, [academic_year, level_name, postgraduate_program]);
+  
+  result.type = "students";
+}
+
     res.json({ success: true, ...result });
 
   } catch (err) {
@@ -9277,7 +9285,7 @@ app.get("/api/fees-report", async (req, res) => {
 // التحقق من التوكن
 const verifyAcademicToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const VALID_TOKEN = "eyJhbG454_ciOiJIUzI1NiIs2323_InR5cCI6IkpXVC_J9.eyJpZCI_6OSwid23";
+    const VALID_TOKEN = "STUDENT_SYSTEM_TOKEN_2026";
 
     if (!authHeader || authHeader !== VALID_TOKEN) {
         console.log(" محاولة دخول غير مصرح بها من:", req.ip);

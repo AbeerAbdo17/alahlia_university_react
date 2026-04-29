@@ -370,7 +370,7 @@ function useNationalitySmartList() {
 
   const fetchNationalities = async () => {
     try {
-      const res = await fetch(`${API_BASE}/students/nationalities`); // سنحتاج لإنشاء هذا المسار في الخلفية
+      const res = await fetch(`${API_BASE}/students/nationalities`);
       const data = await res.json();
       setNationalities(data);
     } catch (err) {
@@ -595,10 +595,13 @@ function PromotionTab({ showToast }) {
 useEffect(() => {
   const token = sessionStorage.getItem("token");
   if (!token) {
-    showToast("  انتهت الجلسة", "error");
-    navigate("/login", { replace: true });
+    const timer = setTimeout(() => {
+      showToast("انتهت الجلسة", "error");
+      navigate("/login", { replace: true });
+    }, 0);
+    return () => clearTimeout(timer);
   }
-}, [navigate, showToast]);
+}, [navigate]); 
 
   useEffect(() => {
     if (programType === "postgraduate") {
@@ -825,6 +828,7 @@ useEffect(() => {
     }
 
     setLoading(true);
+    const token = sessionStorage.getItem("token");
 
     const qs = new URLSearchParams({
       department_id: departmentId,
@@ -840,6 +844,13 @@ useEffect(() => {
 
     fetch(`${API_BASE}/promotion/candidates?${qs.toString()}`)
       .then(async (res) => {
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+            navigate("/login");
+            return null;
+        }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "فشل جلب المرشحين");
         return data;
@@ -941,6 +952,14 @@ const handleBatchPromote = async () => {
         }),
       });
 
+      if (response.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
+            navigate("/login");
+            return;
+        }
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "فشل في عملية الترحيل الجماعي");
@@ -969,7 +988,6 @@ const termOrder = (t) => {
   const term = (t || "").toString().trim();
   if (term.includes("أول") || term === "الفصل الأول" || term === "فصل أول") return 1;
   if (term.includes("ثان") || term === "الفصل الثاني" || term === "فصل ثاني") return 2;
-  if (term.includes("ثالث") || term === "الفصل الثالث" || term === "فصل ثالث") return 3; 
 
   return 0;
 };
@@ -1260,7 +1278,7 @@ const getNextAcademicYear = (year) => {
                   <th style={ui.th}>الرقم الجامعي</th>
                   <th style={ui.th}>اسم الطالب</th>
                   <th style={ui.th}>السنة الدراسية</th>
-                  <th style={ui.th}>المستوى</th>
+                  <th style={ui.th}>{programType === "postgraduate" ? "الدفعة" : "المستوى"}</th>
                   <th style={ui.th}>الفصل الدراسي</th>
                   <th style={ui.th}>الموقف الأكاديمي</th>
                   <th style={ui.th}>النجاح</th>
@@ -1365,8 +1383,6 @@ const getNextAcademicYear = (year) => {
   );
 }
 
-
-
 /* =========================================================
    تاب 2 – تسجيل طالب (فردي)
    ========================================================= */
@@ -1391,10 +1407,13 @@ function SingleRegistrationTab({ showToast }) {
 useEffect(() => {
   const token = sessionStorage.getItem("token");
   if (!token) {
-    showToast("  انتهت الجلسة", "error");
-    navigate("/login", { replace: true });
+    const timer = setTimeout(() => {
+      showToast("انتهت الجلسة", "error");
+      navigate("/login", { replace: true });
+    }, 0);
+    return () => clearTimeout(timer);
   }
-}, [navigate, showToast]);
+}, [navigate]); 
 
   const [studentForm, setStudentForm] = useState({
     firstName: "",
@@ -1696,6 +1715,14 @@ const saveStudentOnly = async () => {
   const fullNameValue = getFullName(studentForm);
 
   try {
+
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return;
+    }
+
     // تجهيز البيانات المشتركة (سواء للإضافة أو التحديث)
     const studentData = {
       first_name: studentForm.firstName.trim(),
@@ -1715,7 +1742,10 @@ const saveStudentOnly = async () => {
     if (!selectedStudent?.id) {
       const res = await fetch(`${API_BASE}/students`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({
           ...studentData,
           receipt_number: null,
@@ -1723,7 +1753,13 @@ const saveStudentOnly = async () => {
           registrar: DEFAULT_REGISTRAR,
         }),
       });
-
+      if (res.status === 401) {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
+  showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+  navigate("/login");
+  return null;
+}
       const data = await res.json();
       if (!res.ok) {
         showToast(data.message || "فشل إضافة الطالب", "error");
@@ -1736,10 +1772,20 @@ const saveStudentOnly = async () => {
     else {
       const resUpd = await fetch(`${API_BASE}/students/${selectedStudent.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify(studentData),
       });
 
+      if (resUpd.status === 401) {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
+  showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+  navigate("/login");
+  return null;
+}
       const dataUpd = await resUpd.json();
       if (!resUpd.ok) {
         showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
@@ -1828,6 +1874,14 @@ if (programType !== "postgraduate") {
         body: JSON.stringify(studentDataPayload),
       });
 
+    if (resUpd.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
+
       if (!resUpd.ok) {
         const errData = await resUpd.json();
         showToast(errData.message || "فشل تحديث بيانات الطالب", "error");
@@ -1853,6 +1907,14 @@ if (programType !== "postgraduate") {
           registrar: DEFAULT_REGISTRAR,
         }),
       });
+
+    if (resStudent.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
 
       const dataStudent = await resStudent.json();
 
@@ -1880,7 +1942,13 @@ if (programType !== "postgraduate") {
         },
         body: JSON.stringify({ academic_status: form.academic_status }),
       });
-
+     if (resReg.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
       if (!resReg.ok) {
         showToast("فشل في تعديل الموقف الأكاديمي", "error");
         return;
@@ -1915,6 +1983,13 @@ if (programType !== "postgraduate") {
         },
         body: JSON.stringify(regBody),
       });
+      if (resReg.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
 
       if (!resReg.ok) {
         const dataReg = await resReg.json();
@@ -2010,6 +2085,26 @@ if (programType !== "postgraduate") {
 {hasSearched && !searchLoading && searchResults.length === 0 && (
   <div style={{ marginTop: 10, color: "#64748b", fontWeight: 700 }}>
     لا توجد نتائج
+  </div>
+)}
+
+{selectedStudent && (
+  <div style={{ 
+    marginTop: 12, padding: 10, 
+    background: "#f0f9ff", borderRadius: 8, color: "#0a3753",
+    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"
+  }}>
+    <strong>الطالب المختار:</strong> {selectedStudent.full_name} ({selectedStudent.university_id || "—"})
+    <button
+      onClick={resetStudentForm}
+      style={{
+        padding: "4px 12px", fontSize: 13,
+        background: "#ef4444", color: "white", 
+        border: "none", borderRadius: 6, cursor: "pointer",
+      }}
+    >
+      إلغاء الاختيار
+    </button>
   </div>
 )}
 
@@ -2183,12 +2278,6 @@ if (programType !== "postgraduate") {
     تعديل بيانات الطالب 
   </button>
 )}
-
-        {selectedStudent && (
-          <div style={{ marginTop: 12, color: "#334155", fontWeight: 800 }}>
-            يتم استخدام بيانات الطالب: <span style={{ color: "#0a3753" }}>{selectedStudent.full_name}</span>
-          </div>
-        )}
       </div>
       <div>
         {programType === "postgraduate" && (
@@ -2548,7 +2637,7 @@ useEffect(() => {
 
   const registerFailedCourse = async (course) => {
     if (!departmentId || !academicYear || !levelName || !termName) {
-      showToast("املئي السنة والمستوى والفصل أولاً", "error");
+      showToast("ادخل السنة والمستوى والفصل أولاً", "error");
       return;
     }
     const yearRegex = /^\d{4}\/\d{4}$/; 
@@ -2707,7 +2796,7 @@ useEffect(() => {
           style={ui.input}
         />
 
-        {searchLoading && <div style={{ marginTop: 10, color: "#64748b" }}>جاري البحث...</div>}
+{searchLoading && <div style={{ marginTop: 10, color: "#64748b" }}>جاري البحث...</div>}
 
         {searchResults.length > 0 && (
           <div style={{ marginTop: 12, ...ui.tableWrap }}>
@@ -2743,6 +2832,37 @@ useEffect(() => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {selectedStudent && (
+          <div style={{ 
+            marginTop: 12, padding: 10, 
+            background: "#f0f9ff", borderRadius: 8, color: "#0a3753",
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"
+          }}>
+            <strong>الطالب المختار:</strong> {selectedStudent.full_name} ({selectedStudent.university_id || "—"})
+            <button
+              onClick={() => {
+                setSelectedStudent(null);
+                setQuery("");
+                setSearchResults([]);
+                setFailedCourses([]);
+                setRegisteredInCurrentPeriod([]);
+                setSelectedFacultyId("");
+                setDepartmentId("");
+                setAcademicYear("");
+                setLevelName("");
+                setTermName("");
+              }}
+              style={{
+                padding: "4px 12px", fontSize: 13,
+                background: "#ef4444", color: "white", 
+                border: "none", borderRadius: 6, cursor: "pointer",
+              }}
+            >
+              إلغاء الاختيار
+            </button>
           </div>
         )}
       </div>
@@ -3732,7 +3852,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
   }
  };
 
- const printFeesReport = async () => {
+const printFeesReport = async () => {
   if (!selectedStudent || !academicYear || !levelName) {
     showToast("اختر طالب وحدد السنة والمستوى أولاً", "error");
     return;
@@ -3754,10 +3874,9 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
 
     const data = await response.json();
 
-
-    let totalPaid = 0;    
-    let totalRemaining = 0; 
-    let totalDue = 0;      
+    let totalPaid = 0;
+    let totalRemaining = 0;
+    let totalDue = 0;
 
     const installmentsRows = [];
 
@@ -3769,7 +3888,9 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
       const paidDateRaw = data[`installment_${i}_paid_at`];
       const paidDate = (isPaid && paidDateRaw && paidDateRaw !== '0000-00-00') ? paidDateRaw : "—";
 
-      // الحسابات
+      const startDate = feesData[`installment_${i}_start`] || data[`installment_${i}_start`] || "—";
+      const endDate   = feesData[`installment_${i}_end`]   || data[`installment_${i}_end`]   || "—";
+
       totalDue += amount;
       if (isPaid) {
         totalPaid += amount;
@@ -3780,7 +3901,9 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
       installmentsRows.push(`
         <tr style="background: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">قسط ${i}</td>
-          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: right;">${formatCurrency(amount)}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(amount)}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${startDate}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${endDate}</td>
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center; color: ${isPaid ? '#059669' : '#dc2626'}; font-weight: bold;">
             ${isPaid ? 'مدفوع' : 'غير مدفوع'}
           </td>
@@ -3789,7 +3912,6 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
       `);
     }
 
-    
     const headerHTML = `
       <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0a3753; direction: rtl; font-family: 'Cairo', sans-serif;">
         <h1 style="margin: 0; color: #0a3753; font-size: 22px; font-weight: bold;">جامعة بورتسودان الأهلية</h1>
@@ -3804,7 +3926,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
     const summaryTable = `
       <div style="margin-bottom: 25px; direction: rtl; font-family: 'Cairo', sans-serif;">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; direction: rtl; font-family: 'Cairo', sans-serif; font-size: 13px;">
-           <tr style="background: #6e6e6e; color: white;">
+          <tr style="background: #6e6e6e; color: white;">
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المستحق</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتحصل</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتبقي</th>
@@ -3824,12 +3946,17 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
           <tr style="background: #6e6e6e; color: white;">
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">بيان القسط</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">المبلغ</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">بداية الدفع</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">نهاية الدفع</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">الحالة</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">تاريخ السداد</th>
           </tr>
         </thead>
         <tbody>
-          ${installmentsRows.length > 0 ? installmentsRows.join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">لا توجد أقساط مجدولة</td></tr>'}
+          ${installmentsRows.length > 0
+            ? installmentsRows.join('')
+            : '<tr><td colspan="6" style="padding: 15px; text-align: center;">لا توجد أقساط مجدولة</td></tr>'
+          }
         </tbody>
       </table>
     `;
@@ -3837,8 +3964,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
     const footerHTML = `
       <div style="margin-top: 40px; direction: rtl; font-family: 'Cairo', sans-serif;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
-          <div style="text-align: center; width: 40%;">
-          </div>
+          <div style="text-align: center; width: 40%;"></div>
           <div style="text-align: center; width: 40%;">
             <p style="font-weight: bold; margin-bottom: 30px;">توقيع المسجل :</p>
             <p>........................................</p>
@@ -3859,7 +3985,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
         ${footerHTML}
       </div>
     `;
-    
+
     const element = document.createElement('div');
     element.innerHTML = fullContent;
 
@@ -3877,7 +4003,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
     console.error("خطأ التقرير:", err);
     showToast("حدث خطأ أثناء استخراج التقرير", "error");
   }
- };
+};
 
   return (
     <div>
@@ -4702,4 +4828,5 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
     </div>
   );
 }
+
 export default RegistrationTabs;

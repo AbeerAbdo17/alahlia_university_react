@@ -1204,12 +1204,13 @@ const saveSession = async () => {
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label">المستوى</label>
-                  <input
+       <label className="input-label">
+    {programType === "postgraduate" ? "الدفعة" : "المستوى"}
+  </label>                  <input
                     className="input-field"
                     dir="rtl"
                     list="schedule_levels"
-                    placeholder="مثال: المستوى الأول"
+    placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الأول"}
                     value={levelName}
                     onChange={(e) => {
                       setLevelName(e.target.value);

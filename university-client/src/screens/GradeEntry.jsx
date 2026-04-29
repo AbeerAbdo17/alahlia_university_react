@@ -35,6 +35,21 @@ const getAllowedProgramTypes = () => {
   }
 };
 
+const PENALTY_OPTIONS = [
+  { value: "none", label: "لا يوجد" },
+  { value: "warning", label: "إنذار" },
+  { value: "fail_zero", label: " صفر في المادة" },
+  { value: "suspension", label: "إيقاف" },
+  { value: "expulsion", label: "فصل نهائي" }
+];
+
+const SUSPENSION_OPTIONS = [
+  { value: "term", label: "فصل دراسي" },
+  { value: "one_year", label: "سنة دراسية" },
+  { value: "two_years", label: "سنتين دراسيتين" },
+  { value: "three_years", label: "ثلاث سنوات دراسية" }
+];
+
 const GradeEntry = () => {
   const navigate = useNavigate();
 
@@ -422,10 +437,63 @@ const calcStudentRow = (student) => {
     ...student,
     coursework_mark: cw ?? "",
     final_exam_mark: fe ?? "",
+    is_absent: student.is_absent || false, 
     total_mark: total,
     letter,
     points,
   };
+};
+
+const onChangeAbsent = (studentId, checked) => {
+  setStudents((prev) =>
+    prev.map((s) => {
+      if (s.student_id !== studentId) return s;
+
+      if (checked && s.penalty_type && s.penalty_type !== 'none') {
+        showToast("لا يمكن اختيار غائب لطالب لديه عقوبة مسجلة", "error");
+        return s;
+      }
+
+      if (checked) {
+        return {
+          ...s,
+          is_absent: true,
+          penalty_type: 'none', 
+          coursework_mark: 0,
+          final_exam_mark: 0,
+          total_mark: 0,
+          letter: "F",
+          points: 0.0,
+        };
+      }
+      return { ...s, is_absent: false, coursework_mark: "", final_exam_mark: "", total_mark: 0 };
+    })
+  );
+};
+
+const onChangePenalty = (studentId, penaltyValue) => {
+  setStudents((prev) =>
+    prev.map((s) => {
+      if (s.student_id !== studentId) return s;
+
+      if (penaltyValue !== 'none' && s.is_absent) {
+        showToast("لا يمكن اختيار عقوبة لطالب مسجل كغائب", "error");
+        return s;
+      }
+
+      let updatedStudent = { ...s, penalty_type: penaltyValue };
+      
+      if (penaltyValue === "fail_zero") {
+        updatedStudent.coursework_mark = 0;
+        updatedStudent.final_exam_mark = 0;
+        updatedStudent.total_mark = 0;
+        updatedStudent.letter = "F";
+        updatedStudent.points = 0.0;
+      }
+      
+      return updatedStudent;
+    })
+  );
 };
 
   // =========================
@@ -552,6 +620,13 @@ const saveGrades = async () => {
   if (savingGrades || !selectedCourseId) return;
 
   setSavingGrades(true);
+  const token = sessionStorage.getItem("token");
+
+  if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
 
   const payload = {
     course_id: selectedCourseId,
@@ -559,7 +634,10 @@ const saveGrades = async () => {
       student_id: s.student_id,
       coursework_mark: s.coursework_mark ?? null,
       final_exam_mark: s.final_exam_mark ?? null,
-      is_repeat: s.is_repeat 
+      is_absent: s.is_absent ? 1 : 0, 
+      is_repeat: s.is_repeat, 
+      penalty_type: s.penalty_type || 'none',
+      suspension_duration: s.suspension_duration || null
     })),
     academic_year: academicYear.trim(),
     level_name: levelName.trim(),
@@ -568,12 +646,23 @@ const saveGrades = async () => {
     postgraduate_program: programType === "postgraduate" ? postgraduateProgram.trim() : null
   };
 
-  try {
+try {
     const res = await fetch(`${API_BASE}/save-grades`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
       body: JSON.stringify(payload)
     });
+
+    if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+            navigate("/login"); 
+            return; 
+        }
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "فشل الحفظ");
@@ -747,12 +836,14 @@ const saveGrades = async () => {
 
               {/* 6) المستوى */}
               <div className="input-group">
-                <label className="input-label">المستوى</label>
+                  <label className="input-label">
+    {programType === "postgraduate" ? "الدفعة" : "المستوى"}
+  </label>
                 <input
                   className="input-field"
                   dir="rtl"
                   list="levels_list_grades"
-                  placeholder="مثال: المستوى الأول"
+    placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الأول"}
                   value={levelName}
                   onChange={(e) => {
                     setLevelName(e.target.value);
@@ -878,7 +969,8 @@ const saveGrades = async () => {
       <th>#</th>
       <th>الاسم</th>
       <th>الرقم الجامعي</th>
-      {/* <th>حالة المادة</th> */}
+      <th>غائب؟</th> 
+      <th>عقوبة حالة الغش</th>
       <th>أعمال السنة</th>
       <th>النهائي</th>
       <th>المجموع</th>
@@ -888,37 +980,96 @@ const saveGrades = async () => {
   </thead>
   <tbody>
     {students.map((s, idx) => (
-      <tr key={s.student_id} style={s.is_repeat ? { backgroundColor: "#fff3e0" } : {}}>  
+      <tr key={s.student_id} style={s.is_absent ? { backgroundColor: "#ffebee" } : (s.is_repeat ? { backgroundColor: "#fff3e0" } : {})}>
         <td>{idx + 1}</td>
         <td>{s.full_name}</td>
         <td>{s.university_id}</td>
-        {/* <td style={{ fontWeight: "bold", color: s.is_repeat ? "#e65100" : "#424242" }}> 
-          {s.is_repeat ? "إعادة" : "منتظم"}
-        </td> */}
-        <td>
+        
+        {/* خانة اختيار الغياب */}
+        <td style={{ textAlign: "center" }}>
           <input
-            className="input-field"
-            type="number"
-            value={s.coursework_mark ?? ""}
-            onChange={(e) =>
-              onChangeMark(s.student_id, "coursework_mark", e.target.value)
-            }
-            placeholder="0"
+            type="checkbox"
+            checked={!!s.is_absent}
+            onChange={(e) => onChangeAbsent(s.student_id, e.target.checked)}
+            disabled={s.penalty_type && s.penalty_type !== 'none'}
+            style={{ transform: "scale(1.5)" }}
           />
         </td>
-        <td>
-          <input
-            className="input-field"
-            type="number"
-            value={s.final_exam_mark ?? ""}
-            onChange={(e) =>
-              onChangeMark(s.student_id, "final_exam_mark", e.target.value)
-            }
-            placeholder="0"
-          />
-        </td>
-        <td>{s.total_mark ?? "—"}</td>
-        <td>{s.letter ?? "—"}</td>
+<td style={{ minWidth: "180px" }}>
+  {/* قائمة اختيار نوع العقوبة */}
+  <select
+    className="input-field"
+    value={s.penalty_type || "none"}
+    onChange={(e) => onChangePenalty(s.student_id, e.target.value)}
+    disabled={!!s.is_absent}
+    style={{ 
+      borderColor: s.penalty_type && s.penalty_type !== 'none' ? 'red' : '',
+      cursor: s.is_absent ? "not-allowed" : "pointer"
+    }}
+  >
+    {PENALTY_OPTIONS.map(opt => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+    ))}
+  </select>
+
+  {/* قائمة اختيار مدة الإيقاف - تظهر فقط عند اختيار "إيقاف" */}
+  {s.penalty_type === "suspension" && (
+    <select
+      className="input-field"
+      style={{ 
+        marginTop: "5px", 
+        border: "1px solid orange",
+        backgroundColor: "#fffaf0" 
+      }}
+      value={s.suspension_duration || ""}
+      onChange={(e) => {
+        const val = e.target.value;
+        setStudents(prev => prev.map(item => 
+          item.student_id === s.student_id ? { ...item, suspension_duration: val } : item
+        ));
+      }}
+      disabled={!!s.is_absent}
+    >
+      <option value="">-- اختر مدة الإيقاف --</option>
+      {SUSPENSION_OPTIONS.map(period => (
+        <option key={period.value} value={period.value}>{period.label}</option>
+      ))}
+    </select>
+  )}
+</td>
+
+<td>
+  <input
+    className="input-field"
+    type="number"
+    value={s.coursework_mark ?? ""}
+    onChange={(e) => onChangeMark(s.student_id, "coursework_mark", e.target.value)}
+    // التعديل: يعطل الإدخال إذا كان غائباً 
+    // أو إذا كانت هناك عقوبة بشرط ألا تكون "إنذار" وألا تكون "لا يوجد"
+    disabled={
+      s.is_absent || 
+      (s.penalty_type && s.penalty_type !== "none" && s.penalty_type !== "warning")
+    }
+    placeholder={s.is_absent ? "غائب" : "0"}
+  />
+</td>
+
+<td>
+  <input
+    className="input-field"
+    type="number"
+    value={s.final_exam_mark ?? ""}
+    onChange={(e) => onChangeMark(s.student_id, "final_exam_mark", e.target.value)}
+    // نفس المنطق هنا
+    disabled={
+      s.is_absent || 
+      (s.penalty_type && s.penalty_type !== "none" && s.penalty_type !== "warning")
+    }
+    placeholder={s.is_absent ? "غائب" : "0"}
+  />
+</td>
+        <td>{s.is_absent ? "غائب" : (s.total_mark ?? "—")}</td>
+        <td style={{ color: s.is_absent ? "red" : "inherit" }}>{s.letter ?? "—"}</td>
         <td>{s.points ?? "—"}</td>
       </tr>
     ))}

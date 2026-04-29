@@ -511,12 +511,22 @@ useEffect(() => {
 }, [savedRows, canComputeTerm, academicYear, levelName, termName, programType, postgraduateProgram]);
 
 //  طباعه النتيجه
-const printResults = () => {
+const printResults = (mode = 'letter') => {
   if (savedRows.length === 0) {
     return showToast("لا توجد نتائج للطباعة بعد", "error");
   }
 
-  // 1. قائمة الشرف: GPA تراكمي ≥ 3.00
+  const isLetterMode = mode === 'letter';
+
+  let programTypeText = "";
+  if (programType === "diploma") programTypeText = "دبلوم";
+  else if (programType === "bachelor") programTypeText = "بكالوريوس";
+  else if (programType === "postgraduate") programTypeText = "دراسات عليا";
+
+  const programNameText = (programType === "postgraduate" && postgraduateProgram.trim())
+    ? ` - ${postgraduateProgram.trim()}`
+    : "";
+
   const honorStudents = savedRows
     .filter(r => Number(r.term_gpa || 0) >= 3.00)
     .sort((a, b) => Number(b.cumulative_gpa || 0) - Number(a.cumulative_gpa || 0));
@@ -534,13 +544,16 @@ const printResults = () => {
       <p style="margin: 8px 0 4px; font-weight: bold; font-size: 16px;">
         ${facultyName} - ${departmentName}
       </p>
+      <p style="margin: 4px 0; font-size: 14px; font-weight: bold;">
+        ${programTypeText}${programNameText}
+      </p>
       <p style="margin: 4px 0; font-size: 14px;">
         السنة الدراسية: ${academicYear} | المستوى: ${levelName} | الفصل: ${termName}
       </p>
     </div>
   `;
 
-  // ──────────────── صفحة الشرف (GPA ≥ 3.00) ────────────────
+  // صفحة الشرف
   let honorPage = '';
   if (honorStudents.length > 0) {
     honorPage = `
@@ -558,7 +571,6 @@ const printResults = () => {
               <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الموقف الأكاديمي</th>
               <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA فصلي</th>
               <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA تراكمي</th>
-              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">التصنيف</th>
             </tr>
           </thead>
           <tbody>
@@ -570,7 +582,6 @@ const printResults = () => {
                 <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.academic_status || 'غير محدد'}</td>
                 <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.term_gpa || 0).toFixed(2)}</td>
                 <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.cumulative_gpa || 0).toFixed(2)}</td>
-                <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.classification_label || '—'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -579,7 +590,7 @@ const printResults = () => {
     `;
   }
 
-  // ──────────────── صفحة نتائج الطلاب العامة ────────────────
+  // صفحة النتائج العامة
   const mainResultsPage = `
     <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 30px; font-size: 14px; break-after: page;">
       ${commonHeader}
@@ -595,7 +606,6 @@ const printResults = () => {
             <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الموقف الأكاديمي</th>
             <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA فصلي</th>
             <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">GPA تراكمي</th>
-            <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">التصنيف</th>
           </tr>
         </thead>
         <tbody>
@@ -607,7 +617,6 @@ const printResults = () => {
               <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.academic_status || 'غير محدد'}</td>
               <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.term_gpa || 0).toFixed(2)}</td>
               <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${Number(r.cumulative_gpa || 0).toFixed(2)}</td>
-              <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.classification_label || '—'}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -615,6 +624,7 @@ const printResults = () => {
     </div>
   `;
 
+  // تحضير المواد
   const allCourses = new Set();
   Object.values(detailedGrades).forEach(grades => {
     grades.forEach(grade => {
@@ -628,12 +638,12 @@ const printResults = () => {
     return;
   }
 
-  // ──────────────── صفحة تفاصيل الدرجات مع عمود مواد الإعادة ────────────────
+  // صفحة التفاصيل
   const detailsPage = `
     <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 30px; font-size: 14px;">
       ${commonHeader}
       <h2 style="color: #0a3753; text-align: center; margin: 35px 0 25px; font-size: 18px;">
-        تفاصيل درجات المواد
+        تفاصيل درجات المواد ${isLetterMode ? '(الحرفية)' : '(الرقمية)'}
       </h2>
 
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px; break-inside: auto;">
@@ -644,13 +654,13 @@ const printResults = () => {
             <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الرقم الجامعي</th>
             <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">الموقف الأكاديمي</th>
             ${uniqueCourses.map(courseName => `
-              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">${courseName}</th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px; text-align: center;">
+                ${courseName}
+              </th>
             `).join('')}
 
             ${Object.values(repeatedCoursesMap).some(arr => arr.length > 0) ? `
-              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px; background: #6e6e6e; color: white;">
-               إزالة الرسوب
-              </th>
+              <th style="padding: 12px; border: 1px solid #ccc; font-size: 13px;">إزالة الرسوب</th>
             ` : ''}
           </tr>
         </thead>
@@ -659,22 +669,16 @@ const printResults = () => {
             const studentGrades = detailedGrades[r.student_id] || [];
             const gradesMap = {};
             studentGrades.forEach(grade => {
-              if (grade.course_name) {
-                gradesMap[grade.course_name] = grade;
-              }
+              if (grade.course_name) gradesMap[grade.course_name] = grade;
             });
 
             const repeatedData = repeatedCoursesMap[r.student_id] || [];
             let repeatedDisplay = "—";
-
             if (repeatedData.length > 0) {
               repeatedDisplay = repeatedData.map(item => `
                 ${item.course_name}: 
                 <strong>${item.grade_letter || '—'}</strong> 
-                (${item.total_mark ?? '—'}) 
-                <span style="color: ${item.status === 'رسوب' ? '#dc2626' : '#16a34a'}; font-weight: bold;">
-                  ${item.status || '—'}
-                </span>
+                (${item.total_mark ?? '—'})
               `).join("<br>");
             }
 
@@ -684,17 +688,20 @@ const printResults = () => {
                 <td style="padding: 11px; border: 1px solid #ddd;">${r.full_name}</td>
                 <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.university_id}</td>
                 <td style="padding: 11px; border: 1px solid #ddd; text-align: center;">${r.academic_status || 'غير محدد'}</td>
+
                 ${uniqueCourses.map(courseName => {
                   const grade = gradesMap[courseName];
+                  if (!grade) {
+                    return `<td style="padding: 11px; border: 1px solid #ddd; text-align: center;">—</td>`;
+                  }
+
+                  const displayValue = isLetterMode 
+                    ? (grade.grade_letter || '—') 
+                    : (grade.total_mark ?? '—');
+
                   return `
-                    <td style="padding: 11px; border: 1px solid #ddd; text-align: center; font-size: 12px;">
-                      ${grade ? `
-                        <strong>${grade.grade_letter || '—'}</strong><br>
-                        (${grade.total_mark ?? '—'})<br>
-                        <span style="color: ${grade.status === 'رسوب' ? '#dc2626' : '#16a34a'}; font-weight: bold;">
-                          ${grade.status || '—'}
-                        </span>
-                      ` : '—'}
+                    <td style="padding: 11px; border: 1px solid #ddd; text-align: center; font-weight: bold; font-size: 13px;">
+                      ${displayValue}
                     </td>
                   `;
                 }).join('')}
@@ -712,7 +719,6 @@ const printResults = () => {
     </div>
   `;
 
-  // تجميع كل الصفحات
   const fullContent = honorPage + mainResultsPage + detailsPage;
 
   const element = document.createElement('div');
@@ -720,7 +726,7 @@ const printResults = () => {
 
   const options = {
     margin: 0.5,
-    filename: `نتائج_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.pdf`,
+    filename: `نتائج_${isLetterMode ? 'حرفية' : 'رقمية'}_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
@@ -729,7 +735,7 @@ const printResults = () => {
 
   html2pdf().from(element).set(options).save();
 
-  showToast("جاري إنشاء ملف PDF...", "success");
+  showToast(`جاري إنشاء ملف PDF ${isLetterMode ? 'الحرفي' : 'الرقمي'}...`, "success");
 };
 
   return (
@@ -877,12 +883,13 @@ const printResults = () => {
               </div>
 
               <div className="input-group">
-                <label className="input-label">المستوى</label>
-                <input
+       <label className="input-label">
+    {programType === "postgraduate" ? "الدفعة" : "المستوى"}
+  </label>                <input
                   className="input-field"
                   dir="rtl"
                   list="levels_list_result"
-                  placeholder="مثال: المستوى الأول"
+    placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الأول"}
                   value={levelName}
                   onChange={(e) => {
                     setLevelName(e.target.value);
@@ -937,14 +944,25 @@ const printResults = () => {
               </button>
 
 {savedRows.length > 0 && (
-  <button
-    type="button"
-    className="btn btn-primary"
-    onClick={printResults}
-    disabled={computingResult || loadingResult || loadingDetails}
-  >
-    طباعة النتيجة
-  </button>
+  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={() => printResults('letter')}
+      disabled={computingResult || loadingResult || loadingDetails}
+    >
+       طباعة النتيجة الحرفية
+    </button>
+
+    <button
+      type="button"
+      className="btn btn-success"
+      onClick={() => printResults('numeric')}
+      disabled={computingResult || loadingResult || loadingDetails}
+    >
+       طباعة النتيجة الرقمية
+    </button>
+  </div>
 )}
               <div style={{ color: "#6b7280", fontWeight: 800, alignSelf: "center" }}>
                 عدد النتائج: {savedRows.length}
@@ -1001,9 +1019,10 @@ const printResults = () => {
                       <th>الموقف الأكاديمي</th>
                       <th>GPA فصلي</th>
                       <th>GPA تراكمي</th>
-                      <th>التصنيف</th>
+                      {/* <th>التصنيف</th> */}
                       <th>نقاط الفصل</th>
                       <th>ساعات الفصل</th>
+                      <th>ساعات الرسوب</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1015,9 +1034,10 @@ const printResults = () => {
                         <td>{r.academic_status}</td>
                         <td>{r.term_gpa ?? "—"}</td>
                         <td>{r.cumulative_gpa ?? "—"}</td>
-                        <td>{r.classification_label ?? "—"}</td>
+                        {/* <td>{r.classification_label ?? "—"}</td> */}
                         <td>{r.term_total_points ?? "—"}</td>
                         <td>{r.term_total_hours ?? "—"}</td>
+                        <td style={{color: Number(r.failed_hours || 0) > 0 ? '#dc2626' : '#16a34a', fontWeight: 'bold'}}> {r.failed_hours ?? "—"}</td>
 
                       </tr>
                     ))}

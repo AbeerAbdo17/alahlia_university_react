@@ -1028,15 +1028,16 @@ const onSelectDepartment = (deptId) => {
         </div>
 
         {/* 6) المستوى */}
-        <div className="input-group">
-          <label className="input-label">المستوى</label>
-
-          <input
-            className="input-field"
-            dir="rtl"
-            list="levels_list"
-            placeholder="مثال: المستوى الأول"
-            value={levelName}
+<div className="input-group">
+  <label className="input-label">
+    {programType === "postgraduate" ? "الدفعة" : "المستوى"}
+  </label>
+  <input
+    className="input-field"
+    dir="rtl"
+    list="levels_list"
+    placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الأول"}
+    value={levelName}
             onChange={(e) => {
               setLevelName(e.target.value);
               setTermName("");
@@ -1662,9 +1663,9 @@ const handleEditDepartment = (dept) => {
                               <button type="button" className="btn btn-outline" style={{ marginInlineStart: 4 }} onClick={() => handleEditFaculty(f)}>
                                 تعديل
                               </button>
-                              <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
+                              {/* <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
                                 حذف
-                              </button>
+                              </button> */}
                             </td>
                           </tr>
                         ))}

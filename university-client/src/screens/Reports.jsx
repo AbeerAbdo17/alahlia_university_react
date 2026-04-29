@@ -21,6 +21,43 @@ const ui = {
   radioLabel: { display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: "#334155", cursor: "pointer", padding: "8px 12px", borderRadius: 8, transition: "background 0.2s" },
 };
 
+function usePostgradProgramsSmartList() {
+  const [programs, setPrograms] = useState([]);
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/postgraduate-programs`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "فشل تحميل البرامج");
+      setPrograms(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setPrograms([]);
+    }
+  };
+
+  return { programs, fetchPrograms };
+}
+
+function useAcademicPeriodsSmartList() {
+  const [years, setYears] = useState([]);
+  const [levels, setLevels] = useState([]);
+
+  // أضفنا parameter هنا لتحديد النوع
+  const fetchPeriods = async (type = "bachelor") => {
+    try {
+      const res = await fetch(`${API_BASE}/academic-periods?program_type=${type}`);
+      const data = await res.json();
+      if (res.ok) {
+        setYears([...new Set(data.map(p => p.academic_year))].sort().reverse());
+        setLevels([...new Set(data.map(p => p.level_name))].sort());
+      }
+    } catch (e) { console.error("Error fetching periods:", e); }
+  };
+
+  return { years, levels, fetchPeriods };
+}
+
 const Report = () => {
   const navigate = useNavigate();
   const [toast, setToast] = useState(null);
@@ -48,6 +85,10 @@ const Report = () => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingPeriods, setLoadingPeriods] = useState(false);
+
+  const pgSmart = usePostgradProgramsSmartList();
+  const [postgradProgram, setPostgradProgram] = useState("");
+  const academicPeriods = useAcademicPeriodsSmartList();
 
   // Load Data
   useEffect(() => {
@@ -93,12 +134,14 @@ const Report = () => {
     setAcademicYear("");
     setLevelName("");
     setReportData(null);   
+    setPostgradProgram("");
   }, [scope]);
 
   // Fetch Report
   const fetchReport = async () => {
     if (!academicYear || !levelName) return showToast("اختر السنة والمستوى", "error");
     if (scope === "student" && !selectedStudent) return showToast("اختر طالب", "error");
+    if (scope === "postgrad_program" && !postgradProgram) return showToast("اختر البرنامج أولاً", "error");
 
     setLoading(true);
     const params = new URLSearchParams({
@@ -108,6 +151,8 @@ const Report = () => {
       student_id: selectedStudent?.id || "",
       academic_year: academicYear,
       level_name: levelName,
+
+      postgraduate_program: postgradProgram || "",
     });
 
     try {
@@ -130,7 +175,7 @@ const Report = () => {
   // Print PDF 
   const printReport = () => {
     if (!reportData || !reportData.groupsByCurrency) {
-      showToast("ما فيش بيانات للطباعة بعد", "error");
+      showToast("لايوجد بيانات للطباعة بعد", "error");
       return;
     }
 
@@ -152,6 +197,7 @@ const Report = () => {
     if (scope === "all") subtitle = "تقرير رسوم – كل الجامعة";
     else if (scope === "faculty") subtitle = `تقرير رسوم – ${facultyName}`;
     else if (scope === "department") subtitle = `تقرير رسوم – ${departmentName}`;
+    else if (scope === "postgrad_program") subtitle = `تقرير برنامج: ${postgradProgram}`; 
     else if (scope === "student") subtitle = `تقرير رسوم الطالب – ${studentName}`;
 
     const commonHeader = `
@@ -219,9 +265,14 @@ const Report = () => {
         const gt = currencyData.grand_total;
         content += `
           <div style="padding: 24px 20px; margin: 32px 0; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 3px 10px rgba(0,0,0,0.05); text-align: center;">
-            <div style="font-size: 19px; font-weight: 800; color: #0a3753; margin-bottom: 18px;">
-              الإجمالي الكلي (${currency}) لـ ${scope === "all" ? "الجامعة" : scope === "faculty" ? "الكلية" : scope === "department" ? "القسم" : "الطالب"}
-            </div>
+<div style="font-size: 19px; font-weight: 800; color: #0a3753; margin-bottom: 18px;">
+        الإجمالي الكلي (${currency}) لـ ${
+          scope === "all" ? "الجامعة" : 
+          scope === "faculty" ? "الكلية" : 
+          scope === "department" ? "القسم" : 
+          scope === "postgrad_program" ? "برنامج الدراسات العليا" : "الطالب"
+        }
+      </div>
             <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; font-size: 15px; color: #334155;">
               <div>المستحق: <strong style="color: #0a3753; font-size: 17px; font-weight: 700;">${Number(gt.total_due || 0).toLocaleString()}</strong></div>
               <div>المتحصل: <strong style="color: #16a34a; font-size: 17px; font-weight: 700;">${Number(gt.total_paid || 0).toLocaleString()}</strong></div>
@@ -301,7 +352,13 @@ const Report = () => {
         <div style={ui.card}>
           <h3 style={ui.sectionTitle}>اختر نطاق التقرير</h3>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            {[{ value: "all", label: "كل الجامعة" }, { value: "faculty", label: "كلية محددة" }, { value: "department", label: "قسم محدد" }, { value: "student", label: "طالب محدد" }].map(item => (
+            {[
+  { value: "all", label: "كل الجامعة" }, 
+  { value: "faculty", label: "كلية محددة" }, 
+  { value: "department", label: "قسم محدد" }, 
+  { value: "postgrad_program", label: "برنامج دراسات عليا" },
+  { value: "student", label: "طالب محدد" }
+].map(item => (
               <label key={item.value} style={{ ...ui.radioLabel, background: scope === item.value ? "#e0f2fe" : "transparent" }}>
                 <input type="radio" name="scope" value={item.value} checked={scope === item.value} onChange={e => setScope(e.target.value)} />
                 {item.label}
@@ -332,6 +389,26 @@ const Report = () => {
               </div>
             )}
 
+{scope === "postgrad_program" && (
+  <div style={ui.field}>
+    <label style={ui.label}>اختر برنامج الدراسات العليا</label>
+    <input
+      type="text"
+      list="pg_programs_list"
+      placeholder="مثال: ماجستير إدارة أعمال"
+      value={postgradProgram}
+      onChange={(e) => setPostgradProgram(e.target.value)}
+      onFocus={() => pgSmart.fetchPrograms && pgSmart.fetchPrograms()} 
+      style={ui.input}
+    />
+    <datalist id="pg_programs_list">
+      {pgSmart.programs && pgSmart.programs.map((p) => (
+        <option key={p} value={p} />
+      ))}
+    </datalist>
+  </div>
+)}
+
             {scope === "student" && (
               <div style={ui.field}>
                 <label style={ui.label}>بحث عن الطالب</label>
@@ -349,21 +426,45 @@ const Report = () => {
               </div>
             )}
 
-            <div style={ui.field}>
-              <label style={ui.label}>السنة الدراسية</label>
-              <select value={academicYear} onChange={e => setAcademicYear(e.target.value)} disabled={loadingPeriods} style={ui.select}>
-                <option value="">— اختر السنة —</option>
-                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
+{/* حقل السنة الدراسية */}
+<div style={ui.field}>
+  <label style={ui.label}>السنة الدراسية</label>
+  <input
+    type="text"
+    list="years_datalist"
+    placeholder=" — اختر — "
+    value={academicYear}
+    onChange={(e) => setAcademicYear(e.target.value)}
+onFocus={() => academicPeriods.fetchPeriods(scope === "postgrad_program" ? "postgraduate" : "bachelor")}    style={ui.input}
+  />
+  <datalist id="years_datalist">
+    {/* التعديل هنا: استخدمنا بيانات الـ Hook مباشرة */}
+    {academicPeriods.years.map(y => <option key={y} value={y} />)}
+  </datalist>
+</div>
 
-            <div style={ui.field}>
-              <label style={ui.label}>المستوى</label>
-              <select value={levelName} onChange={e => setLevelName(e.target.value)} disabled={loadingPeriods} style={ui.select}>
-                <option value="">— اختر المستوى —</option>
-                {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
+<div style={ui.field}>
+  <label style={ui.label}>
+    {scope === "postgrad_program" ? "الدفعة" : "المستوى"}
+  </label>
+  
+  <input
+    type="text"
+    list="dynamic_levels_list"
+    placeholder={scope === "postgrad_program" ? "مثلاً: الدفعة الأولى" : "اختر المستوى"}
+    value={levelName}
+    onChange={(e) => setLevelName(e.target.value)}
+onFocus={() => academicPeriods.fetchPeriods(scope === "postgrad_program" ? "postgraduate" : "bachelor")}    style={ui.input}
+    disabled={loadingPeriods}
+  />
+
+  <datalist id="dynamic_levels_list">
+    {/* التعديل هنا: استخدمنا academicPeriods.levels بدلاً من levelOptions */}
+    {academicPeriods.levels.map((l, index) => (
+      <option key={index} value={l} />
+    ))}
+  </datalist>
+</div>
           </div>
 
           <button onClick={fetchReport} disabled={loading || loadingPeriods} style={{ ...ui.primaryBtn, marginTop: 28, width: "100%", fontSize: 17, padding: "16px" }}>
@@ -427,10 +528,15 @@ const Report = () => {
                     boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
                     textAlign: "center"
                   }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: "#0a3753", marginBottom: 18 }}>
-                      الإجمالي الكلي ({currency}) — 
-                      {scope === "all" ? "الجامعة" : scope === "faculty" ? "الكلية" : scope === "department" ? "القسم" : "الطالب"}
-                    </div>
+<div style={{ fontSize: 24, fontWeight: 900, color: "#0a3753", marginBottom: 18 }}>
+  الإجمالي الكلي ({currency}) — 
+  {
+    scope === "all" ? "الجامعة" : 
+    scope === "faculty" ? "الكلية" : 
+    scope === "department" ? "القسم" : 
+    scope === "postgrad_program" ? "برنامج الدراسات العليا" : "الطالب"
+  }
+</div>
                     
                     <div style={{ 
                       display: "flex", 
