@@ -125,11 +125,11 @@ const GradeRulesAdmin = ({ showToast, faculties }) => {
       return;
     }
 
-    //  Validation: لازم النهائي + أعمال الفصل = 100
+    //  Validation: يجب أن يكون النهائي + أعمال الفصل = 100
     const total = Number(gpaSettings.total_mark ?? 100);
     const sum = Number(gpaSettings.final_exam_max || 0) + Number(gpaSettings.coursework_max || 0);
     if (sum !== total) {
-      showToast?.(`لازم مجموع (النهائي + أعمال الفصل) = ${total}`, "error");
+      showToast?.(`يجب ان يكون مجموع (النهائي + أعمال الفصل) = ${total}`, "error");
       return;
     }
 
@@ -515,6 +515,7 @@ const CoursesAdmin = ({ showToast, faculties }) => {
   const [courseName, setCourseName] = useState("");
   const [instructor, setInstructor] = useState("");
   const [creditHours, setCreditHours] = useState("");
+  const [courseNameEn, setCourseNameEn] = useState("");
 
   const [totalMark, setTotalMark] = useState(100);
   const [courseworkMax, setCourseworkMax] = useState(40);
@@ -530,6 +531,8 @@ const CoursesAdmin = ({ showToast, faculties }) => {
   const [loadingInstructors, setLoadingInstructors] = useState(false);
 
   const pgSmart = usePostgradProgramsSmartList();
+  const navigate = useNavigate();
+  
 
 
   const canPickDepartment = !!selectedFacultyId;
@@ -585,6 +588,7 @@ const canProceedAfterProgram =
 
   const resetForm = () => {
     setCourseName("");
+    setCourseNameEn("");
     setInstructor("");
     setCreditHours("");
     setTotalMark(100);
@@ -817,20 +821,31 @@ const onSelectDepartment = (deptId) => {
 
 
   const handleSaveCourse = async (e) => {
+    const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
     e.preventDefault();
 
     if (!canLoad) return showToast?.("كمّل الاختيارات بالترتيب أولاً", "error");
     if (!courseName.trim()) return showToast?.("اكتب اسم المادة", "error");
+    if (!courseNameEn.trim()) return showToast?.("اكتب اسم المادة بالإنجليزية", "error");
 
     const tm = Number(totalMark ?? 100);
     const cw = Number(courseworkMax ?? 0);
     const fe = Number(finalExamMax ?? 0);
-    if (cw + fe !== tm) return showToast?.(`لازم (أعمال السنة + الامتحان) = ${tm}`, "error");
+
+
+
+    
+    if (cw + fe !== tm) return showToast?.(`يجب انو يكون (أعمال السنة + الامتحان) = ${tm}`, "error");
 
     const chRaw = (creditHours ?? "").toString().trim();
     const ch = chRaw === "" ? null : Number(chRaw);
     if (chRaw !== "" && (!Number.isFinite(ch) || ch <= 0)) {
-      return showToast?.("عدد الساعات لازم يكون رقم أكبر من 0", "error");
+      return showToast?.("عدد الساعات يجب أن يكون رقم أكبر من 0", "error");
     }
 
     if (programType === "postgraduate" && !postgraduateProgram.trim()) {
@@ -847,6 +862,7 @@ const onSelectDepartment = (deptId) => {
       postgraduate_program: programType === "postgraduate" ? postgraduateProgram.trim() : null,
 
       course_name: courseName.trim(),
+      course_name_en: courseNameEn.trim(),
       instructor: instructor.trim(),
       credit_hours: ch,
       total_mark: tm,
@@ -859,18 +875,42 @@ const onSelectDepartment = (deptId) => {
       if (editingCourseId) {
         const res = await fetch(`${API_BASE}/courses/${editingCourseId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
           body: JSON.stringify(payload),
         });
+
+            if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+            navigate("/login"); 
+            return; 
+        }
+
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "فشل تعديل المادة");
         showToast?.(data.message || "تم تعديل المادة", "success");
       } else {
         const res = await fetch(`${API_BASE}/courses`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
           body: JSON.stringify(payload),
         });
+
+                   if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+            navigate("/login"); 
+            return; 
+        }
+
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "فشل إضافة المادة");
         showToast?.(data.message || "تمت إضافة المادة", "success");
@@ -889,6 +929,7 @@ const onSelectDepartment = (deptId) => {
   const handleEditCourse = (c) => {
     setEditingCourseId(c.id);
     setCourseName(c.course_name ?? "");
+    setCourseNameEn(c.course_name_en ?? "");
     setInstructor(c.instructor ?? "");
     setCreditHours(c.credit_hours ?? "");
 
@@ -1082,6 +1123,11 @@ const onSelectDepartment = (deptId) => {
           <label className="input-label">المادة</label>
           <input className="input-field" value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder="اسم المادة" disabled={!canLoad} />
         </div>
+        <div className="input-group">
+  <label className="input-label">المادة (EN)</label>
+           <input className="input-field" value={courseNameEn} onChange={(e) => setCourseNameEn(e.target.value)} placeholder="اسم المادة بالإنجليزية" disabled={!canLoad} />
+
+</div>
 
 <div className="input-group">
   <label className="input-label">الأستاذ</label>
@@ -1127,7 +1173,7 @@ const onSelectDepartment = (deptId) => {
 <div>
   {!partsOk && canLoad && (
     <div style={{ color: "#b91c1c", marginBottom: 4 }}>
-      لازم (أعمال السنة + الامتحان) = {Number(totalMark || 100)}
+      يجب أن يكون (أعمال السنة + الامتحان) = {Number(totalMark || 100)}
     </div>
   )}
 
@@ -1167,6 +1213,7 @@ const onSelectDepartment = (deptId) => {
               <tr>
                 <th>#</th>
                 <th>المادة</th>
+                <th>المادة (EN)</th>
                 <th>الأستاذ</th>
                 <th>الساعات</th>
                 <th>أعمال السنة</th>
@@ -1180,6 +1227,7 @@ const onSelectDepartment = (deptId) => {
                 <tr key={c.id}>
                   <td>{idx + 1}</td>
                   <td>{c.course_name}</td>
+                  <td>{c.course_name_en || "—"}</td>
                   <td>{c.instructor || "—"}</td>
                   <td>{c.credit_hours ?? "—"}</td>
                   <td>{c.coursework_max}</td>

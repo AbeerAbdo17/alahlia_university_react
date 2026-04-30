@@ -44,7 +44,7 @@ const PENALTY_OPTIONS = [
 ];
 
 const SUSPENSION_OPTIONS = [
-  { value: "term", label: "فصل دراسي" },
+  // { value: "term", label: "فصل دراسي" },
   { value: "one_year", label: "سنة دراسية" },
   { value: "two_years", label: "سنتين دراسيتين" },
   { value: "three_years", label: "ثلاث سنوات دراسية" }
@@ -618,6 +618,13 @@ const onChangeMark = (studentId, field, value) => {
 
 const saveGrades = async () => {
   if (savingGrades || !selectedCourseId) return;
+
+  for (const s of students) {
+    if (s.penalty_type === "suspension" && !s.suspension_duration) {
+      showToast(`يرجى تحديد مدة الإيقاف للطالب: ${s.full_name}`, "error");
+      return; 
+    }
+  }
 
   setSavingGrades(true);
   const token = sessionStorage.getItem("token");

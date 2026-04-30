@@ -2603,41 +2603,73 @@ app.post("/api/save-grades", authMiddleware, async (req, res) => {
       );
       const currentMaxAttempt = maxAttemptRows[0].max_attempt || 0;
 
-      // 6. الحفظ (تحديث أو إضافة)
-if (!isRepeat) {
-        const [existingRows] = await dbp.query(
-          `SELECT id FROM course_grades WHERE student_id = ? AND course_id = ? AND attempt_number = 1`,
-          [student_id, course_id]
-        );
+// 6. الحفظ (تحديث أو إضافة)
+      const [existingRows] = await dbp.query(
+        `SELECT id FROM course_grades WHERE student_id = ? AND course_id = ? AND attempt_number = 1`,
+        [student_id, course_id]
+      );
 
-        if (existingRows.length > 0) {
-          await dbp.query(
-            `UPDATE course_grades 
-             SET coursework_mark = ?, final_exam_mark = ?, total_mark = ?, 
-                 letter = ?, points = ?, is_absent = ?, 
-                 penalty_type = ?, suspension_duration = ?,
-                 updated_by = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE id = ?`,
-            [cm, fm, total_mark, letter, points, absent_flag, penalty_type || 'none', suspension_duration || null, operator, existingRows[0].id]
-          );
-          continue;
-        }
+      if (existingRows.length > 0 && !isRepeat) {
+        await dbp.query(
+          `UPDATE course_grades 
+           SET coursework_mark = ?, final_exam_mark = ?, total_mark = ?, 
+               letter = ?, points = ?, is_absent = ?, 
+               penalty_type = ?, suspension_duration = ?,
+               updated_by = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [cm, fm, total_mark, letter, points, absent_flag, penalty_type || 'none', suspension_duration || null, operator, existingRows[0].id]
+        );
+      } else {
+        const newAttempt = currentMaxAttempt + 1;
+        await dbp.query(
+          `INSERT INTO course_grades 
+           (course_id, student_id, attempt_number, is_repeat, is_absent,
+            coursework_mark, final_exam_mark, total_mark, letter, points,
+            penalty_type, suspension_duration, 
+            created_by, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [course_id, student_id, newAttempt, isRepeat ? 1 : 0, absent_flag, cm, fm, total_mark, letter, points, penalty_type || 'none', suspension_duration || null, operator]
+        );
       }
 
-      // إضافة سجل جديد (إعادة أو مادة أول مرة لم تسجل من قبل)
-      const newAttempt = currentMaxAttempt + 1;
-await dbp.query(
-        `INSERT INTO course_grades 
-         (course_id, student_id, attempt_number, is_repeat, is_absent,
-          coursework_mark, final_exam_mark, total_mark, letter, points,
-          penalty_type, suspension_duration, 
-          created_by, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [course_id, student_id, newAttempt, isRepeat ? 1 : 0, absent_flag, cm, fm, total_mark, letter, points, penalty_type || 'none', suspension_duration || null, operator]
-      );
-    }
+      // ==========================================
+      // منطق العقوبات
+      // ==========================================
 
-    res.json({ success: true, message: "تم حفظ الدرجات بنجاح" });
+      if (penalty_type === 'expulsion') {
+        // تطبيق عقوبة الفصل النهائي
+        await dbp.query("UPDATE students SET status = 'inactive' WHERE id = ?", [student_id]);
+        await dbp.query(
+          `UPDATE student_registrations SET academic_status = 'فصل' 
+           WHERE student_id = ? AND academic_year = ? AND level_name = ? AND term_name = ?`,
+          [student_id, academic_year, level_name, term_name]
+        );
+
+      } else if (penalty_type === 'suspension') {
+        // تطبيق عقوبة الإيقاف
+        await dbp.query(
+          `UPDATE student_registrations SET academic_status = ? 
+           WHERE student_id = ? AND academic_year = ? AND level_name = ? AND term_name = ?`,
+          [`إيقاف (${suspension_duration})`, student_id, academic_year, level_name, term_name]
+        );
+
+        // حساب السنة القادمة بدقة (تحويل النص إلى أرقام للجمع)
+        let [year1, year2] = academic_year.split('/').map(Number);
+        let yearsToAdd = suspension_duration === 'three_years' ? 3 : (suspension_duration === 'two_years' ? 2 : 1);
+        const nextYear = `${year1 + yearsToAdd}/${year2 + yearsToAdd}`;
+
+        // جدولة سجل العودة المستقبلي
+        await dbp.query(
+          `INSERT INTO student_registrations (student_id, academic_year, level_name, term_name, program_type, academic_status, created_at)
+           VALUES (?, ?, ?, ?, ?, 'منتظم', CURRENT_TIMESTAMP)
+           ON DUPLICATE KEY UPDATE academic_status = 'منتظم'`,
+          [student_id, nextYear, level_name, term_name, program_type]
+        );
+      }
+
+    } 
+
+    res.json({ success: true, message: "تم حفظ الدرجات وتحديث حالات الطلاب بنجاح" });
 
   } catch (err) {
     console.error("SAVE GRADES ERROR:", err);
@@ -2676,7 +2708,7 @@ app.get("/api/courses", async (req, res) => {
         id, faculty_id, department_id,
         academic_year, level_name, term_name,
         program_type, postgraduate_program,
-        course_name, instructor, credit_hours,
+        course_name, course_name_en, instructor, credit_hours,
         total_mark, coursework_max, final_exam_max
       FROM courses
       WHERE faculty_id = ?
@@ -2796,7 +2828,7 @@ app.get("/api/courses", async (req, res) => {
         id, faculty_id, department_id,
         academic_year, level_name, term_name,
         program_type, postgraduate_program,
-        course_name, instructor, credit_hours,
+        course_name, course_name_en, instructor, credit_hours,
         total_mark, coursework_max, final_exam_max
       FROM courses
       WHERE faculty_id = ?
@@ -2820,7 +2852,7 @@ app.get("/api/courses", async (req, res) => {
 
 
 
-app.post("/api/courses", async (req, res) => {
+app.post("/api/courses", authMiddleware, async (req, res) => {
   try {
     const {
       faculty_id,
@@ -2829,6 +2861,7 @@ app.post("/api/courses", async (req, res) => {
       level_name,
       term_name,
       course_name,
+      course_name_en,
       instructor,
       credit_hours,
       total_mark,
@@ -2855,6 +2888,8 @@ app.post("/api/courses", async (req, res) => {
     const tm = Number(total_mark ?? 100);
     const cw = Number(coursework_max ?? 40);
     const fe = Number(final_exam_max ?? 60);
+
+    const userName = req.user.full_name || req.user.username;
 
     let ch = null;
     if (credit_hours !== "" && credit_hours !== null && credit_hours !== undefined) {
@@ -2893,10 +2928,10 @@ app.post("/api/courses", async (req, res) => {
         faculty_id, department_id,
         academic_year, level_name, term_name,
         program_type, postgraduate_program,
-        course_name, instructor, credit_hours,
-        total_mark, coursework_max, final_exam_max
+        course_name, course_name_en, instructor, credit_hours,
+        total_mark, coursework_max, final_exam_max, created_by
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?)
       `,
       [
         facultyId,
@@ -2907,11 +2942,13 @@ app.post("/api/courses", async (req, res) => {
         programType,
         pgProgram,
         name,
+        course_name_en,
         instr,
         ch,
         tm,
         cw,
         fe,
+        userName
       ]
     );
 
@@ -2930,7 +2967,7 @@ app.post("/api/courses", async (req, res) => {
 
 
 
-app.put("/api/courses/:id", async (req, res) => {
+app.put("/api/courses/:id", authMiddleware, async (req, res) => {
   try {
     const courseId = Number(req.params.id);
 
@@ -2941,6 +2978,7 @@ app.put("/api/courses/:id", async (req, res) => {
       level_name,
       term_name,
       course_name,
+      course_name_en,
       instructor,
       credit_hours,
       total_mark,
@@ -2967,6 +3005,8 @@ app.put("/api/courses/:id", async (req, res) => {
     const cw = Number(coursework_max ?? 40);
     const fe = Number(final_exam_max ?? 60);
 
+    const userName = req.user.full_name || req.user.username;
+
     let ch = null;
     if (credit_hours !== "" && credit_hours !== null && credit_hours !== undefined) {
       ch = Number(credit_hours);
@@ -2988,15 +3028,15 @@ app.put("/api/courses/:id", async (req, res) => {
       return res.status(400).json({ error: `لازم (أعمال السنة + الامتحان) = ${tm}` });
     }
 
-    const [result] = await dbp.query(
+const [result] = await dbp.query(
       `
       UPDATE courses
       SET
         faculty_id = ?, department_id = ?,
         academic_year = ?, level_name = ?, term_name = ?,
         program_type = ?, postgraduate_program = ?,
-        course_name = ?, instructor = ?, credit_hours = ?,
-        total_mark = ?, coursework_max = ?, final_exam_max = ?
+        course_name = ?, course_name_en = ?, instructor = ?, credit_hours = ?,
+        total_mark = ?, coursework_max = ?, final_exam_max = ? , created_by = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       `,
       [
@@ -3008,11 +3048,13 @@ app.put("/api/courses/:id", async (req, res) => {
         programType,
         pgProgram,
         name,
+        course_name_en,
         instr,
         ch,
         tm,
         cw,
         fe,
+        userName,
         courseId,
       ]
     );
@@ -4453,7 +4495,8 @@ const [rows] = await dbp.query(
     tr.failed_hours,
     tr.courses_count,
     tr.completed_courses,
-    tr.missing_courses
+    tr.missing_courses,
+    tr.recommendation
   FROM term_results tr
   JOIN students s ON s.id = tr.student_id
   LEFT JOIN student_registrations sr 
@@ -4480,6 +4523,44 @@ const [rows] = await dbp.query(
   } catch (e) {
     console.error("TERM RESULTS LIST ERROR:", e);
     return res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/api/term-results/save-recommendation", authMiddleware, async (req, res) => {
+  try {
+    const { student_id, faculty_id, department_id, academic_year,
+            level_name, term_name, program_type, postgraduate_program,
+            recommendation } = req.body;
+
+    if (!student_id || !academic_year || !level_name || !term_name) {
+      return res.status(400).json({ error: "بيانات ناقصة" });
+    }
+
+    const pgProg = (postgraduate_program || "").trim() || null;
+
+    await dbp.query(
+      `UPDATE term_results
+       SET recommendation = ?, updated_at = NOW()
+       WHERE student_id    = ?
+         AND faculty_id    = ?
+         AND department_id = ?
+         AND academic_year = ?
+         AND level_name    = ?
+         AND term_name     = ?
+         AND program_type  = ?
+         AND (postgraduate_program <=> ?)`,
+      [
+        (recommendation || "").trim(),
+        student_id, faculty_id, department_id,
+        academic_year, level_name, term_name,
+        program_type || "bachelor", pgProg
+      ]
+    );
+
+    return res.json({ success: true, message: "تم حفظ التوصية" });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Database error", details: e.message });
   }
 });
 
@@ -4590,6 +4671,7 @@ app.get("/api/courses/by-term", async (req, res) => {
       SELECT
         c.id,
         c.course_name,
+        c.course_name_en,
         c.credit_hours,
         c.total_mark,
         c.coursework_max,
