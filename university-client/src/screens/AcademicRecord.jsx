@@ -142,6 +142,15 @@ const AcademicRecord = () => {
 
   // live search (debounce)
   useEffect(() => {
+    if (searchQuery.trim() === "") {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedStudent(null);
+    setLatestReg(null);
+    setGrades([]);
+    setTermGpas([]);
+    return;
+  }
     if (searchQuery.trim().length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -233,151 +242,201 @@ const sortByLevelOrder = (levelsObj) => {
   });
 };
   
-  const handlePrint = () => {
-    if (!selectedStudent || grades.length === 0) {
-      alert("لا توجد بيانات كافية للطباعة");
-      return;
+const handlePrint = (lang = 'ar') => {
+  if (!selectedStudent || grades.length === 0) {
+    alert(lang === 'ar' ? "لا توجد بيانات كافية للطباعة" : "No data available to print");
+    return;
+  }
+
+  const isAr = lang === 'ar';
+
+  const facultyName = isAr 
+    ? (grades[0]?.faculty_name || "غير محدد") 
+    : (grades[0]?.faculty_name_en || grades[0]?.faculty_name || "Not Specified");
+
+  const departmentName = isAr 
+    ? (grades[0]?.department_name || "غير محدد") 
+    : (grades[0]?.department_name_en || grades[0]?.department_name || "Not Specified");
+
+  const studentName = isAr 
+    ? selectedStudent.full_name 
+    : (selectedStudent.full_name_en || selectedStudent.full_name || "Student");
+
+  const byLevel = {};
+
+  grades.forEach(grade => {
+    let level = grade.level_name || "غير محدد";
+    if (!isAr) {
+      const levelMap = {
+        "المستوى الأول": "First Year",
+        "المستوى الثاني": "Second Year",
+        "المستوى الثالث": "Third Year",
+        "المستوى الرابع": "Fourth Year",
+        "المستوى الخامس": "Fifth Year",
+        "المستوى السادس": "Sixth Year",
+      };
+      level = levelMap[level] || level;
     }
 
-    const facultyName = grades[0]?.faculty_name || "غير محدد";
-    const departmentName = grades[0]?.department_name || "غير محدد";
+    const termKey = `${grade.academic_year}-${grade.term_name}`;
 
-    const byLevel = {};
+    if (!byLevel[level]) byLevel[level] = {};
+    if (!byLevel[level][termKey]) {
+      byLevel[level][termKey] = {
+        academic_year: grade.academic_year,
+        term_name: isAr 
+          ? grade.term_name 
+          : (grade.term_name?.includes("الأول") || grade.term_name?.includes("اول") ? "First Semester" : "Second Semester"),
+        courses: [],
+        term_gpa: "—",
+        cumulative_gpa: "—"
+      };
+    }
 
-    grades.forEach(grade => {
-      const level = grade.level_name || "غير محدد";
-      const termKey = `${grade.academic_year}-${grade.term_name}`;
-
-      if (!byLevel[level]) byLevel[level] = {};
-      if (!byLevel[level][termKey]) {
-        byLevel[level][termKey] = {
-          academic_year: grade.academic_year,
-          term_name: grade.term_name,
-          courses: [],
-          term_gpa: "—",
-          cumulative_gpa: "—"
-        };
-      }
-
-      const term = byLevel[level][termKey];
-      term.courses.push({
-        name: grade.course_name || "—",
-        letter: grade.letter || "—",
-        hours: Number(grade.credit_hours) || "—"
-      });
+    const term = byLevel[level][termKey];
+    term.courses.push({
+      name: isAr ? (grade.course_name || "—") : (grade.course_name_en || grade.course_name || "—"),
+      letter: grade.letter || "—",
+      hours: Number(grade.credit_hours) || "—"
     });
-
-    termGpas.forEach(term => {
-      const level = term.level_name || "غير محدد";
-      const termKey = `${term.academic_year}-${term.term_name}`;
-
-      if (byLevel[level] && byLevel[level][termKey]) {
-        byLevel[level][termKey].term_gpa = term.term_gpa || "—";
-        byLevel[level][termKey].cumulative_gpa = term.cumulative_gpa || "—";
-      }
-    });
-
-    let content = `
-      <div style="direction: rtl; font-family: 'Cairo', 'Tajawal', sans-serif; padding: 35px 25px; font-size: 14.5px; line-height: 1.6; color: #1f2937;">
-        <div style="text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #0a3753;">
-          <h1 style="margin: 0; color: #0a3753; font-size: 28px; font-weight: 900;">
-            جامعة بورتسودان الأهلية
-          </h1>
-          <h3 style="margin: 10px 0 6px; color: #334155; font-size: 20px; font-weight: 700;">
-            ${facultyName}
-          </h3>
-          <h4 style="margin: 6px 0 10px; color: #475569; font-size: 17px; font-weight: 600;">
-            القسم: ${departmentName}
-          </h4>
-          <h2 style="margin: 16px 0 8px; color: #0f172a; font-size: 23px; font-weight: 800;">
-            السجل الأكاديمي – ${selectedStudent.full_name}
-          </h2>
-          <p style="margin: 6px 0 0; color: #4b5563; font-size: 15.5px;">
-            الرقم الجامعي: ${selectedStudent.university_id || "غير متوفر"}
-          </p>
-        </div>
-    `;
-
-const sortedLevels = sortByLevelOrder(byLevel);
-
-sortedLevels.forEach(([level, termsObj]) => {
-  content += `
-    <h2 style="color: #0a3753; font-size: 21px; margin: 40px 0 18px 0; border-bottom: 2px solid #0f766e; padding-bottom: 8px; font-weight: 800;">
-      ${level}
-    </h2>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-  `;
-
-  const orderedTerms = Object.values(termsObj).sort((a, b) => {
-    const aIsFirst = a.term_name.includes("الأول") || a.term_name.includes("اول");
-    const bIsFirst = b.term_name.includes("الأول") || b.term_name.includes("اول");
-    if (aIsFirst && !bIsFirst) return -1;
-    if (!aIsFirst && bIsFirst) return 1;
-    return 0;
   });
 
-  orderedTerms.forEach(term => {
-    content += `
-      <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; background: #fdfdfd; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-        <h3 style="margin: 0 0 14px 0; color: #0f766e; font-size: 17px; font-weight: 700; text-align: center;">
-          ${term.academic_year} – ${term.term_name}
-        </h3>
+  // دمج المعدلات
+termGpas.forEach(term => {                    
+    let levelLookup = term.level_name || "غير محدد";
 
-        <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 14px; font-weight: 600; color: #374151;">
-          <div>المعدل الفصلي: <span style="color:#111827;">${term.term_gpa}</span></div>
-          <div>المعدل التراكمي: <span style="color:#111827;">${term.cumulative_gpa}</span></div>
+    if (!isAr) {
+      const levelMap = {
+        "المستوى الأول": "First Year",
+        "المستوى الثاني": "Second Year",
+        "المستوى الثالث": "Third Year",
+        "المستوى الرابع": "Fourth Year",
+        "المستوى الخامس": "Fifth Year",
+        "المستوى السادس": "Sixth Year",
+      };
+      levelLookup = levelMap[levelLookup] || levelLookup;
+    }
+
+    const termKey = `${term.academic_year}-${term.term_name}`;
+
+    if (byLevel[levelLookup] && byLevel[levelLookup][termKey]) {
+      byLevel[levelLookup][termKey].term_gpa = term.term_gpa || "—";
+      byLevel[levelLookup][termKey].cumulative_gpa = term.cumulative_gpa || "—";
+    }
+  });
+
+  // ====================== ترتيب المستويات ======================
+  const levelOrderAr = ["المستوى الأول","المستوى الثاني","المستوى الثالث","المستوى الرابع","المستوى الخامس","المستوى السادس"];
+  const levelOrderEn = ["First Year","Second Year","Third Year","Fourth Year","Fifth Year","Sixth Year"];
+  const levelOrder = isAr ? levelOrderAr : levelOrderEn;
+
+  const sortedLevels = Object.entries(byLevel).sort((a, b) => {
+    const indexA = levelOrder.indexOf(a[0]);
+    const indexB = levelOrder.indexOf(b[0]);
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
+
+  let content = `
+    <div style="direction: ${isAr ? 'rtl' : 'ltr'}; 
+                font-family: 'Cairo', 'Arial', sans-serif; 
+                padding: 20px 25px; 
+                color: #1e293b; 
+                line-height: 1.75; 
+                font-size: 14.5px;">
+
+      <!-- Header -->
+      <div style="page-break-inside: avoid; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #0a3753;">
+        <div style="text-align: center;">
+          <h1 style="margin:0; color:#0a3753; font-size:26px; font-weight:900;">
+            ${isAr ? 'جامعة بورتسودان الأهلية' : 'Port Sudan Ahlia University'}
+          </h1>
+          <h3 style="margin:10px 0 5px; color:#0f766e;">${facultyName}</h3>
+          <h4 style="margin:4px 0;">${isAr ? 'القسم' : 'Department'}: ${departmentName}</h4>
         </div>
+        
+        <div style="text-align: center; margin-top: 25px;">
+          <h2 style="margin:0; color:#0f172a; font-size:21px;">
+            ${isAr ? 'السجل الأكاديمي' : 'Academic Transcript'}
+          </h2>
+          <p style="font-size:17.5px; margin:10px 0 4px;">
+            <strong>${isAr ? 'اسم الطالب' : 'Student Name'}:</strong> ${studentName}
+          </p>
+          <p><strong>${isAr ? 'الرقم الجامعي' : 'Student ID'}:</strong> ${selectedStudent.university_id || "—"}</p>
+        </div>
+      </div>
+  `;
 
-        <table style="width:100%; border-collapse: collapse; font-size: 13px; line-height: 1.4;">
-          <thead>
-            <tr style="background: #f3f4f6; color: #374151; font-weight: 600;">
-              <th style="padding: 8px 10px; border-bottom: 2px solid #cbd5e1; text-align: right;">المادة</th>
-              <th style="padding: 8px 6px; border-bottom: 2px solid #cbd5e1; width: 75px; text-align: center;">التقدير</th>
-              <th style="padding: 8px 6px; border-bottom: 2px solid #cbd5e1; width: 80px; text-align: center;">الساعات</th>
-            </tr>
-          </thead>
-          <tbody>
+  // عرض المستويات + ترتيب الفصول داخل كل مستوى
+  sortedLevels.forEach(([level, termsObj]) => {
+    content += `
+      <h3 style="background:#0a3753; color:white; padding:12px 18px; border-radius:6px; margin:35px 0 18px 0;">
+        ${level}
+      </h3>
     `;
 
-    term.courses.forEach((c, i) => {
-      const bg = i % 2 === 0 ? "#ffffff" : "#f9fafb";
-      content += `
-        <tr style="background:${bg};">
-          <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${c.name}</td>
-          <td style="padding: 8px 6px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: 700;">${c.letter || "—"}</td>
-          <td style="padding: 8px 6px; border-bottom: 1px solid #e5e7eb; text-align: center;">${c.hours || "—"}</td>
-        </tr>
-      `;
+    // ترتيب الفصول (الأول قبل الثاني)
+    const orderedTerms = Object.values(termsObj).sort((a, b) => {
+      const aIsFirst = a.term_name.includes("الأول") || a.term_name.includes("اول") || 
+                      a.term_name.includes("First");
+      const bIsFirst = b.term_name.includes("الأول") || b.term_name.includes("اول") || 
+                      b.term_name.includes("First");
+      if (aIsFirst && !bIsFirst) return -1;
+      if (!aIsFirst && bIsFirst) return 1;
+      return 0;
     });
 
-    content += `
-          </tbody>
-        </table>
-      </div>
-    `;
+    orderedTerms.forEach(term => {
+      content += `
+        <div style="margin-bottom: 32px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f8fafc; padding: 12px; text-align: center; font-weight: bold;">
+            ${term.academic_year} — ${term.term_name}
+          </div>
+          
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="padding:11px; text-align:${isAr?'right':'left'}; border-bottom:2px solid #cbd5e1;">${isAr ? 'المادة' : 'Course'}</th>
+                <th style="padding:11px; text-align:center; border-bottom:2px solid #cbd5e1; width:85px;">${isAr ? 'التقدير' : 'Grade'}</th>
+                <th style="padding:11px; text-align:center; border-bottom:2px solid #cbd5e1; width:75px;">${isAr ? 'الساعات' : 'Hours'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${term.courses.map(c => `
+                <tr style="page-break-inside: avoid;">
+                  <td style="padding:10px; border-bottom:1px solid #e5e7eb; text-align:${isAr?'right':'left'};">${c.name}</td>
+                  <td style="padding:10px; border-bottom:1px solid #e5e7eb; text-align:center; font-weight:bold;">${c.letter}</td>
+                  <td style="padding:10px; border-bottom:1px solid #e5e7eb; text-align:center;">${c.hours}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div style="padding:13px; background:#f0f9ff; display:flex; justify-content:space-between; font-weight:bold; font-size:15px; border-top:1px solid #bae6fd;">
+            <span>${isAr ? 'المعدل الفصلي' : 'Term GPA'}: <strong>${term.term_gpa}</strong></span>
+            <span>${isAr ? 'المعدل التراكمي' : 'Cumulative GPA'}: <strong>${term.cumulative_gpa}</strong></span>
+          </div>
+        </div>
+      `;
+    });
   });
 
   content += `</div>`;
-});
 
-    content += `</div>`;
+  const element = document.createElement("div");
+  element.innerHTML = content;
 
-    const element = document.createElement("div");
-    element.innerHTML = content;
-
-    html2pdf()
-      .set({
-        margin: [18, 14, 18, 14],
-        filename: `سجل_اكاديمي_${selectedStudent.university_id || "طالب"}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["avoid-all", "css"] },
-      })
-      .from(element)
-      .save();
-  };
+  html2pdf()
+    .set({
+      margin: [10, 12, 15, 12],
+      filename: `Academic_Transcript_${selectedStudent.university_id || 'Student'}_${lang.toUpperCase()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css'] }
+    })
+    .from(element)
+    .save();
+};
 
   return (
     <div style={ui.page}>
@@ -458,7 +517,7 @@ sortedLevels.forEach(([level, termsObj]) => {
                 <h3 style={{ margin: "0 0 12px 0", color: "#0a3753" }}>آخر تسجيل</h3>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                   <div><strong>السنة:</strong> {latestReg.academic_year}</div>
-                  <div><strong>المستوى:</strong> {latestReg.level_name}</div>
+                  <div><strong>المستوى/الدفعة:</strong> {latestReg.level_name}</div>
                   <div><strong>الفصل:</strong> {latestReg.term_name}</div>
                   <div><strong>الموقف الأكاديمي:</strong> {latestReg.academic_status || "—"}</div>
                 </div>
@@ -475,7 +534,7 @@ sortedLevels.forEach(([level, termsObj]) => {
                   <table style={ui.table}>
                     <thead>
                       <tr>
-                        <th>المستوى</th>
+                        <th>المستوى/الدفعة</th>
                         <th>الفصل الأول</th>
                         <th>الفصل الثاني</th>
                       </tr>
@@ -518,15 +577,23 @@ sortedLevels.forEach(([level, termsObj]) => {
               </p>
             )}
 
-            <div style={{ textAlign: "center", marginTop: 40 }}>
-              <button 
-                style={ui.primaryBtn} 
-                onClick={handlePrint}
-                disabled={grades.length === 0}
-              >
-                طباعة السجل الأكاديمي
-              </button>
-            </div>
+<div style={{ textAlign: "center", marginTop: 40, display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+  <button 
+    style={ui.primaryBtn} 
+    onClick={() => handlePrint('ar')}
+    disabled={grades.length === 0}
+  >
+        طباعة السجل (AR)
+  </button>
+  
+  <button 
+    style={{...ui.primaryBtn, background: "#0f766e"}} 
+    onClick={() => handlePrint('en')}
+    disabled={grades.length === 0}
+  >
+         طباعة السجل (EN)
+  </button>
+</div>
           </div>
         )}
 

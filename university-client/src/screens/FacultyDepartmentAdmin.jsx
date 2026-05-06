@@ -1262,11 +1262,13 @@ const FacultyDepartmentAdmin = () => {
   const [activeTab, setActiveTab] = useState("main"); // main | grading
 
   const [facultyName, setFacultyName] = useState("");
+  const [facultyNameEn, setFacultyNameEn] = useState("");      
   const [editingFacultyId, setEditingFacultyId] = useState(null);
 
   const [facultyCode, setFacultyCode] = useState("");        // ← رمز الكلية
 
   const [departmentName, setDepartmentName] = useState("");
+  const [departmentNameEn, setDepartmentNameEn] = useState(""); 
   const [levelsCount, setLevelsCount] = useState(4);  //   افتراضي 4
   const [editingDepartmentId, setEditingDepartmentId] = useState(null);
 
@@ -1366,16 +1368,25 @@ useEffect(() => {
   };
 
 const handleSaveFaculty = async (e) => {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
   e.preventDefault();
   if (!facultyName.trim()) {
     showToast("اكتبي اسم الكلية أولاً", "error");
     return;
   }
+  if (!facultyName.trim()) return showToast("اسم الكلية مطلوب", "error");
+  if (!facultyCode.trim()) return showToast("رمز الكلية مطلوب", "error");
 
   setSaving(true);
   try {
     const payload = {
       faculty_name: facultyName.trim(),
+      faculty_name_en: facultyNameEn.trim() || null,
       faculty_type: facultyType, 
       faculty_code: facultyCode ? facultyCode.trim().toUpperCase() : null,
     };
@@ -1384,30 +1395,52 @@ const handleSaveFaculty = async (e) => {
     if (editingFacultyId) {
       res = await fetch(`${API_BASE}/faculties/${editingFacultyId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
     } else {
       res = await fetch(`${API_BASE}/faculties`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
     }
 
+    if (res.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+      navigate("/login");
+      return; 
+    }
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "فشل الحفظ");
+    if (!res.ok) {
+      if (data.error?.includes("مستخدم مسبقًا") || data.error?.includes("Duplicate")) {
+        showToast("رمز الكلية مستخدم من قبل", "error");
+      } else {
+        showToast(data.error || "فشل الحفظ", "error");
+      }
+      return;
+    }
 
     showToast(data.message || (editingFacultyId ? "تم تعديل الكلية" : "تمت إضافة الكلية"), "success");
 
     setFacultyName("");
+    setFacultyNameEn("");
     setFacultyCode("");
     setFacultyType("theoretical");
     setEditingFacultyId(null);
     fetchFaculties();
   } catch (e) {
     console.error(e);
-    showToast("مشكلة في حفظ الكلية: " + e.message, "error");
+    showToast("خطأ في حفظ الكلية: " + e.message, "error");
   } finally {
     setSaving(false);
   }
@@ -1416,6 +1449,7 @@ const handleSaveFaculty = async (e) => {
   const handleEditFaculty = (faculty) => {
     setEditingFacultyId(faculty.id);
     setFacultyName(faculty.faculty_name);
+    setFacultyNameEn(faculty.faculty_name_en || "");    
     setFacultyCode(faculty.faculty_code || "");
     setFacultyType(faculty.faculty_type || "theoretical");
   };
@@ -1442,6 +1476,12 @@ const handleSaveFaculty = async (e) => {
   };
 
 const handleSaveDepartment = async (e) => {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
   e.preventDefault();
   if (!selectedFaculty) {
     showToast("اختارِ كلية أولاً", "error");
@@ -1457,6 +1497,7 @@ const handleSaveDepartment = async (e) => {
     const payload = {
       faculty_id: selectedFaculty.id,
       department_name: departmentName.trim(),
+      department_name_en: departmentNameEn.trim() || null,
       levels_count: levelsCount,  
     };
 
@@ -1464,13 +1505,25 @@ const handleSaveDepartment = async (e) => {
       // تعديل
       const res = await fetch(`${API_BASE}/departments/${editingDepartmentId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+        navigate("/login");
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل تعديل القسم");
       showToast(data.message || "تم تعديل القسم", "success");
       setDepartmentName("");
+      setDepartmentNameEn("");
       setLevelsCount(4);         
       setEditingDepartmentId(null);
       fetchDepartments(selectedFaculty);
@@ -1478,9 +1531,19 @@ const handleSaveDepartment = async (e) => {
       // إضافة جديد
       const res = await fetch(`${API_BASE}/departments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
+      if (res.status === 401) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+        navigate("/login");
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل إضافة القسم");
       showToast(data.message || "تمت إضافة القسم", "success");
@@ -1490,7 +1553,7 @@ const handleSaveDepartment = async (e) => {
     }
   } catch (e) {
     console.error(e);
-    showToast("مشكلة في الاتصال بالسيرفر", "error");
+    showToast("خطأ في حفظ القسم: " + e.message, "error");
   } finally {
     setSaving(false);
   }
@@ -1499,6 +1562,7 @@ const handleSaveDepartment = async (e) => {
 const handleEditDepartment = (dept) => {
   setEditingDepartmentId(dept.id);
   setDepartmentName(dept.department_name);
+  setDepartmentNameEn(dept.department_name_en || "");
   setLevelsCount(dept.levels_count || 4);  
 };
 
@@ -1631,18 +1695,31 @@ const handleEditDepartment = (dept) => {
       maxLength={10}
     />
   </div>
-  <div className="input-group">
-    <label className="input-label">{editingFacultyId ? "تعديل اسم الكلية" : "إضافة كلية جديدة"}</label>
-    <input
-      type="text"
-      dir="rtl"
-      className="input-field"
-      placeholder="أدخل اسم الكلية"
-      value={facultyName}
-      onChange={(e) => setFacultyName(e.target.value)}
-      required
-    />
-  </div>
+<div className="input-group">
+  <label className="input-label">اسم الكلية</label>
+  <input
+    type="text"
+    dir="rtl"
+    className="input-field"
+    placeholder="ادخل اسم الكلية "
+    value={facultyName}
+    onChange={(e) => setFacultyName(e.target.value)}
+    required
+  />
+</div>
+
+<div className="input-group">
+  <label className="input-label">اسم الكلية(EN)</label>
+  <input
+    type="text"
+    dir="ltr"
+    className="input-field"
+    placeholder="ادخل اسم الكلية بالانجليزية "
+    value={facultyNameEn}
+    onChange={(e) => setFacultyNameEn(e.target.value)}
+  />
+</div>
+  
 
   <div className="input-group">
     <label className="input-label">نوع الكلية</label>
@@ -1670,6 +1747,8 @@ const handleEditDepartment = (dept) => {
         onClick={() => {
           setEditingFacultyId(null);
           setFacultyName("");
+          setFacultyNameEn("");
+          setFacultyCode("");
           setFacultyType("theoretical"); // reset
         }}
       >
@@ -1701,7 +1780,10 @@ const handleEditDepartment = (dept) => {
                           <tr key={f.id} className={selectedFaculty && selectedFaculty.id === f.id ? "row-selected" : ""}>
                             <td>{index + 1}</td>
                             <td>{f.faculty_code}</td>
-                            <td>{f.faculty_name}</td>
+                            <td>
+                            {f.faculty_name}
+                            {f.faculty_name_en && <span style={{color: "#64748b", fontSize: "0.9em"}}> ({f.faculty_name_en})</span>}
+                            </td>
                             <td>{f.faculty_type  ? (f.faculty_type === "theoretical" ? "نظرية" : "عملية")   : "غير محدد"}</td>
                             <td>{f.departments_count}</td>
                             <td>
@@ -1732,15 +1814,26 @@ const handleEditDepartment = (dept) => {
                 ) : (
                   <>
 <form onSubmit={handleSaveDepartment} className="two-col-grid" style={{ alignItems: "flex-end", marginBottom: 12 }}>
-  <div className="input-group">
-    <label className="input-label">{editingDepartmentId ? "تعديل اسم القسم" : "إضافة قسم جديد"}</label>
-    <input 
-      className="input-field" 
+<div className="input-group">
+  <label className="input-label">اسم القسم </label>
+  <input 
+    className="input-field" 
       placeholder="أدخل اسم القسم" 
-      value={departmentName} 
-      onChange={(e) => setDepartmentName(e.target.value)} 
-    />
-  </div>
+    value={departmentName} 
+    onChange={(e) => setDepartmentName(e.target.value)} 
+  />
+</div>
+
+<div className="input-group">
+  <label className="input-label">اسم القسم(EN) </label>
+  <input 
+    dir="ltr"
+    className="input-field" 
+      placeholder="أدخل اسم القسم بالانجليزية" 
+    value={departmentNameEn} 
+    onChange={(e) => setDepartmentNameEn(e.target.value)} 
+  />
+</div>
 
   <div className="input-group">
     <label className="input-label">عدد المستويات</label>
@@ -1767,6 +1860,7 @@ const handleEditDepartment = (dept) => {
         onClick={() => {
           setEditingDepartmentId(null);
           setDepartmentName("");
+          setDepartmentNameEn("");
           setLevelsCount(4);
         }}
       >
@@ -1795,7 +1889,10 @@ const handleEditDepartment = (dept) => {
   {departments.map((d, index) => (
     <tr key={d.id}>
       <td>{index + 1}</td>
-      <td>{d.department_name}</td>
+      <td>
+  {d.department_name}
+  {d.department_name_en && <span style={{color: "#64748b", fontSize: "0.9em"}}> ({d.department_name_en})</span>}
+</td>
       <td>{d.levels_count || "—"}</td>
       <td>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1822,6 +1919,7 @@ const handleEditDepartment = (dept) => {
               onClick={() => {
                 setEditingDepartmentId(null);
                 setDepartmentName("");
+                setDepartmentNameEn("");
                 setLevelsCount(4);
               }}
             >
@@ -1842,10 +1940,8 @@ const handleEditDepartment = (dept) => {
             </>
           )}
 
-{/* ✅ تاب 2 */}
 {activeTab === "grading" && <GradeRulesAdmin showToast={showToast} faculties={faculties} />}
 
-{/* ✅ تاب 3 */}
 {activeTab === "courses" && <CoursesAdmin showToast={showToast} faculties={faculties} />}
 
 
