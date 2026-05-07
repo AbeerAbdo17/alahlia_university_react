@@ -4464,19 +4464,22 @@ app.get("/api/term-results/list", async (req, res) => {
     const studentIds = rows.map(r => r.student_id);
  
     // ── إجمالي ساعات الفصلين (نفسه لكل الطلاب) ──────────────
-    const [bothTotalRow] = await dbp.query(`
-      SELECT COALESCE(SUM(credit_hours), 0) AS total_hours
-      FROM courses
-      WHERE academic_year         = ?
-        AND level_name            = ?
-        AND program_type          = ?
-        AND (postgraduate_program <=> ?)
-        AND term_name IN (
-          'الفصل الأول','فصل أول','فصل الأول',
-          'الفصل الثاني','فصل ثاني','فصل الثاني'
-        )
-    `, [academicYear, levelName, programType, pgProgram]);
+const [bothTotalRow] = await dbp.query(`
+  SELECT COALESCE(SUM(credit_hours), 0) AS total_hours
+  FROM courses
+  WHERE academic_year         = ?
+    AND level_name            = ?
+    AND program_type          = ?
+    AND (postgraduate_program <=> ?)
+    AND faculty_id            = ?
+    AND department_id         = ?
+    AND term_name IN (
+      'الفصل الأول','فصل أول','فصل الأول',
+      'الفصل الثاني','فصل ثاني','فصل الثاني'
+    )
+`, [academicYear, levelName, programType, pgProgram, facultyId, departmentId]);
     const bothTotalHours = Number(bothTotalRow[0]?.total_hours || 0);
+
  
     // ── رسوب كل طالب في الفصلين ──────────────────────────────
     const [bothFailRows] = await dbp.query(`
@@ -7314,7 +7317,7 @@ if (program_type === 'postgraduate') {
       if (yearDecision.action === 'dismiss' || secondRepeat.dismiss) {
         await dbp.query(`
           UPDATE student_registrations
-          SET academic_status = 'مفصول', registrar = ?
+          SET academic_status = 'فصل', registrar = ?
           WHERE student_id = ? AND academic_year = ? AND level_name = ? AND term_name = ?
         `, [registrar, studentId, current_academic_year, current_level_name, current_term_name]);
         // await dbp.query(`UPDATE students SET status = 'مفصول' WHERE id = ?`, [studentId]);
@@ -8904,7 +8907,7 @@ app.get("/api/student-fees-calculated", async (req, res) => {
     }
 
     // 5. تعديل الرسوم حسب الموقف الأكاديمي (إعادة، تجميد، فصل)
-    if (status === "إعاده") {
+    if (status === "إعادة") {
       const discount = (fees.repeat_discount || 50) / 100;
       fees.tuition_fee = (fees.tuition_fee || 0) * (1 - discount);
       notes.push(`إعادة: خصم ${(discount * 100)}%`);

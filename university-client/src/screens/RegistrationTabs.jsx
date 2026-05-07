@@ -245,7 +245,7 @@ const getAllowedProgramTypes = () => {
 };
 const ACADEMIC_STATUS_OPTIONS = [
   "منتظم",
-  "إعاده",
+  "إعادة",
   " محوّل داخلي",
   "محول خارجي",
   "مجمّد",
@@ -1805,6 +1805,16 @@ const saveStudentOnly = async () => {
   }
 };
 
+function incrementAcademicYear(yearStr) {
+  if (!yearStr) return yearStr;
+  const parts = yearStr.split("/");
+  if (parts.length !== 2) return yearStr;
+  const y1 = parseInt(parts[0]);
+  const y2 = parseInt(parts[1]);
+  if (isNaN(y1) || isNaN(y2)) return yearStr;
+  return `${y1 + 1}/${y2 + 1}`;
+}
+
 const saveRegistration = async () => {
   // 1. تجميع الاسم الكامل والتحقق من الحقول الأربعة
   const fullNameValue = getFullName(studentForm);
@@ -1927,34 +1937,92 @@ if (programType !== "postgraduate") {
     }
 
     // 3. منطق التسجيل (الأكاديمي) كما هو مع استخدام الـ studentId الصحيح
-    if (
-      lastRegistration &&
-      lastRegistration.academic_year === form.academic_year &&
-      lastRegistration.level_name === form.level_name &&
-      lastRegistration.term_name === form.term_name
-    ) {
-      // تعديل الموقف الأكاديمي فقط
-      const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,  
-        },
-        body: JSON.stringify({ academic_status: form.academic_status }),
-      });
-     if (resReg.status === 401) {
+if (
+  lastRegistration &&
+  lastRegistration.academic_year === form.academic_year &&
+  lastRegistration.level_name === form.level_name &&
+  lastRegistration.term_name === form.term_name
+) {
+  // تعديل الموقف الأكاديمي
+  const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ academic_status: form.academic_status }),
+  });
+  if (resReg.status === 401) {
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+    navigate("/login");
+    return null;
+  }
+  if (!resReg.ok) {
+    showToast("فشل في تعديل الموقف الأكاديمي", "error");
+    return;
+  }
+
+  //  لو الموقف الأكاديمي "مجمّد" → أنشئي تسجيل جديد بنفس البيانات + سنة جديدة
+  if (form.academic_status === "مجمّد") {
+    const nextYear = incrementAcademicYear(form.academic_year);
+
+    const frozenRegBody = {
+      student_id: studentId,
+      academic_year: nextYear,               // السنة الجديدة
+      level_name: form.level_name,           // نفس المستوى
+      term_name: form.term_name || null,     // نفس الفصل
+      academic_status: "منتظم",              // يبدأ بموقف منتظم في السنة الجديدة
+      registration_status: "غير مسجّل",
+      notes: `تسجيل تلقائي بعد التجميد من سنة ${form.academic_year}`,
+      program_type: programType,
+      postgraduate_data: programType === "postgraduate" ? {
+        prev_degree: form.prev_degree,
+        prev_university: form.prev_university,
+        prev_grad_year: form.prev_grad_year,
+        study_type: form.study_type,
+      } : null,
+      postgraduate_program: programType === "postgraduate"
+        ? (form.postgraduate_program || null)
+        : null,
+    };
+
+    const resFrozen = await fetch(`${API_BASE}/registrations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(frozenRegBody),
+    });
+
+    if (resFrozen.status === 401) {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
       showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
       navigate("/login");
       return null;
     }
-      if (!resReg.ok) {
-        showToast("فشل في تعديل الموقف الأكاديمي", "error");
-        return;
-      }
-      showToast("تم تعديل الموقف الأكاديمي", "success");
-    } 
+
+    if (!resFrozen.ok) {
+      const errData = await resFrozen.json();
+      // التسجيل الأصلي اتعدل بنجاح لكن التسجيل الجديد فشل
+      showToast(
+        `تم التجميد لكن فشل إنشاء تسجيل ${nextYear}: ${errData.message || ""}`,
+        "error"
+      );
+      return;
+    }
+
+    showToast(
+      `تم تجميد الطالب وإنشاء تسجيل جديد للسنة ${nextYear}`,
+      "success"
+    );
+  } else {
+    showToast("تم تعديل الموقف الأكاديمي", "success");
+  }
+}
     else {
       // إنشاء تسجيل جديد
       const regBody = {
@@ -3221,7 +3289,7 @@ const pgSmart = usePostgradProgramsSmartList();
     setFeesData(prev => {
       let base = cleanNumber(prev.tuition_fee_original) || cleanNumber(prev.tuition_fee) || 0;
 
-      if (academicStatus === "إعاده") {
+      if (academicStatus === "إعادة") {
         const repeatPerc = cleanNumber(prev.repeat_discount) / 100 || 0.5;
         base = base * (1 - repeatPerc);
       }
@@ -3247,7 +3315,7 @@ const pgSmart = usePostgradProgramsSmartList();
     setFeesData(prev => {
       let base = cleanNumber(prev.tuition_fee_original) || cleanNumber(prev.tuition_fee) || 0;
 
-      if (academicStatus === "إعاده") {
+      if (academicStatus === "إعادة") {
         const repeatPerc = cleanNumber(prev.repeat_discount) / 100 || 0.5;
         base = base * (1 - repeatPerc);
       }
@@ -3563,7 +3631,7 @@ useEffect(() => {
       let original = data.tuition_fee?.toString() || "";
       let afterRepeat = original;
 
-      if (data.academic_status === "إعاده" && data.repeat_discount) {
+      if (data.academic_status === "إعادة" && data.repeat_discount) {
         const repeatPerc = cleanNumber(data.repeat_discount) / 100 || 0.5;
         original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
       }
@@ -3593,7 +3661,7 @@ useEffect(() => {
     let original = tuition;
     let afterRepeat = tuition;
 
-    if (academicStatus === "إعاده" && fees.repeat_discount) {
+    if (academicStatus === "إعادة" && fees.repeat_discount) {
       const repeatPerc = cleanNumber(fees.repeat_discount) / 100 || 0.5;
       original = (cleanNumber(tuition) / (1 - repeatPerc)).toFixed(2);
     }
@@ -3670,7 +3738,7 @@ useEffect(() => {
       let original = data.tuition_fee?.toString() || "";
       let afterRepeat = original;
 
-      if (data.academic_status === "إعاده" && data.repeat_discount) {
+      if (data.academic_status === "إعادة" && data.repeat_discount) {
         const repeatPerc = cleanNumber(data.repeat_discount) / 100 || 0.5;
         original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
       }
@@ -4359,7 +4427,7 @@ const printFeesReport = async () => {
   </>
  )}
 
-              {academicStatus === "إعاده" && (
+              {academicStatus === "إعادة" && (
                 <div style={ui.field}>
                   <label>نسبة خصم الإعادة (%)</label>
                   <input type="number" value={feesData.repeat_discount} onChange={e => setFeesData({...feesData, repeat_discount: e.target.value})} style={ui.input} placeholder="50" />

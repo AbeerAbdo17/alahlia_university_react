@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
 import html2pdf from 'html2pdf.js';
+import * as XLSX from 'xlsx';
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -130,6 +131,11 @@ const ui = {
 const AcademicRecord = () => {
   const navigate = useNavigate();
   const printRef = useRef();
+    const [toast, setToast] = useState(null);
+    const showToast = (message, type = "success") => {
+      setToast({ message, type });
+      setTimeout(() => setToast(null), 4000);
+    };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -139,6 +145,7 @@ const AcademicRecord = () => {
   const [termGpas, setTermGpas] = useState([]);     // المعدلات   
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // live search (debounce)
   useEffect(() => {
@@ -241,7 +248,67 @@ const sortByLevelOrder = (levelsObj) => {
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
   });
 };
-  
+
+const buildAcademicData = (isAr) => {
+  const byLevel = {};
+
+  grades.forEach(grade => {
+    let level = grade.level_name || "غير محدد";
+    if (!isAr) {
+      const levelMap = {
+        "المستوى الأول": "First Year", "المستوى الثاني": "Second Year",
+        "المستوى الثالث": "Third Year", "المستوى الرابع": "Fourth Year",
+        "المستوى الخامس": "Fifth Year", "المستوى السادس": "Sixth Year",
+      };
+      level = levelMap[level] || level;
+    }
+
+    const termKey = `${grade.academic_year}-${grade.term_name}`;
+
+    if (!byLevel[level]) byLevel[level] = {};
+    if (!byLevel[level][termKey]) {
+      byLevel[level][termKey] = {
+        academic_year: grade.academic_year,
+        term_name: isAr 
+          ? grade.term_name 
+          : (grade.term_name?.includes("الأول") || grade.term_name?.includes("اول") ? "First Semester" : "Second Semester"),
+        courses: [],
+        term_gpa: "—",
+        cumulative_gpa: "—"
+      };
+    }
+
+    const term = byLevel[level][termKey];
+    term.courses.push({
+      name: isAr ? (grade.course_name || "—") : (grade.course_name_en || grade.course_name || "—"),
+      letter: grade.letter || "—",
+      hours: Number(grade.credit_hours) || "—"
+    });
+  });
+
+  // دمج المعدلات
+  termGpas.forEach(term => {
+    let levelLookup = term.level_name || "غير محدد";
+    if (!isAr) {
+      const levelMap = {
+        "المستوى الأول": "First Year", "المستوى الثاني": "Second Year",
+        "المستوى الثالث": "Third Year", "المستوى الرابع": "Fourth Year",
+        "المستوى الخامس": "Fifth Year", "المستوى السادس": "Sixth Year",
+      };
+      levelLookup = levelMap[levelLookup] || levelLookup;
+    }
+
+    const termKey = `${term.academic_year}-${term.term_name}`;
+
+    if (byLevel[levelLookup] && byLevel[levelLookup][termKey]) {
+      byLevel[levelLookup][termKey].term_gpa = term.term_gpa || "—";
+      byLevel[levelLookup][termKey].cumulative_gpa = term.cumulative_gpa || "—";
+    }
+  });
+
+  return byLevel;
+};
+
 const handlePrint = (lang = 'ar') => {
   if (!selectedStudent || grades.length === 0) {
     alert(lang === 'ar' ? "لا توجد بيانات كافية للطباعة" : "No data available to print");
@@ -369,7 +436,7 @@ termGpas.forEach(term => {
   // عرض المستويات + ترتيب الفصول داخل كل مستوى
   sortedLevels.forEach(([level, termsObj]) => {
     content += `
-      <h3 style="background:#0a3753; color:white; padding:12px 18px; border-radius:6px; margin:35px 0 18px 0;">
+      <h3 style="background: white; color:#0a3753; padding:12px 18px; border-radius:6px; margin:35px 0 18px 0;">
         ${level}
       </h3>
     `;
@@ -436,6 +503,111 @@ termGpas.forEach(term => {
     })
     .from(element)
     .save();
+};
+
+const exportToExcel = (lang = 'ar') => {
+  if (!selectedStudent || grades.length === 0) {
+    return showToast(lang === 'ar' ? "لا توجد بيانات كافية للتصدير" : "No data available to export", "error");
+  }
+
+  const isAr = lang === 'ar';
+
+  const facultyName = isAr 
+    ? (grades[0]?.faculty_name || "غير محدد") 
+    : (grades[0]?.faculty_name_en || grades[0]?.faculty_name || "Not Specified");
+
+  const departmentName = isAr 
+    ? (grades[0]?.department_name || "غير محدد") 
+    : (grades[0]?.department_name_en || grades[0]?.department_name || "Not Specified");
+
+  const byLevel = buildAcademicData(isAr);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([]);
+
+  const header = [
+    ["", isAr ? "جامعة بورتسودان الأهلية" : "Port Sudan Ahlia University"],
+    ["", `${facultyName} - ${departmentName}`],
+    ["", isAr ? `السجل الأكاديمي - ${selectedStudent.full_name}` : `Academic Transcript - ${selectedStudent.full_name_en || selectedStudent.full_name || "Student"}`],
+    ["", isAr ? `الرقم الجامعي: ${selectedStudent.university_id || "—"}` : `Student ID: ${selectedStudent.university_id || "—"}`],
+    []
+  ];
+
+  XLSX.utils.sheet_add_aoa(ws, header, { origin: "A1" });
+
+  let row = 7;
+
+  const levelOrderAr = ["المستوى الأول","المستوى الثاني","المستوى الثالث","المستوى الرابع","المستوى الخامس","المستوى السادس"];
+  const levelOrderEn = ["First Year","Second Year","Third Year","Fourth Year","Fifth Year","Sixth Year"];
+  const levelOrder = isAr ? levelOrderAr : levelOrderEn;
+
+  const sortedLevels = Object.entries(byLevel).sort((a, b) => {
+    const indexA = levelOrder.indexOf(a[0]);
+    const indexB = levelOrder.indexOf(b[0]);
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
+
+  sortedLevels.forEach(([level, termsObj]) => {
+    XLSX.utils.sheet_add_aoa(ws, [[`${isAr ? 'المستوى' : 'Level'}: ${level}`]], { origin: `A${row}` });
+    row++;
+
+    const orderedTerms = Object.values(termsObj).sort((a, b) => {
+      const aIsFirst = a.term_name?.includes("الأول") || a.term_name?.includes("اول") || a.term_name?.includes("First");
+      const bIsFirst = b.term_name?.includes("الأول") || b.term_name?.includes("اول") || b.term_name?.includes("First");
+      return aIsFirst && !bIsFirst ? -1 : !aIsFirst && bIsFirst ? 1 : 0;
+    });
+
+    orderedTerms.forEach(term => {
+      const courses = Array.isArray(term.courses) ? term.courses : [];
+
+      // عنوان الفصل + المعدلات
+      XLSX.utils.sheet_add_aoa(ws, [[
+        `${term.academic_year} - ${term.term_name}     ${isAr ? 'معدل الفصل' : 'Term GPA'}: ${term.term_gpa}     ${isAr ? 'التراكمي' : 'Cumulative GPA'}: ${term.cumulative_gpa}`
+      ]], { origin: `A${row}` });
+      row++;
+
+      // رأس الجدول
+      XLSX.utils.sheet_add_aoa(ws, [[
+        isAr ? "اسم المادة" : "Course Name",
+        isAr ? "التقدير" : "Grade",
+        isAr ? "الساعات المعتمدة" : "Credit Hours"
+      ]], { origin: `A${row}` });
+      row++;
+
+      // المواد
+      if (courses.length > 0) {
+        courses.forEach(course => {
+          XLSX.utils.sheet_add_aoa(ws, [[
+            course.name || "—",
+            course.letter || "—",
+            course.hours || "—"
+          ]], { origin: `A${row}` });
+          row++;
+        });
+      } else {
+        XLSX.utils.sheet_add_aoa(ws, [[isAr ? "لا توجد مواد" : "No courses"]], { origin: `A${row}` });
+        row++;
+      }
+
+      row += 2;
+    });
+
+    row += 1;
+  });
+
+  ws['!cols'] = [{ wch: 52 }, { wch: 15 }, { wch: 20 }];
+  
+  if (!ws['!merges']) ws['!merges'] = [];
+  for (let i = 0; i <= 4; i++) {
+    ws['!merges'].push({ s: { r: i, c: 1 }, e: { r: i, c: 3 } });
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, isAr ? "السجل الأكاديمي" : "Academic Transcript");
+
+  const fileName = `سجل_اكاديمي_${selectedStudent.university_id || "Student"}_${isAr ? 'AR' : 'EN'}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+
+  showToast(isAr ? "تم تصدير الملف بنجاح " : "File exported successfully ", "success");
 };
 
   return (
@@ -577,22 +749,95 @@ termGpas.forEach(term => {
               </p>
             )}
 
-<div style={{ textAlign: "center", marginTop: 40, display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-  <button 
-    style={ui.primaryBtn} 
-    onClick={() => handlePrint('ar')}
-    disabled={grades.length === 0}
-  >
-        طباعة السجل (AR)
-  </button>
-  
-  <button 
-    style={{...ui.primaryBtn, background: "#0f766e"}} 
-    onClick={() => handlePrint('en')}
-    disabled={grades.length === 0}
-  >
-         طباعة السجل (EN)
-  </button>
+{/* أزرار التصدير والطباعة - Dropdown Menu */}
+<div style={{ textAlign: "center", marginTop: 40 }}>
+  <div style={{ position: "relative", display: "inline-block" }}>
+    <button
+      className="btn btn-primary"
+      onClick={() => setShowExportMenu(prev => !prev)}
+      disabled={grades.length === 0}
+      style={{ padding: "14px 32px", fontSize: 16, fontWeight: 700 }}
+    >
+      طباعة / تصدير السجل ▾
+    </button>
+
+    {showExportMenu && (
+      <div style={{
+        position: "absolute",
+        top: "110%",
+        right: 0,
+        background: "#fff",
+        border: "1px solid #d1d5db",
+        borderRadius: 8,
+        boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+        zIndex: 999,
+        minWidth: 220,
+        overflow: "hidden",
+        padding: "6px 0"
+      }}>
+        
+        {/* عربي PDF */}
+        <button
+          onClick={() => { handlePrint('ar'); setShowExportMenu(false); }}
+          style={{
+            display: "block", width: "100%", padding: "12px 20px",
+            background: "none", border: "none", textAlign: "right",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+            color: "#1e40af", borderBottom: "1px solid #f3f4f6"
+          }}
+          onMouseEnter={e => e.target.style.background = "#eff6ff"}
+          onMouseLeave={e => e.target.style.background = "none"}
+        >
+            PDF عربي
+        </button>
+
+        {/* عربي Excel */}
+        <button
+          onClick={() => { exportToExcel('ar'); setShowExportMenu(false); }}
+          style={{
+            display: "block", width: "100%", padding: "12px 20px",
+            background: "none", border: "none", textAlign: "right",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+            color: "#166534"
+          }}
+          onMouseEnter={e => e.target.style.background = "#f0fdf4"}
+          onMouseLeave={e => e.target.style.background = "none"}
+        >
+            Excel عربي
+        </button>
+
+        {/* English PDF */}
+        <button
+          onClick={() => { handlePrint('en'); setShowExportMenu(false); }}
+          style={{
+            display: "block", width: "100%", padding: "12px 20px",
+            background: "none", border: "none", textAlign: "right",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+            color: "#1e40af", borderBottom: "1px solid #f3f4f6"
+          }}
+          onMouseEnter={e => e.target.style.background = "#eff6ff"}
+          onMouseLeave={e => e.target.style.background = "none"}
+        >
+            PDF انجليزي
+        </button>
+
+        {/* English Excel */}
+        <button
+          onClick={() => { exportToExcel('en'); setShowExportMenu(false); }}
+          style={{
+            display: "block", width: "100%", padding: "12px 20px",
+            background: "none", border: "none", textAlign: "right",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+            color: "#166534"
+          }}
+          onMouseEnter={e => e.target.style.background = "#f0fdf4"}
+          onMouseLeave={e => e.target.style.background = "none"}
+        >
+           Excel انجليزي
+        </button>
+      </div>
+    )}
+  </div>
 </div>
           </div>
         )}

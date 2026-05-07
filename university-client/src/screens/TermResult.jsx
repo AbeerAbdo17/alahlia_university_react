@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
+import { FaEdit, FaPlus } from "react-icons/fa";
 import html2pdf from 'html2pdf.js';
+import * as XLSX from 'xlsx';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -95,6 +97,9 @@ const TermResult = () => {
   const [computingResult,  setComputingResult]  = useState(false);
   const [loadingResult,    setLoadingResult]    = useState(false);
 
+  const [showPrintMenu, setShowPrintMenu] = useState(false);
+  const [openRecStudentId, setOpenRecStudentId] = useState(null);
+
   const [showStats, setShowStats] = useState(false);
 
 const [courseStats, setCourseStats] = useState({});
@@ -118,6 +123,9 @@ const [courseStats, setCourseStats] = useState({});
   const bothTotalHours  = Number(sampleRow.both_total_hours  || 0);
   const bothOneThird    = bothTotalHours > 0 ? (bothTotalHours / 3).toFixed(1)     : "—";
   const bothTwoThirds   = bothTotalHours > 0 ? (bothTotalHours * 2 / 3).toFixed(1) : "—";
+
+  const termTotalHours = Number(sampleRow.term_total_hours || 0);
+  const termTwoThirds  = termTotalHours > 0 ? (termTotalHours * 2 / 3).toFixed(1) : "—";
 
   useEffect(() => {
     const load = async () => {
@@ -605,6 +613,152 @@ const printResults = (mode = 'letter') => {
   showToast(`جاري إنشاء ملف PDF ${isLetterMode ? 'الحرفي' : 'الرقمي'}...`, "success");
 };
 
+const exportToExcel = (mode = 'letter') => {
+  if (savedRows.length === 0) {
+    return showToast("لا توجد نتائج للتصدير", "error");
+  }
+
+  const isLetterMode = mode === 'letter';
+  const fileSuffix = isLetterMode ? 'حرفية' : 'رقمية';
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([]);
+
+  let row = 1;
+
+  // ==================== الهيدر الرئيسي ====================
+  const facultyName = faculties.find(f => f.id === Number(selectedFacultyId))?.faculty_name || "غير محدد";
+  const departmentName = departments.find(d => d.id === Number(selectedDepartmentId))?.department_name || "غير محدد";
+
+  let programTypeText = programType === "diploma" ? "دبلوم" :
+                        programType === "bachelor" ? "بكالوريوس" : "دراسات عليا";
+
+  const header = [
+    ["جامعة بورتسودان الأهلية"],
+    [`${facultyName} - ${departmentName}`],
+    [`${programTypeText}`],
+    [`${academicYear} | ${levelName} | ${termName}`],
+    []
+  ];
+
+  XLSX.utils.sheet_add_aoa(ws, header, { origin: "A1" });
+
+  // دمج الهيدر الرئيسي (من العمود A إلى G)
+  if (!ws['!merges']) ws['!merges'] = [];
+  for (let i = 0; i <= 4; i++) {
+    ws['!merges'].push({ s: { r: i, c: 0 }, e: { r: i, c: 6 } });
+  }
+
+  row = 7;   // بعد الهيدر + سطر فارغ
+
+  // ==================== قائمة الشرف ====================
+  const honorStudents = savedRows
+    .filter(r => Number(r.term_gpa || 0) >= 3.00)
+    .sort((a, b) => Number(b.cumulative_gpa || 0) - Number(a.cumulative_gpa || 0));
+
+  if (honorStudents.length > 0) {
+    XLSX.utils.sheet_add_aoa(ws, [["قائمة الشرف"]], { origin: `A${row}` });
+    ws['!merges'].push({ s: { r: row-1, c: 0 }, e: { r: row-1, c: 6 } }); // دمج
+    row++;
+
+    const honorHeader = ["#", "الاسم", "الرقم الجامعي", "الموقف الأكاديمي", "GPA فصلي", "GPA تراكمي"];
+    XLSX.utils.sheet_add_aoa(ws, [honorHeader], { origin: `A${row}` });
+    row++;
+
+    honorStudents.forEach((r, i) => {
+      XLSX.utils.sheet_add_aoa(ws, [[
+        i + 1, r.full_name, r.university_id, r.academic_status || "—",
+        Number(r.term_gpa || 0).toFixed(2), Number(r.cumulative_gpa || 0).toFixed(2)
+      ]], { origin: `A${row}` });
+      row++;
+    });
+    row += 3; // مسافة أكبر بين الأقسام
+  }
+
+  // ==================== نتائج الطلاب ====================
+  XLSX.utils.sheet_add_aoa(ws, [["نتائج الطلاب"]], { origin: `A${row}` });
+  ws['!merges'].push({ s: { r: row-1, c: 0 }, e: { r: row-1, c: 6 } });
+  row++;
+
+  const mainHeader = ["#", "الاسم", "الرقم الجامعي", "الموقف الأكاديمي", "حالة النتيجة", "GPA فصلي", "GPA تراكمي"];
+  XLSX.utils.sheet_add_aoa(ws, [mainHeader], { origin: `A${row}` });
+  row++;
+
+  savedRows.sort((a, b) => Number(b.term_gpa || 0) - Number(a.term_gpa || 0))
+    .forEach((r, i) => {
+      XLSX.utils.sheet_add_aoa(ws, [[
+        i + 1,
+        r.full_name,
+        r.university_id,
+        r.academic_status || "—",
+        r.result_status || "—",
+        Number(r.term_gpa || 0).toFixed(2),
+        Number(r.cumulative_gpa || 0).toFixed(2)
+      ]], { origin: `A${row}` });
+      row++;
+    });
+
+  row += 3;
+
+  // ==================== تفاصيل الدرجات ====================
+  const allCourses = new Set();
+  Object.values(detailedGrades).forEach(grades => {
+    grades.forEach(g => g.course_name && allCourses.add(g.course_name));
+  });
+  const uniqueCourses = Array.from(allCourses).sort();
+
+  XLSX.utils.sheet_add_aoa(ws, [[`تفاصيل الدرجات ${isLetterMode ? '(حرفية)' : '(رقمية)'}`]], { origin: `A${row}` });
+  ws['!merges'].push({ s: { r: row-1, c: 0 }, e: { r: row-1, c: 6 } }); // دمج
+  row++;
+
+  const detailHeader = ["#", "الاسم", "الرقم الجامعي", "الموقف الأكاديمي", ...uniqueCourses];
+  XLSX.utils.sheet_add_aoa(ws, [detailHeader], { origin: `A${row}` });
+  row++;
+
+  savedRows.forEach((r, i) => {
+    const studentGrades = detailedGrades[r.student_id] || [];
+    const gradesMap = {};
+    studentGrades.forEach(g => {
+      if (g.course_name) gradesMap[g.course_name] = g;
+    });
+
+    const rowData = [
+      i + 1,
+      r.full_name,
+      r.university_id,
+      r.academic_status || "—"
+    ];
+
+    uniqueCourses.forEach(course => {
+      const grade = gradesMap[course];
+      rowData.push(grade 
+        ? (isLetterMode ? (grade.grade_letter || "—") : (grade.total_mark ?? "—")) 
+        : "—"
+      );
+    });
+
+    XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${row}` });
+    row++;
+  });
+
+  // ==================== تنسيق نهائي ====================
+  ws['!cols'] = [
+    { wch: 5 }, 
+    { wch: 28 }, 
+    { wch: 15 }, 
+    { wch: 14 }, 
+    { wch: 14 },
+    ...uniqueCourses.map(() => ({ wch: 13 }))
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, `نتائج_${fileSuffix}`);
+
+  const fileName = `نتائج_${fileSuffix}_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+
+  showToast(`تم تصدير Excel ${isLetterMode ? 'الحرفي' : 'الرقمي'} بنجاح `, "success");
+};
+
   return (
     <div className="admission-layout">
       <header className="library-header">
@@ -687,28 +841,72 @@ const printResults = (mode = 'letter') => {
               <button className="btn btn-primary" onClick={computeAndSaveResult} disabled={!canComputeTerm||computingResult}>
                 {computingResult?"جاري الحساب...":"حساب النتيجة"}
               </button>
-              {savedRows.length>0&&(<>
-                <button className="btn btn-primary" onClick={()=>printResults('letter')} disabled={loadingDetails}>طباعة الحرفية</button>
-                <button className="btn btn-success" onClick={()=>printResults('numeric')} disabled={loadingDetails}>طباعة الرقمية</button>
-                <button className="btn" onClick={saveRecommendations} disabled={savingRecs}
-                  style={{background:"#0a3753",color:"#fff",fontWeight:700}}>
-                  {savingRecs?"جاري الحفظ...":" حفظ الملاحظات "}
-                </button>
-                {savedRows.length > 0 && (
+{savedRows.length > 0 && (<>
+<div style={{ position: "relative", display: "inline-block" }}>
+  <button
+    className="btn btn-primary"
+    onClick={() => setShowPrintMenu(prev => !prev)}
+    disabled={loadingDetails}
+  >
+     طباعة / تصدير النتيجة ▾
+  </button>
+
+  {showPrintMenu && (
+    <div style={{
+      position: "absolute",
+      top: "110%",
+      right: 0,
+      background: "#fff",
+      border: "1px solid #d1d5db",
+      borderRadius: 8,
+      boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+      zIndex: 999,
+      minWidth: 220,
+      overflow: "hidden"
+    }}>
+      <button onClick={() => { printResults('letter'); setShowPrintMenu(false); }}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e", borderBottom:"1px solid #f3f4f6"}}
+        onMouseEnter={e => e.target.style.background = "#eff6ff"}
+        onMouseLeave={e => e.target.style.background = "none"}>
+         PDF - نتيجة حرفية
+      </button>
+
+      <button onClick={() => { printResults('numeric'); setShowPrintMenu(false); }}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e", borderBottom:"1px solid #f3f4f6"}}
+        onMouseEnter={e => e.target.style.background = "#eff6ff"}
+        onMouseLeave={e => e.target.style.background = "none"}>
+         PDF - نتيجة رقمية
+      </button>
+
+      <button onClick={() => { exportToExcel('letter'); setShowPrintMenu(false); }}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e", borderBottom:"1px solid #f3f4f6"}}
+        onMouseEnter={e => e.target.style.background = "#eff6ff"}
+        onMouseLeave={e => e.target.style.background = "none"}>
+         Excel - نتيجة حرفية
+      </button>
+
+      <button onClick={() => { exportToExcel('numeric'); setShowPrintMenu(false); }}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e"}}
+        onMouseEnter={e => e.target.style.background = "#eff6ff"}
+        onMouseLeave={e => e.target.style.background = "none"}>
+         Excel - نتيجة رقمية
+      </button>
+    </div>
+  )}
+</div>
+
+  {/* زر الإحصائيات */}
   <button
     className="btn"
     onClick={() => setShowStats(!showStats)}
     style={{
       background: showStats ? "#0a998d" : "#0f766e",
-      color: "#fff",
-      fontWeight: 700,
-      marginLeft: 8
+      color: "#fff", fontWeight: 700
     }}
   >
-    {showStats ? "إخفاء الإحصائيات" : " عرض الإحصائيات"}
+    {showStats ? "إخفاء الإحصائيات" : "عرض الإحصائيات"}
   </button>
-)}
-              </>)}
+</>)}
               <span style={{color:"#6b7280",fontWeight:800,alignSelf:"center"}}>عدد النتائج: {savedRows.length}</span>
             </div>
 
@@ -728,11 +926,12 @@ const printResults = (mode = 'letter') => {
                     <span style={{color:item.color}}>{item.label}: {cnt}</span>
                   </div>;
                 })}
-                {bothTotalHours>0&&(
-                  <div style={{background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:8,padding:"6px 12px",fontSize:11,color:"#374151"}}>
-                    إجمالي الفصلين: {bothTotalHours}س &nbsp;|&nbsp; حد الإعادة: {bothOneThird}–{bothTwoThirds}س
-                  </div>
-                )}
+{/* {bothTotalHours>0&&(
+  <div style={{background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:8,padding:"6px 12px",fontSize:11,color:"#374151"}}>
+    حد الإعادة: {bothOneThird}–{bothTwoThirds}س &nbsp;|&nbsp; 
+    حد الفصل: &gt;{termTwoThirds}س
+  </div>
+)} */}
               </div>
             )}
 
@@ -814,26 +1013,70 @@ const printResults = (mode = 'letter') => {
           <td style={cellStyle}>{r.cumulative_gpa ?? "—"}</td>
           <td style={cellStyle}>{r.term_total_points ?? "—"}</td>
           <td style={cellStyle}>{r.term_total_hours ?? "—"}</td>
-          <td style={{...cellStyle, color: Number(r.failed_hours||0)>0 ? '#dc2626':'#16a34a', fontWeight:'bold'}}>
+          <td style={{...cellStyle, color: Number(r.failed_hours||0)>0 ? '#ea580c':'#19bb54', fontWeight:'bold'}}>
             {r.failed_hours ?? "—"}
           </td>
           <td style={cellStyle}>{r.both_total_hours ?? "—"}</td>
-          <td style={{...cellStyle, color: Number(r.both_failed_hours||0)>0 ? '#ea580c':'#16a34a', fontWeight:'bold'}}>
+          <td style={{...cellStyle, color: Number(r.both_failed_hours||0)>0 ? '#ea580c':'#19bb54', fontWeight:'bold'}}>
             {r.both_failed_hours ?? "—"}
           </td>
-          <td style={{...cellStyle, textAlign:"right"}}>
-            <textarea
-              rows={2}
-              value={recommendations[r.student_id]||""}
-              onChange={e => setRecommendations(prev=>({...prev,[r.student_id]:e.target.value}))}
-              placeholder="اكتب الملاحظة هنا.."
-              style={{
-                width:"100%", fontSize:10, border:"1px solid #d1d5db",
-                borderRadius:4, padding:"2px 4px", resize:"vertical",
-                fontFamily:"inherit", direction:"rtl", lineHeight:1.4
-              }}
-            />
-          </td>
+<td style={{...cellStyle, textAlign: "center"}}>
+  {openRecStudentId === r.student_id ? (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <textarea
+        rows={2}
+        autoFocus
+        value={recommendations[r.student_id] || ""}
+        onChange={e => setRecommendations(prev => ({...prev, [r.student_id]: e.target.value}))}
+        placeholder="اكتب الملاحظة هنا.."
+        style={{
+          width: "100%", fontSize: 10, border: "1px solid #d1d5db",
+          borderRadius: 4, padding: "2px 4px", resize: "vertical",
+          fontFamily: "inherit", direction: "rtl", lineHeight: 1.4
+        }}
+      />
+      <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+        <button
+          onClick={async () => {
+            await saveRecommendations();
+            setOpenRecStudentId(null);
+          }}
+          disabled={savingRecs}
+          style={{
+            fontSize: 10, padding: "2px 8px", background: "#0a3753",
+            color: "#fff", border: "none", borderRadius: 4,
+            cursor: "pointer", fontWeight: 700
+          }}
+        >
+          {savingRecs ? "..." : " حفظ"}
+        </button>
+        <button
+          onClick={() => setOpenRecStudentId(null)}
+          style={{
+            fontSize: 10, padding: "2px 8px", background: "#e5e7eb",
+            color: "#374151", border: "none", borderRadius: 4,
+            cursor: "pointer"
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  ) : (
+    <button
+      onClick={() => setOpenRecStudentId(r.student_id)}
+      title={recommendations[r.student_id] ? "عدّل الملاحظة" : "أضف ملاحظة"}
+      style={{
+        background: recommendations[r.student_id] ? "#fef3c7" : "#f3f4f6",
+        border: `1px solid ${recommendations[r.student_id] ? "#f59e0b" : "#d1d5db"}`,
+        borderRadius: 6, cursor: "pointer", padding: "3px 8px",
+        fontSize: 14, color: recommendations[r.student_id] ? "#92400e" : "#6b7280"
+      }}
+    >
+      {recommendations[r.student_id] ? <FaEdit size={14} /> : <FaPlus size={14} />}
+    </button>
+  )}
+</td>
         </tr>
       );
     })}
@@ -864,7 +1107,7 @@ const printResults = (mode = 'letter') => {
           labels: [courseName],
           datasets: [
             { label: "ناجحين", data: [data.passed], backgroundColor: "#16a34a" },
-            { label: "راسبين", data: [data.failed], backgroundColor: "#dc2626" },
+            { label: "راسبين", data: [data.failed], backgroundColor: "#ea580c" },
           ],
         };
 
@@ -872,7 +1115,7 @@ const printResults = (mode = 'letter') => {
           labels: ["ناجحين", "راسبين"],
           datasets: [{
             data: [data.passed, data.failed],
-            backgroundColor: ["#16a34a", "#dc2626"],
+            backgroundColor: ["#16a34a", "#ea580c"],
             borderWidth: 2,
           }],
         };

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
 import html2pdf from 'html2pdf.js';
+import * as XLSX from 'xlsx';
+
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -38,7 +40,7 @@ const getAllowedProgramTypes = () => {
 // ====================== Constants للفلاتر ======================
 const ACADEMIC_STATUS_OPTIONS = [
   "منتظم",
-  "إعاده",
+  "إعادة",
   "محوّل داخلي",
   "محول خارجي",
   "مجمّد",
@@ -488,6 +490,100 @@ const StudentsTermList = () => {
     showToast("جاري تجهيز القائمة للطباعة...", "success");
   };
 
+  const getHeaderInfo = () => {
+    const facultyName = faculties.find(f => f.id === Number(selectedFacultyId))?.faculty_name || "غير محدد";
+    const departmentName = departments.find(d => d.id === Number(selectedDepartmentId))?.department_name || "غير محدد";
+    let programLabel = "";
+    if (programType === "postgraduate") programLabel = `دراسات عليا - ${postgraduateProgram || "غير محدد"}`;
+    else if (programType === "diploma") programLabel = "دبلوم";
+    else programLabel = "بكالوريوس";
+
+    const filterParts = [];
+    if (registrationFilter === "registered") filterParts.push("المسجلين");
+    if (registrationFilter === "unregistered") filterParts.push("غير المسجلين");
+    if (academicStatusFilter.trim()) filterParts.push(`موقف: ${academicStatusFilter}`);
+    if (scholarshipTypeFilter.trim()) filterParts.push(`منحة: ${scholarshipTypeFilter}`);
+
+    return { facultyName, departmentName, programLabel, filterParts };
+  };
+
+
+  const exportToExcel = () => {
+  if (filteredStudents.length === 0) {
+    return showToast("لا توجد بيانات للتصدير", "error");
+  }
+
+  const { facultyName, departmentName, programLabel, filterParts } = getHeaderInfo();
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([]);
+
+  // ==================== الهيدر الجديد (في العمود الثاني) ====================
+  const headerInfo = [
+    ["", "جامعة بورتسودان الأهلية"],                    // B1
+    ["", `${facultyName} - ${departmentName}`],           // B2
+    ["", `نوع البرنامج: ${programLabel}`],               // B3
+    ["", `السنة الدراسية: ${academicYear} | ${levelName} | ${termName}`], // B4
+  ];
+
+  if (filterParts.length > 0) {
+    headerInfo.push(["", `الفلاتر: ${filterParts.join(" | ")}`]); // B5
+  }
+
+  // إضافة الهيدر
+  XLSX.utils.sheet_add_aoa(ws, headerInfo, { origin: "A1" });
+
+  // مسافة فارغة
+  XLSX.utils.sheet_add_aoa(ws, [[]], { origin: -1 });
+
+  // رؤوس الأعمدة (تبدأ من A7)
+  const colHeaders = ["#", "الرقم الجامعي", "اسم الطالب", "الموقف الأكاديمي", "نوع المنحة", "نسبة المنحة", "حالة التسجيل"];
+  XLSX.utils.sheet_add_aoa(ws, [colHeaders], { origin: -1 });
+
+  // البيانات
+  const dataRows = filteredStudents.map((s, idx) => [
+    idx + 1,
+    s.university_id || "—",
+    s.full_name || "—",
+    s.academic_status || "—",
+    s.scholarship_type || "—",
+    s.scholarship_percentage !== undefined && s.scholarship_percentage !== null
+      ? `${s.scholarship_percentage}%`
+      : "—",
+    s.registration_status || "غير مسجل",
+  ]);
+
+  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: -1 });
+
+  // تنسيق الأعمدة
+  ws['!cols'] = [
+    { wch: 6 },   // #
+    { wch: 18 },  // الرقم الجامعي
+    { wch: 35 },  // الاسم
+    { wch: 20 },  // الموقف
+    { wch: 25 },  // نوع المنحة
+    { wch: 12 },  // النسبة
+    { wch: 16 },  // حالة التسجيل
+  ];
+
+  // دمج الخلايا في الهيدر (اختياري - يعطي شكل أفضل)
+  if (!ws['!merges']) ws['!merges'] = [];
+  ws['!merges'].push({ s: { r: 0, c: 1 }, e: { r: 0, c: 6 } }); // دمج اسم الجامعة
+  ws['!merges'].push({ s: { r: 1, c: 1 }, e: { r: 1, c: 6 } });
+  ws['!merges'].push({ s: { r: 2, c: 1 }, e: { r: 2, c: 6 } });
+  ws['!merges'].push({ s: { r: 3, c: 1 }, e: { r: 3, c: 6 } });
+  if (filterParts.length > 0) {
+    ws['!merges'].push({ s: { r: 4, c: 1 }, e: { r: 4, c: 6 } });
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, "قائمة الطلاب");
+
+  const fileName = `قائمة_طلاب_${academicYear.replace('/', '-')}_${termName.replace(/ /g, '_')}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+
+  showToast("تم تصدير ملف Excel بنجاح ", "success");
+  };
+
   return (
     <div className="admission-layout">
       <header className="library-header">
@@ -701,9 +797,19 @@ const StudentsTermList = () => {
                   className="btn btn-primary"
                   onClick={printTermStudentsList}
                   disabled={!canLoadStudents || loadingStudents || filteredStudents.length === 0}
-                  style={{ backgroundColor: "#0a3753", borderColor: "#0a3753" }}
+                  style={{ backgroundColor: "#0a3753", borderColor: "#0a3753", display: "flex", alignItems: "center", gap: 6 }}
                 >
-                  طباعة القائمة
+                  طباعة PDF
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={exportToExcel}
+                  disabled={!canLoadStudents || loadingStudents || filteredStudents.length === 0}
+                  style={{ backgroundColor: "#16a34a", borderColor: "#16a34a", display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  تصدير Excel
                 </button>
 
                 <div style={{ color: "#6b7280", fontWeight: 800 }}>
