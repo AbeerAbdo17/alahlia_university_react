@@ -1206,7 +1206,7 @@ const onSelectDepartment = (deptId) => {
         ) : loadingCourses ? (
           <p>جارٍ تحميل المواد...</p>
         ) : courses.length === 0 ? (
-          <p>لا توجد مواد لهذه الاختيارات.</p>
+          <p>لا توجد مواد لهذه الفترة.</p>
         ) : (
           <table className="simple-table" style={{ width: "100%" }}>
             <thead>

@@ -818,12 +818,12 @@ useEffect(() => {
       return;
     }
     if (programType === "postgraduate" && !postgradProgram.trim()) {
-      showToast("اختاري/اكتبي برنامج الدراسات العليا أولاً", "error");
+      showToast("اختار/اكتب برنامج الدراسات العليا أولاً", "error");
       return;
     }
 
     if (!fromYear || !fromLevel || !fromTerm) {
-      showToast("اختاري السنة الدراسية الحالية والمستوى والفصل أولاً", "error");
+      showToast("اختار السنة الدراسية الحالية والمستوى والفصل أولاً", "error");
       return;
     }
 
