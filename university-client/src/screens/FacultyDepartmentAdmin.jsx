@@ -832,6 +832,8 @@ const onSelectDepartment = (deptId) => {
     if (!canLoad) return showToast?.("كمّل الاختيارات بالترتيب أولاً", "error");
     if (!courseName.trim()) return showToast?.("اكتب اسم المادة", "error");
     if (!courseNameEn.trim()) return showToast?.("اكتب اسم المادة بالإنجليزية", "error");
+    if (!instructor.trim()) return showToast?.("اختار أستاذ", "error");
+
 
     const tm = Number(totalMark ?? 100);
     const cw = Number(courseworkMax ?? 0);
@@ -844,6 +846,7 @@ const onSelectDepartment = (deptId) => {
 
     const chRaw = (creditHours ?? "").toString().trim();
     const ch = chRaw === "" ? null : Number(chRaw);
+    if (chRaw === "") return showToast?.("ادخل عدد الساعات", "error"); 
     if (chRaw !== "" && (!Number.isFinite(ch) || ch <= 0)) {
       return showToast?.("عدد الساعات يجب أن يكون رقم أكبر من 0", "error");
     }

@@ -968,7 +968,7 @@ const saveGrades = async () => {
 
             <div style={{ overflowX: "auto" }}>
               {!selectedCourseId ? (
-                <p style={{ color: "#6b7280" }}>اختار المادة أولاً عشان نجيب الطلاب.</p>
+                <p style={{ color: "#6b7280" }}>اختار المادة أولاً ليتم جلب الطلاب.</p>
               ) : loadingStudents ? (
                 <p>جارٍ تحميل الطلاب...</p>
               ) : students.length === 0 ? (

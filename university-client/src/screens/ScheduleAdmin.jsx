@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import html2pdf from 'html2pdf.js';
+import TimePicker from "./TimePicker";
 
 const API_BASE = "http://localhost:5000/api";
 const DAYS = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
@@ -345,10 +346,11 @@ const handlePrint = () => {
     return;
   }
 
+  // 1. استخراج الفترات الزمنية الفريدة
   const timeSlotsSet = new Set();
   sessions.forEach(s => {
     if (s.start_time && s.end_time) {
-      timeSlotsSet.add(`${s.start_time.slice(0,5)} – ${s.end_time.slice(0,5)}`);
+      timeSlotsSet.add(`${s.start_time.slice(0, 5)} – ${s.end_time.slice(0, 5)}`);
     }
   });
 
@@ -358,208 +360,132 @@ const handlePrint = () => {
     return aStart.localeCompare(bStart);
   });
 
-const programTypeLabel =
-  programType === "postgraduate"
-    ? `دراسات عليا${postgraduateProgram ? " — " + postgraduateProgram.trim() : ""}`
-    : programType === "diploma"
-      ? "دبلوم"
-      : "بكالوريوس";
+  const programTypeLabel =
+    programType === "postgraduate"
+      ? `دراسات عليا${postgraduateProgram ? " — " + postgraduateProgram.trim() : ""}`
+      : programType === "diploma" ? "دبلوم" : "بكالوريوس";
 
-
-  const printWindow = window.open("", "", "height=900,width=1200");
-  printWindow.document.write(`
-    <html lang="ar" dir="rtl">
-    <head>
-      <meta charset="utf-8">
-      <title>جدول محاضرات - ${levelName || ''} - ${termName || ''}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  const element = document.createElement('div');
+  element.innerHTML = `
+    <div lang="ar" dir="rtl" style="font-family: 'Cairo', Arial, sans-serif; padding: 10px; background: #fff;">
       <style>
-        body {
-          font-family: 'Cairo', Tahoma, Arial, sans-serif;
-          margin: 0;
-          padding: 20px 40px;
-          color: #111;
-          background: #fff;
-          line-height: 1.5;
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        
+        .print-container { width: 100%; margin: 0; }
+        .header { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .header h1 { font-size: 22px; margin: 0; color: #0a3753; }
+        .header h2 { font-size: 16px; margin: 5px 0; color: #333; }
+        
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          table-layout: fixed; 
+          word-wrap: break-word;
         }
-
-        .container {
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-
-        .header {
-          text-align: center;
-          margin-bottom: 25px;
-        }
-
-        h1 {
-          font-size: 28px;
-          margin: 0 0 8px 0;
-          color: #0a3753;
-          font-weight: 700;
-        }
-
-        h2 {
-          font-size: 20px;
-          margin: 4px 0 2px 0;
-          color: #333;
-          font-weight: 600;
-        }
-
-        .subtitle {
-          font-size: 16px;
-          color: #555;
-          margin: 6px 0 20px 0;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
-          font-size: 15px;
-        }
-
-        th, td {
-          border: 1px solid #444;
-          padding: 12px 10px;
-          text-align: center;
+        
+        th, td { 
+          border: 1px solid #444; 
+          padding: 6px 2px; 
+          text-align: center; 
           vertical-align: middle;
+          overflow: hidden;
         }
-
-        th {
-          background-color: #e8f0fe;
-          color: #0a3753;
-          font-weight: 700;
-          font-size: 15px;
+        
+        th { 
+          background-color: #e8f0fe; 
+          color: #0a3753; 
+          font-size: 12px;
+          white-space: nowrap;
         }
-
-        .day-cell {
-          background-color: #f5f5f5;
-          font-weight: 700;
-          width: 90px;
-          color: #222;
-        }
-
-        .time-header {
-          background-color: #d1e3ff;
-          font-weight: 700;
-          min-width: 120px;
-        }
-
-        .session-cell {
-          background-color: #f9fcff;
-          line-height: 1.6;
-          font-size: 14.5px;
-        }
-
-        .session-cell strong {
-          color: #0d47a1;
-          display: block;
-          margin-bottom: 4px;
-        }
-
-        .session-cell .instructor {
-          color: #444;
-        }
-
-        .session-cell .room {
-          color: #555;
+        
+        .day-cell { 
+          background-color: #f5f5f5; 
+          font-weight: 700; 
+          width: 60px; 
           font-size: 13px;
         }
-
-        .empty {
-          color: #aaa;
-          font-style: italic;
+        
+        .session-cell { 
+          background-color: #f9fcff; 
+          font-size: 11px; 
+          line-height: 1.3;
         }
-
-        .footer {
-          margin-top: 40px;
-          text-align: center;
-          color: #666;
-          font-size: 13px;
+        
+        .session-cell strong { 
+          color: #0d47a1; 
+          display: block; 
+          margin-bottom: 2px;
+          font-size: 12px;
         }
+        
+        .instructor { color: #444; font-size: 10px; margin-bottom: 2px; }
+        .room { color: #666; font-size: 10px; font-weight: bold; }
+        .empty { color: #ddd; font-size: 14px; }
 
-        @media print {
-          body { 
-            margin: 15mm; 
-            font-size: 13px; 
-          }
-          .header { margin-bottom: 20px; }
-          h1 { font-size: 24px; }
-          h2 { font-size: 18px; }
-          table { page-break-inside: avoid; }
-          tr { page-break-inside: avoid; page-break-after: auto; }
-        }
+        /* تحسين مظهر التوقيع في الأسفل */
+        .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 11px; padding: 0 20px; }
       </style>
-    </head>
-    <body>
-      <div class="container">
 
+      <div class="print-container">
         <div class="header">
-        <h1>جامعة بورتسودان الأهلية </h1>
-          <h2>       
-            ${faculties.find(f => f.id == selectedFacultyId)?.faculty_name || '—'}  
-            / ${departments.find(d => d.id == selectedDepartmentId)?.department_name || '—'}
-          </h2>
-          <h2>
-  ${programTypeLabel} <br/>
-  ${levelName || '—'} — ${termName || '—'} — ${academicYear || '—'}
-</h2>
-
+          <h1>جامعة بورتسودان الأهلية</h1>
+          <h2>${faculties.find(f => f.id == selectedFacultyId)?.faculty_name || '—'} / القسم: ${departments.find(d => d.id == selectedDepartmentId)?.department_name || '—'}</h2>
+          <h2>${programTypeLabel} | ${levelName || '—'} | ${termName || '—'}</h2>
         </div>
 
         <table>
           <thead>
             <tr>
               <th class="day-cell">اليوم</th>
-              ${timeSlots.map(slot => `<th class="time-header">${slot}</th>`).join('')}
+              ${timeSlots.map(slot => `<th>${slot}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-  `);
+            ${DAYS.map(day => `
+              <tr>
+                <td class="day-cell">${day}</td>
+                ${timeSlots.map(slot => {
+                  const [slotStart] = slot.split(' – ');
+                  const session = sessions.find(s => 
+                    s.day_of_week === day && s.start_time.slice(0, 5) === slotStart
+                  );
 
-  DAYS.forEach(day => {
-    printWindow.document.write(`<tr><td class="day-cell">${day}</td>`);
-
-    timeSlots.forEach(slot => {
-      const [slotStart, slotEnd] = slot.split(' – ').map(t => t + ':00');
-
-      const session = sessions.find(s => 
-        s.day_of_week === day &&
-        s.start_time < slotEnd &&
-        s.end_time > slotStart
-      );
-
-      if (session) {
-        printWindow.document.write(`
-          <td class="session-cell">
-            <strong>${session.course_name || '—'}</strong>
-            <div class="instructor">${session.instructor_name || '—'}</div>
-            <div class="room">${session.room_name || '—'}</div>
-          </td>
-        `);
-      } else {
-        printWindow.document.write('<td class="empty">—</td>');
-      }
-    });
-
-    printWindow.document.write('</tr>');
-  });
-
-  printWindow.document.write(`
+                  if (session) {
+                    return `
+                      <td class="session-cell">
+                        <strong>${session.course_name || '—'}</strong>
+                        <div class="instructor">${session.instructor_name || '—'}</div>
+                        <div class="room">${session.room_name || '—'}</div>
+                      </td>
+                    `;
+                  }
+                  return '<td class="empty">—</td>';
+                }).join('')}
+              </tr>
+            `).join('')}
           </tbody>
         </table>
 
-
+        <div class="footer">
+           <span>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</span>
+        </div>
       </div>
-    </body>
-    </html>
-  `);
+    </div>
+  `;
 
-  printWindow.document.close();
-  printWindow.focus();
+  const opt = {
+    margin: [5, 5, 5, 5],
+    filename: `جدول_${levelName}.pdf`,
+    image: { type: 'jpeg', quality: 1.0 },
+    html2canvas: { 
+      scale: 3, 
+      useCORS: true,
+      letterRendering: true 
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
 
+  html2pdf().set(opt).from(element).save();
 };
 
   // ---------- fetch faculties 
@@ -752,32 +678,39 @@ useEffect(() => {
     }
   };
 
-  const fetchSessions = async () => {
-    if (!canLoad) return;
-    setLoadingSessions(true);
-    try {
-      const qs =
-        `faculty_id=${selectedFacultyId}` +
-        `&department_id=${selectedDepartmentId}` +
-        `&academic_year=${encodeURIComponent(academicYear.trim())}` +
-        `&level_name=${encodeURIComponent(levelName.trim())}` +
-        `&term_name=${encodeURIComponent(termName.trim())}` +
-        `&program_type=${encodeURIComponent(programType)}` +
-        (programType === "postgraduate"
-          ? `&postgraduate_program=${encodeURIComponent(postgraduateProgram.trim())}`
-          : "");
+const fetchSessions = async () => {
+  if (!canLoad) return;
+  setLoadingSessions(true);
 
-      const res = await fetch(`${API_BASE}/timetable-sessions?${qs}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "فشل تحميل الجدول");
-      setSessions(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setSessions([]);
-      toast(e.message || "مشكلة في تحميل الجدول", "error");
-    } finally {
-      setLoadingSessions(false);
+  try {
+    const qs = new URLSearchParams({
+      faculty_id: selectedFacultyId,
+      department_id: selectedDepartmentId,
+      academic_year: academicYear.trim(),
+      level_name: levelName.trim(),
+      term_name: termName.trim(),
+      program_type: programType,
+    });
+
+    // أضف postgraduate_program فقط لو كان postgraduate
+    if (programType === "postgraduate" && postgraduateProgram.trim()) {
+      qs.append("postgraduate_program", postgraduateProgram.trim());
     }
-  };
+
+    const res = await fetch(`${API_BASE}/timetable-sessions?${qs}`);
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) throw new Error(data?.error || "فشل تحميل الجدول");
+
+    setSessions(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error(e);
+    setSessions([]);
+    toast(e.message || "مشكلة في تحميل الجدول", "error");
+  } finally {
+    setLoadingSessions(false);
+  }
+};
 
   // ---------- selection handlers (للجدول فقط)
   const resetAfterDepartment = () => {
@@ -964,6 +897,12 @@ useEffect(() => {
 
   // ---------- create/update session
 const saveSession = async () => {
+  const token = sessionStorage.getItem("token");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
   if (!canLoad) return toast("كمّل الاختيارات أولاً", "error");
   if (!courseId) return toast("اختار المادة", "error");
   if (!roomId) return toast("اختار القاعة", "error");
@@ -971,6 +910,7 @@ const saveSession = async () => {
   if (startTime >= endTime) return toast("زمن البداية لازم يكون قبل النهاية", "error");
 
   setSaving(true);
+
   try {
     const payload = {
       faculty_id: Number(selectedFacultyId),
@@ -978,8 +918,13 @@ const saveSession = async () => {
       academic_year: academicYear.trim(),
       level_name: levelName.trim(),
       term_name: termName.trim(),
+      
       program_type: programType,
-      postgraduate_program: programType === "postgraduate" ? postgraduateProgram.trim() : null,
+      // التعديل المهم هنا:
+      postgraduate_program: programType === "postgraduate" 
+        ? (postgraduateProgram || "").trim() || null 
+        : null,
+
       course_id: Number(courseId),
       instructor_staff_id: instructorStaffId ? Number(instructorStaffId) : null,
       instructor_name: instructorDisplayName || null,
@@ -992,22 +937,45 @@ const saveSession = async () => {
     const isEdit = !!editingSessionId;
 
     const res = await fetch(
-      isEdit
+      isEdit 
         ? `${API_BASE}/timetable-sessions/${editingSessionId}`
         : `${API_BASE}/timetable-sessions`,
       {
         method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`   
+        },
         body: JSON.stringify(payload),
       }
     );
 
-    const { ok } = await handleConflictIfAny(res);
-    if (!ok) return; 
+    // معالجة التضارب
+    if (res.status === 409) {
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || "تضارب في الجدول (نفس البرنامج)", "error");
+      return;
+    }
+
+    if (res.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      navigate("/login");
+      return;
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "فشل الحفظ");
+    }
 
     toast(isEdit ? "تم تعديل المحاضرة" : "تمت إضافة المحاضرة للجدول", "success");
     resetSessionForm();
-    fetchSessions();
+    fetchSessions();   // إعادة تحميل الجدول
+
+  } catch (err) {
+    console.error("saveSession error:", err);
+    toast(err.message || "حدث خطأ أثناء الحفظ", "error");
   } finally {
     setSaving(false);
   }
@@ -1303,12 +1271,12 @@ const saveSession = async () => {
 
                     <div className="input-group">
                       <label className="input-label">من</label>
-                      <input className="input-field" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} disabled={!canLoad} />
+                      <TimePicker value={startTime} onChange={setStartTime} disabled={!canLoad} />
                     </div>
 
                     <div className="input-group">
                       <label className="input-label">إلى</label>
-                      <input className="input-field" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} disabled={!canLoad} />
+                      <TimePicker value={endTime} onChange={setEndTime} disabled={!canLoad} />
                     </div>
 
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

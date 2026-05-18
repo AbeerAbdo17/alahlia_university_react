@@ -704,18 +704,26 @@ const exportToExcel = (lang = 'ar') => {
 
                 <div style={ui.tableWrap}>
                   <table style={ui.table}>
-                    <thead>
-                      <tr>
-                        <th>المستوى/الدفعة</th>
-                        <th>الفصل الأول</th>
-                        <th>الفصل الثاني</th>
-                      </tr>
-                    </thead>
+<thead>
+  <tr>
+    <th>المستوى/الدفعة</th>
+    <th>الفصل الأول</th>
+    <th>الفصل الثاني</th>
+    {Object.values(groupedTermGpas).some(termsObj =>
+      Object.values(termsObj).find(t => t.term_name.includes("الثالث") || t.term_name.includes("ثالث"))
+    ) && <th>الفصل الثالث</th>}
+  </tr>
+</thead>
                     <tbody>
 {sortByLevelOrder(groupedTermGpas).map(([level, termsObj]) => {
   const terms = Object.values(termsObj);
-  const firstTerm = terms.find(t => t.term_name.includes("الأول") || t.term_name.includes("اول")) || terms[0];
-  const secondTerm = terms.find(t => t.term_name.includes("الثاني") || t.term_name.includes("ثاني")) || terms[1];
+  const firstTerm  = terms.find(t => t.term_name.includes("الأول") || t.term_name.includes("اول"));
+  const secondTerm = terms.find(t => t.term_name.includes("الثاني") || t.term_name.includes("ثاني"));
+  const thirdTerm  = terms.find(t => t.term_name.includes("الثالث") || t.term_name.includes("ثالث"));
+
+  const hasThirdTerm = Object.values(groupedTermGpas).some(obj =>
+    Object.values(obj).find(t => t.term_name.includes("الثالث") || t.term_name.includes("ثالث"))
+  );
 
   return (
     <tr key={level}>
@@ -736,6 +744,16 @@ const exportToExcel = (lang = 'ar') => {
           </div>
         ) : "لا توجد بيانات"}
       </td>
+      {hasThirdTerm && (
+        <td>
+          {thirdTerm ? (
+            <div style={ui.gpaBox}>
+              <div>الفصلي: {thirdTerm.term_gpa}</div>
+              <div>التراكمي: {thirdTerm.cumulative_gpa}</div>
+            </div>
+          ) : "—"}
+        </td>
+      )}
     </tr>
   );
 })}
@@ -791,6 +809,21 @@ const exportToExcel = (lang = 'ar') => {
             PDF عربي
         </button>
 
+                {/* English PDF */}
+        <button
+          onClick={() => { handlePrint('en'); setShowExportMenu(false); }}
+          style={{
+            display: "block", width: "100%", padding: "12px 20px",
+            background: "none", border: "none", textAlign: "right",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+            color: "#1e40af", borderBottom: "1px solid #f3f4f6"
+          }}
+          onMouseEnter={e => e.target.style.background = "#eff6ff"}
+          onMouseLeave={e => e.target.style.background = "none"}
+        >
+            PDF انجليزي
+        </button>
+
         {/* عربي Excel */}
         <button
           onClick={() => { exportToExcel('ar'); setShowExportMenu(false); }}
@@ -804,21 +837,6 @@ const exportToExcel = (lang = 'ar') => {
           onMouseLeave={e => e.target.style.background = "none"}
         >
             Excel عربي
-        </button>
-
-        {/* English PDF */}
-        <button
-          onClick={() => { handlePrint('en'); setShowExportMenu(false); }}
-          style={{
-            display: "block", width: "100%", padding: "12px 20px",
-            background: "none", border: "none", textAlign: "right",
-            cursor: "pointer", fontSize: 14, fontWeight: 700,
-            color: "#1e40af", borderBottom: "1px solid #f3f4f6"
-          }}
-          onMouseEnter={e => e.target.style.background = "#eff6ff"}
-          onMouseLeave={e => e.target.style.background = "none"}
-        >
-            PDF انجليزي
         </button>
 
         {/* English Excel */}

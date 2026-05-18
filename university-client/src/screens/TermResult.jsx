@@ -550,11 +550,12 @@ const printResults = (mode = 'letter') => {
             const repeatedData = repeatedCoursesMap[r.student_id] || [];
             let repeatedDisplay = "—";
             if (repeatedData.length > 0) {
-              repeatedDisplay = repeatedData.map(item => `
-                ${item.course_name}: 
-                <strong>${item.grade_letter || '—'}</strong> 
-                (${item.total_mark ?? '—'})
-              `).join("<br>");
+              repeatedDisplay = repeatedData.map(item => {
+              const displayValue = isLetterMode 
+              ? (item.grade_letter || '—') 
+              : (item.total_mark ?? '—');
+              return `${item.course_name}: <strong>${displayValue}</strong>`;
+            }).join("<br>");
             }
 
             return `
@@ -711,7 +712,7 @@ const exportToExcel = (mode = 'letter') => {
   ws['!merges'].push({ s: { r: row-1, c: 0 }, e: { r: row-1, c: 6 } }); // دمج
   row++;
 
-  const detailHeader = ["#", "الاسم", "الرقم الجامعي", "الموقف الأكاديمي", ...uniqueCourses];
+ const detailHeader = ["#", "الاسم", "الرقم الجامعي", "الموقف الأكاديمي", ...uniqueCourses, "إزالة الرسوب"];
   XLSX.utils.sheet_add_aoa(ws, [detailHeader], { origin: `A${row}` });
   row++;
 
@@ -737,6 +738,15 @@ const exportToExcel = (mode = 'letter') => {
       );
     });
 
+
+    const repeatedData = repeatedCoursesMap[r.student_id] || [];
+const repeatedCell = repeatedData.length > 0
+  ? repeatedData.map(item => 
+      `${item.course_name}: ${isLetterMode ? (item.grade_letter || '—') : (item.total_mark ?? '—')}`
+    ).join(" | ")
+  : "—";
+rowData.push(repeatedCell);
+
     XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${row}` });
     row++;
   });
@@ -748,7 +758,8 @@ const exportToExcel = (mode = 'letter') => {
     { wch: 15 }, 
     { wch: 14 }, 
     { wch: 14 },
-    ...uniqueCourses.map(() => ({ wch: 13 }))
+    ...uniqueCourses.map(() => ({ wch: 13 })),
+    { wch: 30 } 
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, `نتائج_${fileSuffix}`);
@@ -879,14 +890,14 @@ const exportToExcel = (mode = 'letter') => {
       </button>
 
       <button onClick={() => { exportToExcel('letter'); setShowPrintMenu(false); }}
-        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e", borderBottom:"1px solid #f3f4f6"}}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#166534", borderBottom:"1px solid #f3f4f6"}}
         onMouseEnter={e => e.target.style.background = "#eff6ff"}
         onMouseLeave={e => e.target.style.background = "none"}>
          Excel - نتيجة حرفية
       </button>
 
       <button onClick={() => { exportToExcel('numeric'); setShowPrintMenu(false); }}
-        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#1e4a6e"}}
+        style={{display:"block", width:"100%", padding:"11px 16px", background:"none", border:"none", textAlign:"right", cursor:"pointer", fontWeight:700, color:"#166534"}}
         onMouseEnter={e => e.target.style.background = "#eff6ff"}
         onMouseLeave={e => e.target.style.background = "none"}>
          Excel - نتيجة رقمية

@@ -393,6 +393,11 @@ const BookListPage = () => {
     return;
   }
 
+  if (!formValues.faculty_id) {                   
+    showToast("اختيار الكلية مطلوب!", "error");
+    return;
+  }
+
   try {
     let finalPdfUrl = "";
 
@@ -476,6 +481,10 @@ const BookListPage = () => {
       showToast("العنوان مطلوب!", "error");
       return;
     }
+      if (!formValues.faculty_id) {                   
+    showToast("اختيار الكلية مطلوب!", "error");
+    return;
+  }
 
     const formData = new FormData();
     formData.append("title", formValues.title);

@@ -368,7 +368,7 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
 function useNationalitySmartList() {
   const [nationalities, setNationalities] = useState([]);
 
-  const fetchNationalities = async () => {
+const fetchNationalities = async () => {
     try {
       const res = await fetch(`${API_BASE}/students/nationalities`);
       const data = await res.json();
@@ -988,7 +988,7 @@ const termOrder = (t) => {
   const term = (t || "").toString().trim();
   if (term.includes("أول") || term === "الفصل الأول" || term === "فصل أول") return 1;
   if (term.includes("ثان") || term === "الفصل الثاني" || term === "فصل ثاني") return 2;
-
+  if (term.includes("ثالث") || term === "الفصل الثالث" || term === "فصل ثالث") return 3;
   return 0;
 };
 
@@ -1180,24 +1180,24 @@ const getNextAcademicYear = (year) => {
   </datalist>
 </div>
 
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الحالي</label>
-            <select
-              value={fromTerm}
-              onChange={(e) => {
-                setFromTerm(e.target.value);
-                setToYear("");
-                setToLevel("");
-                setTermName("");
-              }}
-              style={ui.select}
-            >
-              <option value="">اختر الفصل</option>
-              {TERM_OPTIONS.map((x) => (
-                <option key={x} value={x}>{x}</option>
-              ))}
-            </select>
-          </div>
+<div style={ui.field}>
+  <label style={ui.label}>الفصل الحالي</label>
+  <select
+    value={fromTerm}
+    onChange={(e) => {
+      setFromTerm(e.target.value);
+      setToYear("");
+      setToLevel("");
+      setTermName("");
+    }}
+    style={ui.select}
+  >
+    <option value="">اختر الفصل</option>
+    {(programType === "postgraduate" ? TERMS_POSTGRAD : TERMS_NORMAL).map((x) => (
+      <option key={x} value={x}>{x}</option>
+    ))}
+  </select>
+</div>
 
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الجديدة</label>
@@ -1246,19 +1246,19 @@ const getNextAcademicYear = (year) => {
   )}
 </div>
 
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الدراسي (الجديد)</label>
-            <select
-              value={termName}
-              onChange={(e) => setTermName(e.target.value)}
-              style={ui.select}
-            >
-              <option value="">اختر الفصل الجديد</option>
-              {TERM_OPTIONS.map((x) => (
-                <option key={x} value={x}>{x}</option>
-              ))}
-            </select>
-          </div>
+<div style={ui.field}>
+  <label style={ui.label}>الفصل الدراسي (الجديد)</label>
+  <select
+    value={termName}
+    onChange={(e) => setTermName(e.target.value)}
+    style={ui.select}
+  >
+    <option value="">اختر الفصل الجديد</option>
+    {(programType === "postgraduate" ? TERMS_POSTGRAD : TERMS_NORMAL).map((x) => (
+      <option key={x} value={x}>{x}</option>
+    ))}
+  </select>
+</div>
         </div>
 
         <button onClick={loadCandidates} disabled={loading} style={ui.primaryBtn}>
@@ -3426,15 +3426,20 @@ const pgSmart = usePostgradProgramsSmartList();
       fillFeesData(feesToUse); 
       setFeesSource(source);
 
-      if (calculatedData) {
-        setFeesData(prev => ({
-          ...prev,
-          registration_fee: calculatedData.registration_fee?.toString() || prev.registration_fee,
-          tuition_fee: calculatedData.tuition_fee?.toString() || prev.tuition_fee,
-          freeze_fee: calculatedData.total_extra && calculatedData.notes?.includes("تجميد") 
-                      ? calculatedData.total_extra.toString() : "0",
-        }));
-      }
+if (calculatedData) {
+  setFeesData(prev => ({
+    ...prev,
+    registration_fee: calculatedData.registration_fee?.toString() || prev.registration_fee,
+    tuition_fee: calculatedData.tuition_fee?.toString() || prev.tuition_fee,
+    freeze_fee: calculatedData.total_extra && calculatedData.notes?.includes("تجميد") 
+                ? calculatedData.total_extra.toString() : "0",
+
+    // مهم: نحافظ على بيانات المنحة من calculated
+    scholarship_type: calculatedData.scholarship_type || prev.scholarship_type || "لا منحة",
+    scholarship_percentage: Number(calculatedData.scholarship_percentage) || 0,
+    scholarship_granted_by: calculatedData.scholarship_granted_by || prev.scholarship_granted_by || "",
+  }));
+}
     }
 
     const statusRes = await fetch(`${API_BASE}/student-installments-status?${params}`);
@@ -3599,7 +3604,7 @@ useEffect(() => {
  }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
 
 
- useEffect(() => {
+useEffect(() => {
   if (!selectedStudent || !academicYear || !levelName) {
     setCalculatedFees(null);
     setAcademicStatus("");
@@ -3617,10 +3622,7 @@ useEffect(() => {
       });
 
       const res = await fetch(`${API_BASE}/student-fees-calculated?${params}`);
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "فشل في حساب الرسوم");
-      }
+      if (!res.ok) throw new Error((await res.json()).error || "فشل في حساب الرسوم");
 
       const data = await res.json();
 
@@ -3628,33 +3630,44 @@ useEffect(() => {
       setAcademicStatus(data.academic_status || "نظامي");
       setFacultyType(data.faculty_type || "غير محدد");
 
-      let original = data.tuition_fee?.toString() || "";
-      let afterRepeat = original;
+      // ==================== حساب بعد المنحة ====================
+      let baseTuition = cleanNumber(data.tuition_fee);
+      let tuitionAfterDiscount = baseTuition;
 
-      if (data.academic_status === "إعادة" && data.repeat_discount) {
-        const repeatPerc = cleanNumber(data.repeat_discount) / 100 || 0.5;
-        original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
+      if (data.scholarship_type && data.scholarship_type !== "لا منحة" && Number(data.scholarship_percentage) > 0) {
+        const perc = Number(data.scholarship_percentage);
+        tuitionAfterDiscount = Math.round(baseTuition * (1 - perc / 100) * 100) / 100;
       }
 
       setFeesData(prev => ({
         ...prev,
-        tuition_fee: data.tuition_fee?.toString() || prev.tuition_fee,
-        tuition_fee_original: original,
-        tuition_after_repeat: afterRepeat,
-        freeze_fee: data.total_extra && data.notes?.includes("تجميد") ? data.total_extra.toString() : "0",
+        tuition_fee: tuitionAfterDiscount.toFixed(2),
+        tuition_fee_original: baseTuition.toFixed(2),
+        tuition_after_repeat: tuitionAfterDiscount.toFixed(2),
+
+        scholarship_type: data.scholarship_type || "لا منحة",
+        scholarship_percentage: Number(data.scholarship_percentage) || 0,
+        scholarship_granted_by: data.scholarship_granted_by || "",
+
+        freeze_fee: data.total_extra && data.notes?.includes("تجميد") 
+                    ? data.total_extra.toString() : "0",
         unfreeze_fee: "0",
       }));
 
+      if (data.scholarship_type && data.scholarship_type !== "لا منحة") {
+        showToast(`تم تطبيق منحة "${data.scholarship_type}" بنسبة ${data.scholarship_percentage}%`, "success");
+      }
+
     } catch (err) {
+      console.error(err);
       showToast("خطأ أثناء حساب الرسوم: " + err.message, "error");
-      setCalculatedFees(null);
     } finally {
       setCalculating(false);
     }
-   };
+  };
 
   fetchCalculatedFees();
- }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
+}, [selectedStudent, academicYear, levelName]);
 
   const fillFeesData = (fees) => {
     const tuition = fees.tuition_fee?.toString() || "";
@@ -3677,9 +3690,9 @@ useEffect(() => {
       freeze_fee: fees.freeze_fee?.toString() || "0",
       unfreeze_fee: fees.unfreeze_fee?.toString() || "0",
       repeat_discount: fees.repeat_discount?.toString() || "50",
-      scholarship_type: fees.scholarship_type || "لا منحة",
-      scholarship_percentage: fees.scholarship_percentage || 0,
-      scholarship_granted_by: fees.scholarship_granted_by || "",
+scholarship_type: fees.scholarship_type || "لا منحة",
+scholarship_percentage: Number(fees.scholarship_percentage) || 0,
+scholarship_granted_by: fees.scholarship_granted_by || "",
       currency: fees.currency || "SDG",
       installment_1: fees.installment_1?.toString() || "",
       installment_1_start: fees.installment_1_start || "",
@@ -3891,6 +3904,14 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
       },
       body: JSON.stringify(body),
     });
+
+        if (res.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+      navigate("/login");
+      return;
+    }
 
     if (!res.ok) {
       const errData = await res.json();
@@ -4346,6 +4367,13 @@ const printFeesReport = async () => {
                 {calculatedFees.total_extra > 0 && (
                   <div><strong>إضافي (تجميد/فك):</strong> {formatCurrency(calculatedFees.total_extra)}</div>
                 )}
+                {calculatedFees.scholarship_type && calculatedFees.scholarship_type !== "لا منحة" && (
+        <>
+          <div><strong>نوع المنحة:</strong> {calculatedFees.scholarship_type}</div>
+          <div><strong>نسبة الخصم:</strong> {calculatedFees.scholarship_percentage}%</div>
+          <div><strong>الجهة المانحة:</strong> {calculatedFees.scholarship_granted_by || "غير محدد"}</div>
+        </>
+      )}
                 <div><strong>سنة الدخول الأولى:</strong> {calculatedFees.first_enrollment_year || "غير محددة"}</div>
                 <div><strong>آخر سنة نشطة:</strong> {calculatedFees.last_active_year || "غير محددة"}</div>
                 <div><strong>سنوات الغياب:</strong> {Math.max(0, calculatedFees.years_absent || 0)}</div>

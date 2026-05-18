@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoDocumentText, IoLogOut } from "react-icons/io5"; 
+import EnrollmentStats from "./EnrollmentStats";
 
 import {
   FaUsers,
@@ -32,7 +33,7 @@ const portalLinks = [
   { title: "الجداول الدراسية", icon: <FaCalendarAlt />, path: "/schedule", tone: "cyan" },
   { title: " الشهادات", icon: <FaGraduationCap  />, path: "/certificates", tone: "pink" },
   { title: "السجل الأكاديمي", icon: <FaClipboardList />, path: "/academic-record", tone: "red" },
-  { title: "التقارير", icon: <FaChartPie />, path: "/reports", tone: "orange" },
+  { title: "تقارير الرسوم", icon: <FaChartPie />, path: "/reports", tone: "orange" },
   { title: "المستخدمين والصلاحيات", icon: <FaUserCog />, path: "/UsersManagement", tone: "gray" },
 ];
 
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+  const [showEnrollment, setShowEnrollment] = useState(false);
 
 useEffect(() => {
   const token = sessionStorage.getItem("token");
@@ -189,8 +191,8 @@ const handleLogout = () => {
               </div>
 
               <div className="dash-hero-badges">
-                <span className="dash-badge">الكل: {summary?.students ?? "—"} طلاب</span>
-                <span className="dash-badge">كتب: {summary?.books ?? "—"}</span>
+                {/* <span className="dash-badge">الكل: {summary?.students ?? "—"} طلاب</span> */}
+                {/* <span className="dash-badge">كتب: {summary?.books ?? "—"}</span> */}
                 <span className="dash-badge">
                   آخر تحديث:{" "}
                   {summary?.updated_at ? new Date(summary.updated_at).toLocaleString("ar") : "—"}
@@ -199,16 +201,34 @@ const handleLogout = () => {
             </div>
           </div>
 
-          <div className="dash-top">
-            <div>
-              <h2 className="dash-title">ملخص سريع</h2>
-              <div className="dash-subtitle">يعرض أعداد السجلات الأساسية </div>
-            </div>
+<div className="dash-top">
+  <div>
+    <h2 className="dash-title">ملخص سريع</h2>
+    <div className="dash-subtitle">يعرض أعداد السجلات الأساسية </div>
+  </div>
 
-            <button className="btn btn-primary" onClick={loadSummary} disabled={loading}>
-              {loading ? "جارٍ التحديث..." : "تحديث البيانات"}
-            </button>
-          </div>
+  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+    {/* زر إحصائيات الطلاب الجديد */}
+    <button
+      className="btn btn-primary"
+      onClick={() => setShowEnrollment(true)}
+      style={{
+        background: "linear-gradient(135deg, #1e3a5f, #2563eb)",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
+      <FaChartPie size={14} />
+      إحصائيات الطلاب
+    </button>
+
+    {/* زر تحديث البيانات الموجود */}
+    {/* <button className="btn btn-primary" onClick={loadSummary} disabled={loading}>
+      {loading ? "جارٍ التحديث..." : "تحديث البيانات"}
+    </button> */}
+  </div>
+</div>
 
           <div className="dash-stats-grid">
             {stats.map((s) => (
@@ -260,6 +280,10 @@ const handleLogout = () => {
             </div>
           )}
         </div>
+         {showEnrollment && (
+            <EnrollmentStats onClose={() => setShowEnrollment(false)} />
+          )}
+
       </main>
     </div>
   );
