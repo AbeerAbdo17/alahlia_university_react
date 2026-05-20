@@ -4,11 +4,8 @@ import { useNavigate } from "react-router-dom";
 import html2pdf from 'html2pdf.js';
 import TimePicker from "./TimePicker";
 
-<<<<<<< HEAD
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
-=======
-const API_BASE = "http://localhost:5000/api";
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
+
 const DAYS = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
 
 const ui = {
