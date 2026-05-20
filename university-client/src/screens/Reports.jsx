@@ -5,7 +5,6 @@ import html2pdf from 'html2pdf.js';
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
-
 const ui = {
   page: { fontFamily: `"Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", Arial, sans-serif`, fontSize: 16, background: "#f8fafc", minHeight: "100vh" },
   header: { background: "#0a3753", color: "#fff", padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" },

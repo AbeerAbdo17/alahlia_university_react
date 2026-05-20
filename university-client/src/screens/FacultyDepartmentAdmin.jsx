@@ -4,7 +4,6 @@ import { IoArrowBack } from "react-icons/io5";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
-
 const getAllowedFaculties = () => {
   try {
     const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -1216,6 +1215,8 @@ const FacultyDepartmentAdmin = () => {
   const [facultyName, setFacultyName] = useState("");
   const [editingFacultyId, setEditingFacultyId] = useState(null);
 
+  const [facultyCode, setFacultyCode] = useState("");        // ← رمز الكلية
+
   const [departmentName, setDepartmentName] = useState("");
   const [levelsCount, setLevelsCount] = useState(4);  //   افتراضي 4
   const [editingDepartmentId, setEditingDepartmentId] = useState(null);
@@ -1326,7 +1327,8 @@ const handleSaveFaculty = async (e) => {
   try {
     const payload = {
       faculty_name: facultyName.trim(),
-      faculty_type: facultyType, // ← الجديد
+      faculty_type: facultyType, 
+      faculty_code: facultyCode ? facultyCode.trim().toUpperCase() : null,
     };
 
     let res;
@@ -1350,6 +1352,7 @@ const handleSaveFaculty = async (e) => {
     showToast(data.message || (editingFacultyId ? "تم تعديل الكلية" : "تمت إضافة الكلية"), "success");
 
     setFacultyName("");
+    setFacultyCode("");
     setFacultyType("theoretical");
     setEditingFacultyId(null);
     fetchFaculties();
@@ -1364,6 +1367,7 @@ const handleSaveFaculty = async (e) => {
   const handleEditFaculty = (faculty) => {
     setEditingFacultyId(faculty.id);
     setFacultyName(faculty.faculty_name);
+    setFacultyCode(faculty.faculty_code || "");
     setFacultyType(faculty.faculty_type || "theoretical");
   };
 
@@ -1567,6 +1571,18 @@ const handleEditDepartment = (dept) => {
 
 <form onSubmit={handleSaveFaculty} className="two-col-grid" style={{ alignItems: "flex-end", marginBottom: 12 }}>
   <div className="input-group">
+    <label className="input-label">رمز الكلية </label>
+    <input
+      type="text"
+      dir="rtl"
+      className="input-field"
+      placeholder= "مثال: PAU001"
+      value={facultyCode || ""}          
+      onChange={(e) => setFacultyCode(e.target.value.toUpperCase())}
+      maxLength={10}
+    />
+  </div>
+  <div className="input-group">
     <label className="input-label">{editingFacultyId ? "تعديل اسم الكلية" : "إضافة كلية جديدة"}</label>
     <input
       type="text"
@@ -1624,6 +1640,7 @@ const handleEditDepartment = (dept) => {
                       <thead>
                         <tr>
                           <th>#</th>
+                          <th>رمز الكلية</th>
                           <th>اسم الكلية</th>
                           <th>نوع الكلية</th>
                           <th>عدد الأقسام</th>
@@ -1634,6 +1651,7 @@ const handleEditDepartment = (dept) => {
                         {faculties.map((f, index) => (
                           <tr key={f.id} className={selectedFaculty && selectedFaculty.id === f.id ? "row-selected" : ""}>
                             <td>{index + 1}</td>
+                            <td>{f.faculty_code}</td>
                             <td>{f.faculty_name}</td>
                             <td>{f.faculty_type  ? (f.faculty_type === "theoretical" ? "نظرية" : "عملية")   : "غير محدد"}</td>
                             <td>{f.departments_count}</td>
@@ -1644,9 +1662,9 @@ const handleEditDepartment = (dept) => {
                               <button type="button" className="btn btn-outline" style={{ marginInlineStart: 4 }} onClick={() => handleEditFaculty(f)}>
                                 تعديل
                               </button>
-                              {/* <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
+                              <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
                                 حذف
-                              </button> */}
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -1740,13 +1758,13 @@ const handleEditDepartment = (dept) => {
             تعديل
           </button>
 
-          {/* <button
+          <button
             type="button"
             className="btn btn-danger"
             onClick={() => handleDeleteDepartment(d)}
           >
             حذف
-          </button> */}
+          </button>
 
           {editingDepartmentId === d.id && (
             <button
@@ -1791,5 +1809,3 @@ const handleEditDepartment = (dept) => {
 };
 
 export default FacultyDepartmentAdmin;
-
-          

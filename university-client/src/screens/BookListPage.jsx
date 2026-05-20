@@ -19,6 +19,7 @@ function createBookFromJson(json) {
   };
 }
 
+const LOCAL_MACHINE_IP = "http://165.232.79.188:5000";
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const ui = {
@@ -386,42 +387,79 @@ const BookListPage = () => {
     setShowAddModal(true);
   };
 
-  const submitAddBook = async () => {
-    if (!formValues.title.trim()) {
-      showToast("العنوان مطلوب!", "error");
-      return;
-    }
+ const submitAddBook = async () => {
+  if (!formValues.title.trim()) {
+    showToast("العنوان مطلوب!", "error");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("title", formValues.title);
-    formData.append("copies", formValues.copies);
-    formData.append("description", formValues.description);
-    formData.append("author", formValues.author);
-    formData.append("faculty_id", formValues.faculty_id);
-    formData.append("location", formValues.location);
+  if (!formValues.faculty_id) {                   
+    showToast("اختيار الكلية مطلوب!", "error");
+    return;
+  }
 
-    if (pickedFile) formData.append("pdf", pickedFile, pickedFile.name);
+  try {
+    let finalPdfUrl = "";
 
-    try {
-      const res = await fetch(`${API_BASE}/books`, {
+    // 1. إذا تم اختيار ملف، ارفعه أولاً إلى السيرفر المحلي (جهازك)
+    if (pickedFile) {
+      const fileData = new FormData();
+      fileData.append("pdf", pickedFile, pickedFile.name);
+
+      // الرفع للجهاز المحلي (الذي تحت)
+      const uploadRes = await fetch(`${LOCAL_MACHINE_IP}/api/upload`, {
         method: "POST",
-        body: formData,
+        body: fileData,
       });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        showToast(data?.message || "حدث خطأ أثناء إضافة الكتاب", "error");
+      const uploadData = await uploadRes.json().catch(() => null);
+
+      if (!uploadRes.ok) {
+        showToast("فشل رفع الملف إلى الجهاز المحلي. تأكد من تشغيل السيرفر هناك.", "error");
         return;
       }
 
-      setShowAddModal(false);
-      fetchBooks();
-      showToast("تمت إضافة الكتاب بنجاح", "success");
-    } catch (err) {
-      console.error("Error adding book:", err);
-      showToast("حدث خطأ أثناء إضافة الكتاب", "error");
+      // الحصول على اسم الملف الراجع من جهازك وتركيب الرابط
+      const fileName = uploadData.pdfUrl.split('/').pop();
+      finalPdfUrl = `${LOCAL_MACHINE_IP}/uploads/${fileName}`;
     }
-  };
+
+    // 2. إرسال البيانات النهائية (كـ JSON) إلى الاستضافة (التي فوق)
+    const bookData = {
+      title: formValues.title,
+      copies: formValues.copies,
+      description: formValues.description,
+      author: formValues.author,
+      faculty_id: formValues.faculty_id,
+      location: formValues.location,
+      is_pdf: pickedFile ? 1 : 0,
+      pdf_url: finalPdfUrl, // الرابط يشير لجهازك الشخصي
+    };
+
+    const res = await fetch(`${API_BASE}/books`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify(bookData),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      showToast(data?.message || "حدث خطأ أثناء حفظ البيانات  ", "error");
+      return;
+    }
+
+    // النجاح
+    setShowAddModal(false);
+    setPickedFile(null); // تفريغ الملف بعد النجاح
+    fetchBooks();
+    showToast("تمت الإضافة بنجاح", "success");
+  } catch (err) {
+    console.error("Error adding book:", err);
+    showToast("حدث خطأ! تأكد من اتصال جهازك المحلي بالإنترنت", "error");
+  }
+};
 
   const openEditModal = (book) => {
     setSelectedBook(book);
@@ -443,6 +481,10 @@ const BookListPage = () => {
       showToast("العنوان مطلوب!", "error");
       return;
     }
+      if (!formValues.faculty_id) {                   
+    showToast("اختيار الكلية مطلوب!", "error");
+    return;
+  }
 
     const formData = new FormData();
     formData.append("title", formValues.title);
@@ -767,8 +809,8 @@ const printBorrowedBooks = () => {
       {/* Header */}
       <header className="library-header">
         <div className="library-header-title">
-          <span style={{ fontSize: 24 }}>Books</span>
-          <span>المكتبة</span>
+          <span style={{ fontSize: 24 }}>المكتبة</span>
+          {/* <span>المكتبة</span> */}
         </div>
 
         <button
@@ -1118,107 +1160,116 @@ const printBorrowedBooks = () => {
         </div>
       </main>
 
-      {(showAddModal || showEditModal) && (
-        <Modal
-          onClose={() => {
+ {(showAddModal || showEditModal) && (
+  <Modal
+    onClose={() => {
+      setShowAddModal(false);
+      setShowEditModal(false);
+    }}
+  >
+    <div style={{ 
+      maxHeight: '80vh',    
+      overflowY: 'auto',    
+      padding: '10px',      
+      direction: 'rtl'     
+    }}>
+      
+      <h2>{showAddModal ? "إضافة كتاب" : "تعديل كتاب"}</h2>
+
+      <TextInput
+        label="عنوان الكتاب"
+        value={formValues.title}
+        onChange={(v) => handleChangeForm("title", v)}
+      />
+
+      <TextInput
+        label="عدد النسخ"
+        type="number"
+        value={formValues.copies}
+        onChange={(v) => handleChangeForm("copies", v)}
+      />
+
+      <TextInput
+        label="التصنيف"
+        value={formValues.description}
+        onChange={(v) => handleChangeForm("description", v)}
+      />
+
+      <TextInput
+        label="المؤلف"
+        value={formValues.author}
+        onChange={(v) => handleChangeForm("author", v)}
+      />
+
+      <div className="input-group">
+        <label className="input-label">الكلية</label>
+        <select
+          className="input-field"
+          value={formValues.faculty_id}
+          onChange={(e) => handleChangeForm("faculty_id", e.target.value)}
+        >
+          <option value="">-- اختر الكلية --</option>
+          {faculties.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.faculty_name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <TextInput
+        label="موقع الكتاب في المكتبة"
+        value={formValues.location}
+        onChange={(v) => handleChangeForm("location", v)}
+      />
+
+      <div className="input-group">
+        <span className="input-label">
+          {showAddModal ? "إرفاق PDF (اختياري)" : "تغيير PDF (اختياري)"}
+        </span>
+
+        <input
+          type="file"
+          accept="*/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            setPickedFile(file);
+          }}
+        />
+
+        <div className="file-hint">
+          {pickedFile ? (
+            <>
+              تم اختيار: <strong>{pickedFile.name}</strong>
+            </>
+          ) : (
+            "يمكنك تركه فارغاً إذا لا تريد رفع ملف PDF"
+          )}
+        </div>
+      </div>
+
+      <div className="modal-actions">
+        <button
+          className="btn btn-outline"
+          onClick={() => {
             setShowAddModal(false);
             setShowEditModal(false);
           }}
         >
-          <h2>{showAddModal ? "إضافة كتاب" : "تعديل كتاب"}</h2>
+          إلغاء
+        </button>
 
-          <TextInput
-            label="عنوان الكتاب"
-            value={formValues.title}
-            onChange={(v) => handleChangeForm("title", v)}
-          />
+        <button
+          className="btn btn-primary"
+          onClick={showAddModal ? submitAddBook : submitEditBook}
+        >
+          {showAddModal ? "إضافة" : "حفظ"}
+        </button>
+      </div>
 
-          <TextInput
-            label="عدد النسخ"
-            type="number"
-            value={formValues.copies}
-            onChange={(v) => handleChangeForm("copies", v)}
-          />
-
-          <TextInput
-            label="التصنيف"
-            value={formValues.description}
-            onChange={(v) => handleChangeForm("description", v)}
-          />
-
-          <TextInput
-            label="المؤلف"
-            value={formValues.author}
-            onChange={(v) => handleChangeForm("author", v)}
-          />
-
-          <div className="input-group">
-            <label className="input-label">الكلية</label>
-            <select
-              className="input-field"
-              value={formValues.faculty_id}
-              onChange={(e) => handleChangeForm("faculty_id", e.target.value)}
-            >
-              <option value="">-- اختر الكلية --</option>
-              {faculties.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.faculty_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <TextInput
-            label="موقع الكتاب في المكتبة"
-            value={formValues.location}
-            onChange={(v) => handleChangeForm("location", v)}
-          />
-
-          <div className="input-group">
-            <span className="input-label">
-              {showAddModal ? "إرفاق PDF (اختياري)" : "تغيير PDF (اختياري)"}
-            </span>
-
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                setPickedFile(file);
-              }}
-            />
-
-            <div className="file-hint">
-              {pickedFile ? (
-                <>
-                  تم اختيار: <strong>{pickedFile.name}</strong>
-                </>
-              ) : (
-                "يمكنك تركه فارغاً إذا لا تريد رفع ملف PDF"
-              )}
-            </div>
-          </div>
-
-          <div className="modal-actions">
-            <button
-              className="btn btn-outline"
-              onClick={() => {
-                setShowAddModal(false);
-                setShowEditModal(false);
-              }}
-            >
-              إلغاء
-            </button>
-
-            <button
-              className="btn btn-primary"
-              onClick={showAddModal ? submitAddBook : submitEditBook}
-            >
-              {showAddModal ? "إضافة" : "حفظ"}
-            </button>
-          </div>
-        </Modal>
-      )}
+    </div>
+  </Modal>
+)}
 
       {showBorrowModal && (
         <Modal onClose={() => setShowBorrowModal(false)}>
