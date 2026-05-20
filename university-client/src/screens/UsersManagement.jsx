@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
 
-const API_BASE = "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const allPortalTitles = [
   "المكتبة",
@@ -17,6 +18,7 @@ const allPortalTitles = [
   "السجل الأكاديمي",
   "التقارير",
   "المستخدمين والصلاحيات",
+  "إحصائيات",         
 ];
 
 const registrationTabsList = [
@@ -226,7 +228,7 @@ const [form, setForm] = useState({
   role: 'user', 
   allowed_pages: [], 
   allowed_faculties: [], 
-  allowed_program_types: ["bachelor"],   
+  allowed_program_types: [],   
   registration_tab_permissions: {} 
 });
 
@@ -236,7 +238,7 @@ const [newUserForm, setNewUserForm] = useState({
   role: 'user', 
   allowed_pages: [], 
   allowed_faculties: [], 
-  allowed_program_types: ["bachelor"],  
+  allowed_program_types: [],  
   registration_tab_permissions: {} 
 });
   const [toast, setToast] = useState(null);
@@ -392,7 +394,7 @@ const handleEdit = (user) => {
         throw new Error(errData.error || 'فشل الإضافة');
       }
 
-    setNewUserForm({ username: '',  password: '',  role: 'user', allowed_pages: [], allowed_faculties: [], allowed_program_types: ["bachelor"], registration_tab_permissions: {} });
+    setNewUserForm({ username: '',  password: '',  role: 'user', allowed_pages: [], allowed_faculties: [], allowed_program_types: [], registration_tab_permissions: {} });
       fetchUsers();
       showToast('تم إضافة المستخدم', 'success');
     } catch (err) {

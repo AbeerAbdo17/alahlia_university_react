@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const getAllowedFaculties = () => {
   try {

@@ -20,7 +20,8 @@ import {
 
 import "./Dashboard.css";
 
-const API_BASE = "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const portalLinks = [
   { title: "المكتبة",                  icon: <FaBookOpen />,         path: "/books",            tone: "purple" },
@@ -119,10 +120,10 @@ export default function Dashboard() {
 
   /* Greeting time */
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "صباح الخير" :
-    hour < 17 ? "مساء الخير" :
-                "مساء النور";
+const greeting = 
+  hour < 12 ? "صباح الخير" :
+  hour < 17 ? "نهارك سعيد" :
+              "مساء الخير";
 
   return (
     <div className="admission-layout">
@@ -155,56 +156,59 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {/* <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <div className="dash-badge">
                   آخر تحديث:{" "}
                   {summary?.updated_at
                     ? new Date(summary.updated_at).toLocaleString("ar")
                     : "—"}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
-          {/* Stats section */}
-          <div className="stats-section">
-            <div className="section-header">
-              <div>
-                <div className="section-title">ملخص سريع</div>
-              </div>
+{/* ====================== ملخص سريع + إحصائيات (مربوط بالصلاحية) ====================== */}
+{user.role === 'admin' || 
+ (Array.isArray(user.allowed_pages) && user.allowed_pages.includes("إحصائيات")) ? (
+  
+  <div className="stats-section">
+    <div className="section-header">
+      <div>
+        <div className="section-title">ملخص سريع</div>
+      </div>
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setShowEnrollment(true)}
-                  style={{ background: "linear-gradient(135deg, #0a3753, #0b4985)" }}
-                >
-                  <FaChartPie size={13} />
-                  إحصائيات الطلاب
-                </button>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowEnrollment(true)}
+          style={{ background: "linear-gradient(135deg, #0a3753, #0b4985)" }}
+        >
+          <FaChartPie size={13} />
+          إحصائيات الطلاب
+        </button>
 
-                <button
-                  className="btn btn-outline"
-                  onClick={loadSummary}
-                  disabled={loading}
-                >
-                  <FaSyncAlt
-                    size={13}
-                    style={{
-                      animation: loading ? "spin 1s linear infinite" : "none",
-                    }}
-                  />
-                  {loading ? "جارٍ التحديث…" : "تحديث"}
-                </button>
-              </div>
-            </div>
+        {/* <button
+          className="btn btn-outline"
+          onClick={loadSummary}
+          disabled={loading}
+        >
+          <FaSyncAlt
+            size={13}
+            style={{ animation: loading ? "spin 1s linear infinite" : "none" }}
+          />
+          {loading ? "جارٍ التحديث…" : "تحديث"}
+        </button> */}
+      </div>
+    </div>
 
-            <div className="dash-stats-grid">
-              {stats.map((s) => (
-                <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
-              ))}
-            </div>
-          </div>
+    <div className="dash-stats-grid">
+      {stats.map((s) => (
+        <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
+      ))}
+    </div>
+  </div>
+
+) : null}
 
           {/* Portal links */}
           <div className="card">

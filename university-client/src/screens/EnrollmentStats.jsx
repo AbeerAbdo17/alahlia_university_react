@@ -10,7 +10,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const API_BASE = "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const FACULTY_COLORS = [
   { bg: "#e0f2fe", accent: "#0284c7", bar: "#38bdf8" },

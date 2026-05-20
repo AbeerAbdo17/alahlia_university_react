@@ -20,7 +20,8 @@ function createBookFromJson(json) {
 }
 
 const LOCAL_MACHINE_IP = "http://165.232.79.188:5000";
-const API_BASE = "http://localhost:5000/api";
+// const API_BASE = "http://localhost:5000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 
 const ui = {
   page: {
