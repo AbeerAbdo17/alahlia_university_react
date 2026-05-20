@@ -125,11 +125,11 @@ const GradeRulesAdmin = ({ showToast, faculties }) => {
       return;
     }
 
-    //  Validation: لازم النهائي + أعمال الفصل = 100
+    //  Validation: يجب أن يكون النهائي + أعمال الفصل = 100
     const total = Number(gpaSettings.total_mark ?? 100);
     const sum = Number(gpaSettings.final_exam_max || 0) + Number(gpaSettings.coursework_max || 0);
     if (sum !== total) {
-      showToast?.(`لازم مجموع (النهائي + أعمال الفصل) = ${total}`, "error");
+      showToast?.(`يجب ان يكون مجموع (النهائي + أعمال الفصل) = ${total}`, "error");
       return;
     }
 
@@ -515,6 +515,7 @@ const CoursesAdmin = ({ showToast, faculties }) => {
   const [courseName, setCourseName] = useState("");
   const [instructor, setInstructor] = useState("");
   const [creditHours, setCreditHours] = useState("");
+  const [courseNameEn, setCourseNameEn] = useState("");
 
   const [totalMark, setTotalMark] = useState(100);
   const [courseworkMax, setCourseworkMax] = useState(40);
@@ -530,6 +531,8 @@ const CoursesAdmin = ({ showToast, faculties }) => {
   const [loadingInstructors, setLoadingInstructors] = useState(false);
 
   const pgSmart = usePostgradProgramsSmartList();
+  const navigate = useNavigate();
+  
 
 
   const canPickDepartment = !!selectedFacultyId;
@@ -585,6 +588,7 @@ const canProceedAfterProgram =
 
   const resetForm = () => {
     setCourseName("");
+    setCourseNameEn("");
     setInstructor("");
     setCreditHours("");
     setTotalMark(100);
@@ -817,20 +821,34 @@ const onSelectDepartment = (deptId) => {
 
 
   const handleSaveCourse = async (e) => {
+    const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
     e.preventDefault();
 
     if (!canLoad) return showToast?.("كمّل الاختيارات بالترتيب أولاً", "error");
     if (!courseName.trim()) return showToast?.("اكتب اسم المادة", "error");
+    if (!courseNameEn.trim()) return showToast?.("اكتب اسم المادة بالإنجليزية", "error");
+    if (!instructor.trim()) return showToast?.("اختار أستاذ", "error");
+
 
     const tm = Number(totalMark ?? 100);
     const cw = Number(courseworkMax ?? 0);
     const fe = Number(finalExamMax ?? 0);
-    if (cw + fe !== tm) return showToast?.(`لازم (أعمال السنة + الامتحان) = ${tm}`, "error");
+
+
+
+    
+    if (cw + fe !== tm) return showToast?.(`يجب انو يكون (أعمال السنة + الامتحان) = ${tm}`, "error");
 
     const chRaw = (creditHours ?? "").toString().trim();
     const ch = chRaw === "" ? null : Number(chRaw);
+    if (chRaw === "") return showToast?.("ادخل عدد الساعات", "error"); 
     if (chRaw !== "" && (!Number.isFinite(ch) || ch <= 0)) {
-      return showToast?.("عدد الساعات لازم يكون رقم أكبر من 0", "error");
+      return showToast?.("عدد الساعات يجب أن يكون رقم أكبر من 0", "error");
     }
 
     if (programType === "postgraduate" && !postgraduateProgram.trim()) {
@@ -847,6 +865,7 @@ const onSelectDepartment = (deptId) => {
       postgraduate_program: programType === "postgraduate" ? postgraduateProgram.trim() : null,
 
       course_name: courseName.trim(),
+      course_name_en: courseNameEn.trim(),
       instructor: instructor.trim(),
       credit_hours: ch,
       total_mark: tm,
@@ -859,18 +878,42 @@ const onSelectDepartment = (deptId) => {
       if (editingCourseId) {
         const res = await fetch(`${API_BASE}/courses/${editingCourseId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
           body: JSON.stringify(payload),
         });
+
+            if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+            navigate("/login"); 
+            return; 
+        }
+
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "فشل تعديل المادة");
         showToast?.(data.message || "تم تعديل المادة", "success");
       } else {
         const res = await fetch(`${API_BASE}/courses`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
           body: JSON.stringify(payload),
         });
+
+                   if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+            navigate("/login"); 
+            return; 
+        }
+
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "فشل إضافة المادة");
         showToast?.(data.message || "تمت إضافة المادة", "success");
@@ -889,6 +932,7 @@ const onSelectDepartment = (deptId) => {
   const handleEditCourse = (c) => {
     setEditingCourseId(c.id);
     setCourseName(c.course_name ?? "");
+    setCourseNameEn(c.course_name_en ?? "");
     setInstructor(c.instructor ?? "");
     setCreditHours(c.credit_hours ?? "");
 
@@ -1028,15 +1072,16 @@ const onSelectDepartment = (deptId) => {
         </div>
 
         {/* 6) المستوى */}
-        <div className="input-group">
-          <label className="input-label">المستوى</label>
-
-          <input
-            className="input-field"
-            dir="rtl"
-            list="levels_list"
-            placeholder="مثال: المستوى الأول"
-            value={levelName}
+<div className="input-group">
+  <label className="input-label">
+    {programType === "postgraduate" ? "الدفعة" : "المستوى"}
+  </label>
+  <input
+    className="input-field"
+    dir="rtl"
+    list="levels_list"
+    placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الأول"}
+    value={levelName}
             onChange={(e) => {
               setLevelName(e.target.value);
               setTermName("");
@@ -1081,6 +1126,11 @@ const onSelectDepartment = (deptId) => {
           <label className="input-label">المادة</label>
           <input className="input-field" value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder="اسم المادة" disabled={!canLoad} />
         </div>
+        <div className="input-group">
+  <label className="input-label">المادة (EN)</label>
+           <input className="input-field" value={courseNameEn} onChange={(e) => setCourseNameEn(e.target.value)} placeholder="اسم المادة بالإنجليزية" disabled={!canLoad} />
+
+</div>
 
 <div className="input-group">
   <label className="input-label">الأستاذ</label>
@@ -1126,7 +1176,7 @@ const onSelectDepartment = (deptId) => {
 <div>
   {!partsOk && canLoad && (
     <div style={{ color: "#b91c1c", marginBottom: 4 }}>
-      لازم (أعمال السنة + الامتحان) = {Number(totalMark || 100)}
+      يجب أن يكون (أعمال السنة + الامتحان) = {Number(totalMark || 100)}
     </div>
   )}
 
@@ -1159,13 +1209,14 @@ const onSelectDepartment = (deptId) => {
         ) : loadingCourses ? (
           <p>جارٍ تحميل المواد...</p>
         ) : courses.length === 0 ? (
-          <p>لا توجد مواد لهذه الاختيارات.</p>
+          <p>لا توجد مواد لهذه الفترة.</p>
         ) : (
           <table className="simple-table" style={{ width: "100%" }}>
             <thead>
               <tr>
                 <th>#</th>
                 <th>المادة</th>
+                <th>المادة (EN)</th>
                 <th>الأستاذ</th>
                 <th>الساعات</th>
                 <th>أعمال السنة</th>
@@ -1179,6 +1230,7 @@ const onSelectDepartment = (deptId) => {
                 <tr key={c.id}>
                   <td>{idx + 1}</td>
                   <td>{c.course_name}</td>
+                  <td>{c.course_name_en || "—"}</td>
                   <td>{c.instructor || "—"}</td>
                   <td>{c.credit_hours ?? "—"}</td>
                   <td>{c.coursework_max}</td>
@@ -1213,11 +1265,13 @@ const FacultyDepartmentAdmin = () => {
   const [activeTab, setActiveTab] = useState("main"); // main | grading
 
   const [facultyName, setFacultyName] = useState("");
+  const [facultyNameEn, setFacultyNameEn] = useState("");      
   const [editingFacultyId, setEditingFacultyId] = useState(null);
 
   const [facultyCode, setFacultyCode] = useState("");        // ← رمز الكلية
 
   const [departmentName, setDepartmentName] = useState("");
+  const [departmentNameEn, setDepartmentNameEn] = useState(""); 
   const [levelsCount, setLevelsCount] = useState(4);  //   افتراضي 4
   const [editingDepartmentId, setEditingDepartmentId] = useState(null);
 
@@ -1317,16 +1371,25 @@ useEffect(() => {
   };
 
 const handleSaveFaculty = async (e) => {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
   e.preventDefault();
   if (!facultyName.trim()) {
     showToast("اكتبي اسم الكلية أولاً", "error");
     return;
   }
+  if (!facultyName.trim()) return showToast("اسم الكلية مطلوب", "error");
+  if (!facultyCode.trim()) return showToast("رمز الكلية مطلوب", "error");
 
   setSaving(true);
   try {
     const payload = {
       faculty_name: facultyName.trim(),
+      faculty_name_en: facultyNameEn.trim() || null,
       faculty_type: facultyType, 
       faculty_code: facultyCode ? facultyCode.trim().toUpperCase() : null,
     };
@@ -1335,30 +1398,52 @@ const handleSaveFaculty = async (e) => {
     if (editingFacultyId) {
       res = await fetch(`${API_BASE}/faculties/${editingFacultyId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
     } else {
       res = await fetch(`${API_BASE}/faculties`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
     }
 
+    if (res.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+      navigate("/login");
+      return; 
+    }
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "فشل الحفظ");
+    if (!res.ok) {
+      if (data.error?.includes("مستخدم مسبقًا") || data.error?.includes("Duplicate")) {
+        showToast("رمز الكلية مستخدم من قبل", "error");
+      } else {
+        showToast(data.error || "فشل الحفظ", "error");
+      }
+      return;
+    }
 
     showToast(data.message || (editingFacultyId ? "تم تعديل الكلية" : "تمت إضافة الكلية"), "success");
 
     setFacultyName("");
+    setFacultyNameEn("");
     setFacultyCode("");
     setFacultyType("theoretical");
     setEditingFacultyId(null);
     fetchFaculties();
   } catch (e) {
     console.error(e);
-    showToast("مشكلة في حفظ الكلية: " + e.message, "error");
+    showToast("خطأ في حفظ الكلية: " + e.message, "error");
   } finally {
     setSaving(false);
   }
@@ -1367,6 +1452,7 @@ const handleSaveFaculty = async (e) => {
   const handleEditFaculty = (faculty) => {
     setEditingFacultyId(faculty.id);
     setFacultyName(faculty.faculty_name);
+    setFacultyNameEn(faculty.faculty_name_en || "");    
     setFacultyCode(faculty.faculty_code || "");
     setFacultyType(faculty.faculty_type || "theoretical");
   };
@@ -1393,6 +1479,12 @@ const handleSaveFaculty = async (e) => {
   };
 
 const handleSaveDepartment = async (e) => {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+    showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+    navigate("/login"); 
+    return;
+  }
   e.preventDefault();
   if (!selectedFaculty) {
     showToast("اختارِ كلية أولاً", "error");
@@ -1408,6 +1500,7 @@ const handleSaveDepartment = async (e) => {
     const payload = {
       faculty_id: selectedFaculty.id,
       department_name: departmentName.trim(),
+      department_name_en: departmentNameEn.trim() || null,
       levels_count: levelsCount,  
     };
 
@@ -1415,13 +1508,25 @@ const handleSaveDepartment = async (e) => {
       // تعديل
       const res = await fetch(`${API_BASE}/departments/${editingDepartmentId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+        navigate("/login");
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل تعديل القسم");
       showToast(data.message || "تم تعديل القسم", "success");
       setDepartmentName("");
+      setDepartmentNameEn("");
       setLevelsCount(4);         
       setEditingDepartmentId(null);
       fetchDepartments(selectedFaculty);
@@ -1429,9 +1534,19 @@ const handleSaveDepartment = async (e) => {
       // إضافة جديد
       const res = await fetch(`${API_BASE}/departments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
         body: JSON.stringify(payload),
       });
+      if (res.status === 401) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+        navigate("/login");
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "فشل إضافة القسم");
       showToast(data.message || "تمت إضافة القسم", "success");
@@ -1441,7 +1556,7 @@ const handleSaveDepartment = async (e) => {
     }
   } catch (e) {
     console.error(e);
-    showToast("مشكلة في الاتصال بالسيرفر", "error");
+    showToast("خطأ في حفظ القسم: " + e.message, "error");
   } finally {
     setSaving(false);
   }
@@ -1450,6 +1565,7 @@ const handleSaveDepartment = async (e) => {
 const handleEditDepartment = (dept) => {
   setEditingDepartmentId(dept.id);
   setDepartmentName(dept.department_name);
+  setDepartmentNameEn(dept.department_name_en || "");
   setLevelsCount(dept.levels_count || 4);  
 };
 
@@ -1582,18 +1698,31 @@ const handleEditDepartment = (dept) => {
       maxLength={10}
     />
   </div>
-  <div className="input-group">
-    <label className="input-label">{editingFacultyId ? "تعديل اسم الكلية" : "إضافة كلية جديدة"}</label>
-    <input
-      type="text"
-      dir="rtl"
-      className="input-field"
-      placeholder="أدخل اسم الكلية"
-      value={facultyName}
-      onChange={(e) => setFacultyName(e.target.value)}
-      required
-    />
-  </div>
+<div className="input-group">
+  <label className="input-label">اسم الكلية</label>
+  <input
+    type="text"
+    dir="rtl"
+    className="input-field"
+    placeholder="ادخل اسم الكلية "
+    value={facultyName}
+    onChange={(e) => setFacultyName(e.target.value)}
+    required
+  />
+</div>
+
+<div className="input-group">
+  <label className="input-label">اسم الكلية(EN)</label>
+  <input
+    type="text"
+    dir="ltr"
+    className="input-field"
+    placeholder="ادخل اسم الكلية بالانجليزية "
+    value={facultyNameEn}
+    onChange={(e) => setFacultyNameEn(e.target.value)}
+  />
+</div>
+  
 
   <div className="input-group">
     <label className="input-label">نوع الكلية</label>
@@ -1621,6 +1750,8 @@ const handleEditDepartment = (dept) => {
         onClick={() => {
           setEditingFacultyId(null);
           setFacultyName("");
+          setFacultyNameEn("");
+          setFacultyCode("");
           setFacultyType("theoretical"); // reset
         }}
       >
@@ -1652,7 +1783,10 @@ const handleEditDepartment = (dept) => {
                           <tr key={f.id} className={selectedFaculty && selectedFaculty.id === f.id ? "row-selected" : ""}>
                             <td>{index + 1}</td>
                             <td>{f.faculty_code}</td>
-                            <td>{f.faculty_name}</td>
+                            <td>
+                            {f.faculty_name}
+                            {f.faculty_name_en && <span style={{color: "#64748b", fontSize: "0.9em"}}> ({f.faculty_name_en})</span>}
+                            </td>
                             <td>{f.faculty_type  ? (f.faculty_type === "theoretical" ? "نظرية" : "عملية")   : "غير محدد"}</td>
                             <td>{f.departments_count}</td>
                             <td>
@@ -1662,9 +1796,9 @@ const handleEditDepartment = (dept) => {
                               <button type="button" className="btn btn-outline" style={{ marginInlineStart: 4 }} onClick={() => handleEditFaculty(f)}>
                                 تعديل
                               </button>
-                              <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
+                              {/* <button type="button" className="btn btn-danger" style={{ marginInlineStart: 4 }} onClick={() => handleDeleteFaculty(f)}>
                                 حذف
-                              </button>
+                              </button> */}
                             </td>
                           </tr>
                         ))}
@@ -1683,15 +1817,26 @@ const handleEditDepartment = (dept) => {
                 ) : (
                   <>
 <form onSubmit={handleSaveDepartment} className="two-col-grid" style={{ alignItems: "flex-end", marginBottom: 12 }}>
-  <div className="input-group">
-    <label className="input-label">{editingDepartmentId ? "تعديل اسم القسم" : "إضافة قسم جديد"}</label>
-    <input 
-      className="input-field" 
+<div className="input-group">
+  <label className="input-label">اسم القسم </label>
+  <input 
+    className="input-field" 
       placeholder="أدخل اسم القسم" 
-      value={departmentName} 
-      onChange={(e) => setDepartmentName(e.target.value)} 
-    />
-  </div>
+    value={departmentName} 
+    onChange={(e) => setDepartmentName(e.target.value)} 
+  />
+</div>
+
+<div className="input-group">
+  <label className="input-label">اسم القسم(EN) </label>
+  <input 
+    dir="ltr"
+    className="input-field" 
+      placeholder="أدخل اسم القسم بالانجليزية" 
+    value={departmentNameEn} 
+    onChange={(e) => setDepartmentNameEn(e.target.value)} 
+  />
+</div>
 
   <div className="input-group">
     <label className="input-label">عدد المستويات</label>
@@ -1718,6 +1863,7 @@ const handleEditDepartment = (dept) => {
         onClick={() => {
           setEditingDepartmentId(null);
           setDepartmentName("");
+          setDepartmentNameEn("");
           setLevelsCount(4);
         }}
       >
@@ -1746,7 +1892,10 @@ const handleEditDepartment = (dept) => {
   {departments.map((d, index) => (
     <tr key={d.id}>
       <td>{index + 1}</td>
-      <td>{d.department_name}</td>
+      <td>
+  {d.department_name}
+  {d.department_name_en && <span style={{color: "#64748b", fontSize: "0.9em"}}> ({d.department_name_en})</span>}
+</td>
       <td>{d.levels_count || "—"}</td>
       <td>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1773,6 +1922,7 @@ const handleEditDepartment = (dept) => {
               onClick={() => {
                 setEditingDepartmentId(null);
                 setDepartmentName("");
+                setDepartmentNameEn("");
                 setLevelsCount(4);
               }}
             >
@@ -1793,10 +1943,8 @@ const handleEditDepartment = (dept) => {
             </>
           )}
 
-{/* ✅ تاب 2 */}
 {activeTab === "grading" && <GradeRulesAdmin showToast={showToast} faculties={faculties} />}
 
-{/* ✅ تاب 3 */}
 {activeTab === "courses" && <CoursesAdmin showToast={showToast} faculties={faculties} />}
 
 

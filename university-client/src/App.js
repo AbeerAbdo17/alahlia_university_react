@@ -17,28 +17,32 @@ import Register from "./screens/Register";
 import Certificates from "./screens/Certificates";
 import AcademicRecord from "./screens/AcademicRecord";
 import Reports from "./screens/Reports";
+import ProtectedRoute from "./screens/ProtectedRoute";
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />  
-        <Route path="/books" element={<BookListPage />} />
-        <Route path="/faculty" element={<FacultyDepartmentAdmin />} />
-        <Route path="/RegistrationTabs" element={<RegistrationTabs />} />
-        <Route path="/GradeEntry" element={<GradeEntry />} />
-        <Route path="/TermResult" element={<TermResult />} />
-        <Route path="/StudentsTermList" element={<StudentsTermList />} />
-        <Route path="/StaffMembers" element={<StaffMembers />} />
-        <Route path="/dashboard" element={<Dashboard />} /> 
-        <Route path="/schedule" element={<ScheduleAdmin />} />
-        <Route path="/UsersManagement" element={<UsersManagement />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/certificates" element={<Certificates />} />
-        <Route path="/academic-record" element={<AcademicRecord />} />
-        <Route path="/reports" element={<Reports />} />
-      </Routes>
+<Routes>
+  {/* صفحات عامة - بدون حماية */}
+  <Route path="/" element={<Login />} />
+  <Route path="/login" element={<Login />} />
+  {/* <Route path="/register" element={<Register />} /> */}
+
+  {/* صفحات محمية */}
+  <Route path="/books" element={<ProtectedRoute><BookListPage /></ProtectedRoute>} />
+  <Route path="/faculty" element={<ProtectedRoute><FacultyDepartmentAdmin /></ProtectedRoute>} />
+  <Route path="/RegistrationTabs" element={<ProtectedRoute><RegistrationTabs /></ProtectedRoute>} />
+  <Route path="/GradeEntry" element={<ProtectedRoute><GradeEntry /></ProtectedRoute>} />
+  <Route path="/TermResult" element={<ProtectedRoute><TermResult /></ProtectedRoute>} />
+  <Route path="/StudentsTermList" element={<ProtectedRoute><StudentsTermList /></ProtectedRoute>} />
+  <Route path="/StaffMembers" element={<ProtectedRoute><StaffMembers /></ProtectedRoute>} />
+  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+  <Route path="/schedule" element={<ProtectedRoute><ScheduleAdmin /></ProtectedRoute>} />
+  <Route path="/UsersManagement" element={<ProtectedRoute><UsersManagement /></ProtectedRoute>} />
+  <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
+  <Route path="/academic-record" element={<ProtectedRoute><AcademicRecord /></ProtectedRoute>} />
+  <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+</Routes>
     </Router>
   );
 }

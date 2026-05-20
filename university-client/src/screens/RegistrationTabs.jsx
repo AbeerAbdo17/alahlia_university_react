@@ -1,19 +1,9 @@
-<<<<<<< HEAD
-//const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
-=======
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoArrowBack } from "react-icons/io5";
 import html2pdf from 'html2pdf.js';
 
 
-<<<<<<< HEAD
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
-const DEFAULT_REGISTRAR = "";
-
-const TERM_OPTIONS = ["الفصل الأول", "الفصل الثاني"];
-=======
 const API_BASE = "http://localhost:5000/api";
 const DEFAULT_REGISTRAR = "";
 
@@ -22,7 +12,6 @@ const TERM_OPTIONS = ["الفصل الأول", "الفصل الثاني"];
 const TERMS_NORMAL = ["الفصل الأول", "الفصل الثاني"];
 const TERMS_POSTGRAD = ["الفصل الأول", "الفصل الثاني", "الفصل الثالث"];
 
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 const INSTALLMENT_OPTIONS = [
   // { label: "بدون أقساط (دفع كامل)", value: 0 },
   { label: "قسط واحد", value: 1 },
@@ -256,7 +245,7 @@ const getAllowedProgramTypes = () => {
 };
 const ACADEMIC_STATUS_OPTIONS = [
   "منتظم",
-  "إعاده",
+  "إعادة",
   " محوّل داخلي",
   "محول خارجي",
   "مجمّد",
@@ -266,11 +255,8 @@ const ACADEMIC_STATUS_OPTIONS = [
   "حملة درجات علمية",
 ];
 
-<<<<<<< HEAD
-=======
 const ACADEMIC_STATUS_PG = ["منتظم", "فصل"];
 
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 const REGISTRATION_STATUS_OPTIONS = [" مسجّل", " غير مسجّل"];
 
 function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
@@ -382,9 +368,9 @@ function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
 function useNationalitySmartList() {
   const [nationalities, setNationalities] = useState([]);
 
-  const fetchNationalities = async () => {
+const fetchNationalities = async () => {
     try {
-      const res = await fetch(`${API_BASE}/students/nationalities`); // سنحتاج لإنشاء هذا المسار في الخلفية
+      const res = await fetch(`${API_BASE}/students/nationalities`);
       const data = await res.json();
       setNationalities(data);
     } catch (err) {
@@ -609,10 +595,13 @@ function PromotionTab({ showToast }) {
 useEffect(() => {
   const token = sessionStorage.getItem("token");
   if (!token) {
-    showToast("  انتهت الجلسة", "error");
-    navigate("/login", { replace: true });
+    const timer = setTimeout(() => {
+      showToast("انتهت الجلسة", "error");
+      navigate("/login", { replace: true });
+    }, 0);
+    return () => clearTimeout(timer);
   }
-}, [navigate, showToast]);
+}, [navigate]); 
 
   useEffect(() => {
     if (programType === "postgraduate") {
@@ -626,10 +615,7 @@ useEffect(() => {
     programType,
     postgraduateProgram: postgradProgram,
   });
-<<<<<<< HEAD
-=======
   
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // =========================
   // (1) تحميل الفترات عند اختيار القسم
@@ -709,8 +695,6 @@ useEffect(() => {
   // =========================
   // (4) حساب الفترة الجديدة تلقائياً بناءً على الفصل الحالي
   // =========================
-<<<<<<< HEAD
-=======
 // useEffect(() => {
 //   if (!fromTerm || !fromYear || !fromLevel) {
 //     setToYear("");
@@ -742,7 +726,6 @@ useEffect(() => {
 //   }
 // }, [fromTerm, fromYear, fromLevel]);
 
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 useEffect(() => {
   if (!fromTerm || !fromYear || !fromLevel) {
     setToYear("");
@@ -753,28 +736,6 @@ useEffect(() => {
 
   const currentOrder = termOrder(fromTerm);
 
-<<<<<<< HEAD
-  if (currentOrder === 1) {
-    setToYear(fromYear);
-    setToLevel(fromLevel);
-    setTermName("الفصل الثاني");
-  } 
-  else if (currentOrder === 2) {
-    const nextYear = getNextAcademicYear(fromYear);
-    const nextLevel = getNextLevel(fromLevel);
-
-    setToYear(nextYear);
-    setToLevel(nextLevel);
-    setTermName("الفصل الأول");
-
-  } 
-  else {
-    setToYear("");
-    setToLevel("");
-    setTermName("");
-  }
-}, [fromTerm, fromYear, fromLevel]);
-=======
   // --- وضع الدراسات العليا ---
   if (programType === "postgraduate") {
     if (currentOrder === 1) {
@@ -809,7 +770,6 @@ useEffect(() => {
     }
   }
 }, [fromTerm, fromYear, fromLevel, programType]); // أضفنا programType هنا
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // =========================
   // (5) جلب الكليات والأقسام
@@ -848,10 +808,7 @@ useEffect(() => {
       .catch((err) => console.error("Error loading departments", err));
   }, [selectedFacultyId]);
 
-<<<<<<< HEAD
-=======
   
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   // =========================
   // (6) عرض المرشحين ( fromYear + fromLevel + fromTerm)
   // =========================
@@ -861,16 +818,17 @@ useEffect(() => {
       return;
     }
     if (programType === "postgraduate" && !postgradProgram.trim()) {
-      showToast("اختاري/اكتبي برنامج الدراسات العليا أولاً", "error");
+      showToast("اختار/اكتب برنامج الدراسات العليا أولاً", "error");
       return;
     }
 
     if (!fromYear || !fromLevel || !fromTerm) {
-      showToast("اختاري السنة الدراسية الحالية والمستوى والفصل أولاً", "error");
+      showToast("اختار السنة الدراسية الحالية والمستوى والفصل أولاً", "error");
       return;
     }
 
     setLoading(true);
+    const token = sessionStorage.getItem("token");
 
     const qs = new URLSearchParams({
       department_id: departmentId,
@@ -886,6 +844,13 @@ useEffect(() => {
 
     fetch(`${API_BASE}/promotion/candidates?${qs.toString()}`)
       .then(async (res) => {
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+            navigate("/login");
+            return null;
+        }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "فشل جلب المرشحين");
         return data;
@@ -987,6 +952,14 @@ const handleBatchPromote = async () => {
         }),
       });
 
+      if (response.status === 401) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            showToast("انتهت الجلسة – يرجى تسجيل الدخول مرة أخرى", "error");
+            navigate("/login");
+            return;
+        }
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "فشل في عملية الترحيل الجماعي");
@@ -1015,11 +988,7 @@ const termOrder = (t) => {
   const term = (t || "").toString().trim();
   if (term.includes("أول") || term === "الفصل الأول" || term === "فصل أول") return 1;
   if (term.includes("ثان") || term === "الفصل الثاني" || term === "فصل ثاني") return 2;
-<<<<<<< HEAD
-=======
-  if (term.includes("ثالث") || term === "الفصل الثالث" || term === "فصل ثالث") return 3; 
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
-
+  if (term.includes("ثالث") || term === "الفصل الثالث" || term === "فصل ثالث") return 3;
   return 0;
 };
 
@@ -1186,33 +1155,6 @@ const getNextAcademicYear = (year) => {
             </datalist>
           </div>
 
-<<<<<<< HEAD
-          <div style={ui.field}>
-            <label style={ui.label}>المستوى الحالي</label>
-            <input
-              type="text"
-              list="promo_from_levels"
-              placeholder="اختر المستوى"
-              value={fromLevel}
-              onChange={(e) => {
-                setFromLevel(e.target.value);
-                setFromTerm("");
-                setToYear("");
-                setToLevel("");
-                setTermName("");
-              }}
-              style={ui.input}
-            />
-            <datalist id="promo_from_levels">
-              {fromLevelOptions.map((x) => (
-                <option key={x} value={x} />
-              ))}
-            </datalist>
-          </div>
-
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الحالي (آخر فصل مسجل)</label>
-=======
    <div style={ui.field}>
   <label style={ui.label}>
     {programType === "postgraduate" ? "الدفعة " : "المستوى الحالي"}
@@ -1238,25 +1180,24 @@ const getNextAcademicYear = (year) => {
   </datalist>
 </div>
 
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الحالي</label>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
-            <select
-              value={fromTerm}
-              onChange={(e) => {
-                setFromTerm(e.target.value);
-                setToYear("");
-                setToLevel("");
-                setTermName("");
-              }}
-              style={ui.select}
-            >
-              <option value="">اختر الفصل</option>
-              {TERM_OPTIONS.map((x) => (
-                <option key={x} value={x}>{x}</option>
-              ))}
-            </select>
-          </div>
+<div style={ui.field}>
+  <label style={ui.label}>الفصل الحالي</label>
+  <select
+    value={fromTerm}
+    onChange={(e) => {
+      setFromTerm(e.target.value);
+      setToYear("");
+      setToLevel("");
+      setTermName("");
+    }}
+    style={ui.select}
+  >
+    <option value="">اختر الفصل</option>
+    {(programType === "postgraduate" ? TERMS_POSTGRAD : TERMS_NORMAL).map((x) => (
+      <option key={x} value={x}>{x}</option>
+    ))}
+  </select>
+</div>
 
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الجديدة</label>
@@ -1280,27 +1221,6 @@ const getNextAcademicYear = (year) => {
             </datalist>
           </div>
 
-<<<<<<< HEAD
-          <div style={ui.field}>
-            <label style={ui.label}>المستوى الجديد</label>
-            <input
-              type="text"
-              list="promo_to_levels"
-              placeholder="اختر المستوى الجديد"
-              value={toLevel}
-              onChange={(e) => {
-                setToLevel(e.target.value);
-                setTermName("");
-              }}
-              style={ui.input}
-            />
-            <datalist id="promo_to_levels">
-              {smart.levelOptions.map((x) => (
-                <option key={x} value={x} />
-              ))}
-            </datalist>
-          </div>
-=======
 <div style={ui.field}>
   <label style={ui.label}>
     {programType === "postgraduate" ? "الدفعة (تأكيد)" : "المستوى الجديد"}
@@ -1325,21 +1245,20 @@ const getNextAcademicYear = (year) => {
     </datalist>
   )}
 </div>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الدراسي (الجديد)</label>
-            <select
-              value={termName}
-              onChange={(e) => setTermName(e.target.value)}
-              style={ui.select}
-            >
-              <option value="">اختر الفصل الجديد</option>
-              {TERM_OPTIONS.map((x) => (
-                <option key={x} value={x}>{x}</option>
-              ))}
-            </select>
-          </div>
+<div style={ui.field}>
+  <label style={ui.label}>الفصل الدراسي (الجديد)</label>
+  <select
+    value={termName}
+    onChange={(e) => setTermName(e.target.value)}
+    style={ui.select}
+  >
+    <option value="">اختر الفصل الجديد</option>
+    {(programType === "postgraduate" ? TERMS_POSTGRAD : TERMS_NORMAL).map((x) => (
+      <option key={x} value={x}>{x}</option>
+    ))}
+  </select>
+</div>
         </div>
 
         <button onClick={loadCandidates} disabled={loading} style={ui.primaryBtn}>
@@ -1359,7 +1278,7 @@ const getNextAcademicYear = (year) => {
                   <th style={ui.th}>الرقم الجامعي</th>
                   <th style={ui.th}>اسم الطالب</th>
                   <th style={ui.th}>السنة الدراسية</th>
-                  <th style={ui.th}>المستوى</th>
+                  <th style={ui.th}>{programType === "postgraduate" ? "الدفعة" : "المستوى"}</th>
                   <th style={ui.th}>الفصل الدراسي</th>
                   <th style={ui.th}>الموقف الأكاديمي</th>
                   <th style={ui.th}>النجاح</th>
@@ -1464,8 +1383,6 @@ const getNextAcademicYear = (year) => {
   );
 }
 
-
-
 /* =========================================================
    تاب 2 – تسجيل طالب (فردي)
    ========================================================= */
@@ -1490,10 +1407,13 @@ function SingleRegistrationTab({ showToast }) {
 useEffect(() => {
   const token = sessionStorage.getItem("token");
   if (!token) {
-    showToast("  انتهت الجلسة", "error");
-    navigate("/login", { replace: true });
+    const timer = setTimeout(() => {
+      showToast("انتهت الجلسة", "error");
+      navigate("/login", { replace: true });
+    }, 0);
+    return () => clearTimeout(timer);
   }
-}, [navigate, showToast]);
+}, [navigate]); 
 
   const [studentForm, setStudentForm] = useState({
     firstName: "",
@@ -1505,11 +1425,7 @@ useEffect(() => {
     phone: "",
     nationality: "",       
     gender: "",              
-<<<<<<< HEAD
-    status: "نشط",           
-=======
     status: "",           
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   });
 
   const [form, setForm] = useState({
@@ -1799,6 +1715,14 @@ const saveStudentOnly = async () => {
   const fullNameValue = getFullName(studentForm);
 
   try {
+
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return;
+    }
+
     // تجهيز البيانات المشتركة (سواء للإضافة أو التحديث)
     const studentData = {
       first_name: studentForm.firstName.trim(),
@@ -1818,7 +1742,10 @@ const saveStudentOnly = async () => {
     if (!selectedStudent?.id) {
       const res = await fetch(`${API_BASE}/students`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({
           ...studentData,
           receipt_number: null,
@@ -1826,7 +1753,13 @@ const saveStudentOnly = async () => {
           registrar: DEFAULT_REGISTRAR,
         }),
       });
-
+      if (res.status === 401) {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
+  showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+  navigate("/login");
+  return null;
+}
       const data = await res.json();
       if (!res.ok) {
         showToast(data.message || "فشل إضافة الطالب", "error");
@@ -1839,10 +1772,20 @@ const saveStudentOnly = async () => {
     else {
       const resUpd = await fetch(`${API_BASE}/students/${selectedStudent.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify(studentData),
       });
 
+      if (resUpd.status === 401) {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
+  showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+  navigate("/login");
+  return null;
+}
       const dataUpd = await resUpd.json();
       if (!resUpd.ok) {
         showToast(dataUpd.message || "فشل تحديث بيانات الطالب", "error");
@@ -1862,6 +1805,16 @@ const saveStudentOnly = async () => {
   }
 };
 
+function incrementAcademicYear(yearStr) {
+  if (!yearStr) return yearStr;
+  const parts = yearStr.split("/");
+  if (parts.length !== 2) return yearStr;
+  const y1 = parseInt(parts[0]);
+  const y2 = parseInt(parts[1]);
+  if (isNaN(y1) || isNaN(y2)) return yearStr;
+  return `${y1 + 1}/${y2 + 1}`;
+}
+
 const saveRegistration = async () => {
   // 1. تجميع الاسم الكامل والتحقق من الحقول الأربعة
   const fullNameValue = getFullName(studentForm);
@@ -1873,10 +1826,6 @@ const saveRegistration = async () => {
     return;
   }
 
-<<<<<<< HEAD
-  // 2. التحقق من صحة رقم الهاتف (10 أرقام)
-=======
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   if (studentForm.phone && studentForm.phone.length !== 10) {
     showToast("رقم الهاتف يجب أن يكون 10 أرقام", "error");
     return;
@@ -1891,23 +1840,17 @@ const saveRegistration = async () => {
     showToast("السنة الدراسية والمستوى مطلوبان", "error");
     return;
   }
-<<<<<<< HEAD
-=======
 if (programType !== "postgraduate") {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   if (!ALLOWED_LEVELS.includes(form.level_name.trim())) {
     showToast("يرجى اختيار مستوى صحيح من القائمة (المستوى الأول - المستوى السادس)", "error");
     return;
   }
-<<<<<<< HEAD
-=======
 } else {
   if (!form.level_name || !form.level_name.trim()) {
     showToast("يرجى إدخال الدفعة (مثال: الدفعة الأولى)", "error");
     return;
   }
 }
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   try {
     const token = sessionStorage.getItem("token");
@@ -1919,10 +1862,6 @@ if (programType !== "postgraduate") {
 
     let studentId = selectedStudent ? selectedStudent.id : null;
 
-<<<<<<< HEAD
-    // تجهيز بيانات الطالب المشتركة للحقول الجديدة
-=======
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     const studentDataPayload = {
       first_name: studentForm.firstName.trim(),
       second_name: studentForm.secondName.trim(),
@@ -1944,6 +1883,14 @@ if (programType !== "postgraduate") {
         },
         body: JSON.stringify(studentDataPayload),
       });
+
+    if (resUpd.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
 
       if (!resUpd.ok) {
         const errData = await resUpd.json();
@@ -1971,6 +1918,14 @@ if (programType !== "postgraduate") {
         }),
       });
 
+    if (resStudent.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
+
       const dataStudent = await resStudent.json();
 
       if (!resStudent.ok) {
@@ -1982,28 +1937,92 @@ if (programType !== "postgraduate") {
     }
 
     // 3. منطق التسجيل (الأكاديمي) كما هو مع استخدام الـ studentId الصحيح
-    if (
-      lastRegistration &&
-      lastRegistration.academic_year === form.academic_year &&
-      lastRegistration.level_name === form.level_name &&
-      lastRegistration.term_name === form.term_name
-    ) {
-      // تعديل الموقف الأكاديمي فقط
-      const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,  
-        },
-        body: JSON.stringify({ academic_status: form.academic_status }),
-      });
+if (
+  lastRegistration &&
+  lastRegistration.academic_year === form.academic_year &&
+  lastRegistration.level_name === form.level_name &&
+  lastRegistration.term_name === form.term_name
+) {
+  // تعديل الموقف الأكاديمي
+  const resReg = await fetch(`${API_BASE}/registrations/${lastRegistration.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ academic_status: form.academic_status }),
+  });
+  if (resReg.status === 401) {
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+    navigate("/login");
+    return null;
+  }
+  if (!resReg.ok) {
+    showToast("فشل في تعديل الموقف الأكاديمي", "error");
+    return;
+  }
 
-      if (!resReg.ok) {
-        showToast("فشل في تعديل الموقف الأكاديمي", "error");
-        return;
-      }
-      showToast("تم تعديل الموقف الأكاديمي", "success");
-    } 
+  //  لو الموقف الأكاديمي "مجمّد" → أنشئي تسجيل جديد بنفس البيانات + سنة جديدة
+  if (form.academic_status === "مجمّد") {
+    const nextYear = incrementAcademicYear(form.academic_year);
+
+    const frozenRegBody = {
+      student_id: studentId,
+      academic_year: nextYear,               // السنة الجديدة
+      level_name: form.level_name,           // نفس المستوى
+      term_name: form.term_name || null,     // نفس الفصل
+      academic_status: "منتظم",              // يبدأ بموقف منتظم في السنة الجديدة
+      registration_status: "غير مسجّل",
+      notes: `تسجيل تلقائي بعد التجميد من سنة ${form.academic_year}`,
+      program_type: programType,
+      postgraduate_data: programType === "postgraduate" ? {
+        prev_degree: form.prev_degree,
+        prev_university: form.prev_university,
+        prev_grad_year: form.prev_grad_year,
+        study_type: form.study_type,
+      } : null,
+      postgraduate_program: programType === "postgraduate"
+        ? (form.postgraduate_program || null)
+        : null,
+    };
+
+    const resFrozen = await fetch(`${API_BASE}/registrations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(frozenRegBody),
+    });
+
+    if (resFrozen.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
+
+    if (!resFrozen.ok) {
+      const errData = await resFrozen.json();
+      // التسجيل الأصلي اتعدل بنجاح لكن التسجيل الجديد فشل
+      showToast(
+        `تم التجميد لكن فشل إنشاء تسجيل ${nextYear}: ${errData.message || ""}`,
+        "error"
+      );
+      return;
+    }
+
+    showToast(
+      `تم تجميد الطالب وإنشاء تسجيل جديد للسنة ${nextYear}`,
+      "success"
+    );
+  } else {
+    showToast("تم تعديل الموقف الأكاديمي", "success");
+  }
+}
     else {
       // إنشاء تسجيل جديد
       const regBody = {
@@ -2032,6 +2051,13 @@ if (programType !== "postgraduate") {
         },
         body: JSON.stringify(regBody),
       });
+      if (resReg.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى إعادة تسجيل الدخول", "error");
+      navigate("/login");
+      return null;
+    }
 
       if (!resReg.ok) {
         const dataReg = await resReg.json();
@@ -2127,6 +2153,26 @@ if (programType !== "postgraduate") {
 {hasSearched && !searchLoading && searchResults.length === 0 && (
   <div style={{ marginTop: 10, color: "#64748b", fontWeight: 700 }}>
     لا توجد نتائج
+  </div>
+)}
+
+{selectedStudent && (
+  <div style={{ 
+    marginTop: 12, padding: 10, 
+    background: "#f0f9ff", borderRadius: 8, color: "#0a3753",
+    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"
+  }}>
+    <strong>الطالب المختار:</strong> {selectedStudent.full_name} ({selectedStudent.university_id || "—"})
+    <button
+      onClick={resetStudentForm}
+      style={{
+        padding: "4px 12px", fontSize: 13,
+        background: "#ef4444", color: "white", 
+        border: "none", borderRadius: 6, cursor: "pointer",
+      }}
+    >
+      إلغاء الاختيار
+    </button>
   </div>
 )}
 
@@ -2250,22 +2296,14 @@ if (programType !== "postgraduate") {
 <div style={ui.field}>
   <label style={ui.label}>حالة الطالب</label>
   <select
-<<<<<<< HEAD
-    value={studentForm.status || "active"}        
-=======
     value={studentForm.status || ""}         
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     onChange={e =>
       setStudentForm(prev => ({ ...prev, status: e.target.value }))
     }
     style={ui.select}
   >
-<<<<<<< HEAD
-    <option value="active">نشط</option>           
-=======
     <option value="">— اختر الحالة —</option>
     <option value="active">نشط</option>          
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     <option value="inactive">غير نشط</option>   
   </select>
 </div>
@@ -2308,12 +2346,6 @@ if (programType !== "postgraduate") {
     تعديل بيانات الطالب 
   </button>
 )}
-
-        {selectedStudent && (
-          <div style={{ marginTop: 12, color: "#334155", fontWeight: 800 }}>
-            يتم استخدام بيانات الطالب: <span style={{ color: "#0a3753" }}>{selectedStudent.full_name}</span>
-          </div>
-        )}
       </div>
       <div>
         {programType === "postgraduate" && (
@@ -2397,38 +2429,6 @@ if (programType !== "postgraduate") {
 )}
 </div>
 
-<<<<<<< HEAD
-      <div style={ui.card}>
-        <h3 style={ui.sectionTitle}>تسجيل جديد لسنة/فصل دراسي</h3>
-
-        <div style={ui.grid}>
-<div style={ui.field}>
-            <label style={ui.label}>السنة الدراسية</label>
-            <input
-              type="text"
-              name="academic_year"
-              list="single_years"
-              placeholder="مثال: 2025/2026"
-              value={form.academic_year}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^\d/]/g, "");
-                setForm((p) => ({ ...p, academic_year: val, level_name: "", term_name: "" }));
-              }}
-              style={ui.input}
-            />
-            <datalist id="single_years">
-              {smart.yearOptions.map((x) => <option key={x} value={x} />)}
-            </datalist>
-          </div>
-
-<div style={ui.field}>
-  <label style={ui.label}>المستوى الدراسي</label>
-  <input
-    type="text"
-    name="level_name"
-    list="single_levels" 
-    placeholder="مثال: المستوى الثاني"
-=======
 <div style={ui.card}>
   <h3 style={ui.sectionTitle}>تسجيل جديد لسنة/فصل دراسي</h3>
 
@@ -2465,87 +2465,12 @@ if (programType !== "postgraduate") {
     // نغير الـ list ديناميكياً بناءً على نوع البرنامج
     list={programType === "postgraduate" ? "pg_levels_list" : "single_levels"} 
     placeholder={programType === "postgraduate" ? "مثال: الدفعة الأولى" : "مثال: المستوى الثاني"}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     value={form.level_name}
     onChange={(e) => {
       setForm((p) => ({ ...p, level_name: e.target.value, term_name: "" }));
     }}
     style={ui.input}
   />
-<<<<<<< HEAD
-  <datalist id="single_levels">
-    {ALLOWED_LEVELS.map((lvl) => (
-      <option key={lvl} value={lvl} />
-    ))}
-  </datalist>
-</div>
-
-          <div style={ui.field}>
-            <label style={ui.label}>الفصل الدراسي</label>
-            <select
-              name="term_name"
-              value={form.term_name}
-              onChange={(e) => setForm((p) => ({ ...p, term_name: e.target.value }))}
-              onBlur={() => smart.ensurePeriodSaved(form.academic_year, form.level_name, form.term_name)}
-              style={ui.select}
-            >
-              <option value="">-- اختر الفصل --</option>
-              {TERM_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={ui.field}>
-            <label style={ui.label}>الموقف الأكاديمي</label>
-            <select
-              name="academic_status"
-              value={form.academic_status}
-              onChange={handleFormChange}
-              style={ui.select}
-            >
-              {ACADEMIC_STATUS_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* <div style={ui.field}>
-            <label style={ui.label}>حالة التسجيل</label>
-            <select
-              name="registration_status"
-              value={form.registration_status}
-              onChange={handleFormChange}
-              style={ui.select}
-            >
-              {REGISTRATION_STATUS_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div> */}
-
-          <div style={{ ...ui.field, gridColumn: "1 / span 2" }}>
-            <label style={ui.label}>ملاحظات</label>
-            <textarea
-              name="notes"
-              rows={3}
-              value={form.notes}
-              onChange={handleFormChange}
-              style={ui.textarea}
-              placeholder="أي ملاحظات إضافية..."
-            />
-          </div>
-        </div>
-
-        <button onClick={saveRegistration} style={ui.primaryBtn}>
-          حفظ التسجيل
-        </button>
-      </div>
-=======
 
   {/* 1. قائمة ذكية للدراسات العليا - تظهر فقط الدفعات المسجلة سابقاً في الدراسات العليا */}
   {programType === "postgraduate" && (
@@ -2626,7 +2551,6 @@ if (programType !== "postgraduate") {
     حفظ التسجيل
   </button>
 </div>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     </div>
   );
 }
@@ -2706,17 +2630,6 @@ useEffect(() => {
       .catch(() => showToast("خطأ في تحميل الأقسام", "error"));
   }, [selectedFacultyId]);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    if (departmentId || (programType === "postgraduate" && postgradProgram.trim())) {
-      smart.fetchAcademicPeriods();
-    }
-  }, [departmentId, programType, postgradProgram]);
-
-  useEffect(() => {
-    smart.rebuildOptions(academicYear, levelName);
-  }, [academicYear, levelName, smart.periods]);
-=======
 const fetchPeriodsRef = React.useRef(smart.fetchAcademicPeriods);
 React.useEffect(() => {
   fetchPeriodsRef.current = smart.fetchAcademicPeriods;
@@ -2737,7 +2650,6 @@ useEffect(() => {
 useEffect(() => {
   smart.rebuildOptions(academicYear, levelName);
 }, [academicYear, levelName]);
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2793,7 +2705,7 @@ useEffect(() => {
 
   const registerFailedCourse = async (course) => {
     if (!departmentId || !academicYear || !levelName || !termName) {
-      showToast("املئي السنة والمستوى والفصل أولاً", "error");
+      showToast("ادخل السنة والمستوى والفصل أولاً", "error");
       return;
     }
     const yearRegex = /^\d{4}\/\d{4}$/; 
@@ -2881,26 +2793,6 @@ useEffect(() => {
 </div>
 
       {/* برنامج الدراسات العليا */}
-<<<<<<< HEAD
-      {programType === "postgraduate" && (
-        <div style={ui.card}>
-          <h3 style={ui.sectionTitle}>برنامج الدراسات العليا</h3>
-          <input
-            type="text"
-            list="pg_programs_failed"
-            value={postgradProgram}
-            onChange={(e) => setPostgradProgram(e.target.value)}
-            placeholder="مثال: ماجستير إدارة أعمال"
-            style={ui.input}
-          />
-          <datalist id="pg_programs_failed">
-            {pgSmart.programs.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
-        </div>
-      )}
-=======
 {programType === "postgraduate" && (
   <div style={ui.card}>
     <h3 style={ui.sectionTitle}>برنامج الدراسات العليا</h3>
@@ -2919,7 +2811,6 @@ useEffect(() => {
     </datalist>
   </div>
 )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
       {/* الكلية + القسم */}
       <div style={ui.card}>
@@ -2973,7 +2864,7 @@ useEffect(() => {
           style={ui.input}
         />
 
-        {searchLoading && <div style={{ marginTop: 10, color: "#64748b" }}>جاري البحث...</div>}
+{searchLoading && <div style={{ marginTop: 10, color: "#64748b" }}>جاري البحث...</div>}
 
         {searchResults.length > 0 && (
           <div style={{ marginTop: 12, ...ui.tableWrap }}>
@@ -3009,6 +2900,37 @@ useEffect(() => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {selectedStudent && (
+          <div style={{ 
+            marginTop: 12, padding: 10, 
+            background: "#f0f9ff", borderRadius: 8, color: "#0a3753",
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"
+          }}>
+            <strong>الطالب المختار:</strong> {selectedStudent.full_name} ({selectedStudent.university_id || "—"})
+            <button
+              onClick={() => {
+                setSelectedStudent(null);
+                setQuery("");
+                setSearchResults([]);
+                setFailedCourses([]);
+                setRegisteredInCurrentPeriod([]);
+                setSelectedFacultyId("");
+                setDepartmentId("");
+                setAcademicYear("");
+                setLevelName("");
+                setTermName("");
+              }}
+              style={{
+                padding: "4px 12px", fontSize: 13,
+                background: "#ef4444", color: "white", 
+                border: "none", borderRadius: 6, cursor: "pointer",
+              }}
+            >
+              إلغاء الاختيار
+            </button>
           </div>
         )}
       </div>
@@ -3207,10 +3129,7 @@ function FeesTab({ showToast }) {
     installment_4: "", installment_4_start: "", installment_4_end: "",
     installment_5: "", installment_5_start: "", installment_5_end: "",
     installment_6: "", installment_6_start: "", installment_6_end: "",
-<<<<<<< HEAD
-=======
     term_name: "",
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   };
 
   const [feesData, setFeesData] = useState(defaultFeesData);
@@ -3222,15 +3141,6 @@ function FeesTab({ showToast }) {
 
   const [paidInstallments, setPaidInstallments] = useState({
   1: false, 2: false, 3: false, 4: false, 5: false, 6: false
-<<<<<<< HEAD
-});
-
-const paidCount = React.useMemo(() => {
-  return Object.values(paidInstallments).filter(Boolean).length;
-}, [paidInstallments]);
-
-const minAllowedInstallments = paidCount >= 6 ? 6 : paidCount + 1;
-=======
  });
 
  const paidCount = React.useMemo(() => {
@@ -3238,17 +3148,12 @@ const minAllowedInstallments = paidCount >= 6 ? 6 : paidCount + 1;
  }, [paidInstallments]);
 
  const minAllowedInstallments = paidCount >= 6 ? 6 : paidCount + 1;
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   const smart = useAcademicPeriodsSmartList({
     programType,
     postgraduateProgram: postgradProgram,
   });
-<<<<<<< HEAD
-
-=======
 const pgSmart = usePostgradProgramsSmartList();
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   const cleanNumber = (val) => {
     if (!val && val !== 0) return 0;
     const cleaned = String(val).replace(/,/g, '').replace(/[^0-9.-]/g, '');
@@ -3264,26 +3169,16 @@ const pgSmart = usePostgradProgramsSmartList();
       setFeesData(prev => ({ ...prev, [fieldName]: value }));
     }
   }
-<<<<<<< HEAD
-};
-
-const formatCurrency = (amount) => {
-=======
  };
 
  const formatCurrency = (amount) => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   const value = cleanNumber(amount);
   const symbol = feesData.currency === "USD" ? " $" : " ج.س";
   return value.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }) + symbol;
-<<<<<<< HEAD
-};
-=======
  };
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // الإجمالي المستحق الأساسي (بدون أي أقساط)
   const mainTotal = React.useMemo(() => {
@@ -3308,11 +3203,7 @@ const formatCurrency = (amount) => {
     );
   }, [feesData]);
 
-<<<<<<< HEAD
-const autoDivideInstallments = () => {
-=======
  const autoDivideInstallments = () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   if (installmentCount <= 0) return;
 
   // ─── 1. نحسب الإجمالي المستحق الأساسي ───
@@ -3391,18 +3282,14 @@ const autoDivideInstallments = () => {
   });
 
   showToast(`تم تقسيم المتبقي (${formatCurrency(remaining)}) على ${availableSlots} أقساط غير مدفوعة`, "success");
-<<<<<<< HEAD
-};
-=======
  };
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // تطبيق خصم المنحة بدقة
   const applyScholarshipDiscount = (percentage) => {
     setFeesData(prev => {
       let base = cleanNumber(prev.tuition_fee_original) || cleanNumber(prev.tuition_fee) || 0;
 
-      if (academicStatus === "إعاده") {
+      if (academicStatus === "إعادة") {
         const repeatPerc = cleanNumber(prev.repeat_discount) / 100 || 0.5;
         base = base * (1 - repeatPerc);
       }
@@ -3428,7 +3315,7 @@ const autoDivideInstallments = () => {
     setFeesData(prev => {
       let base = cleanNumber(prev.tuition_fee_original) || cleanNumber(prev.tuition_fee) || 0;
 
-      if (academicStatus === "إعاده") {
+      if (academicStatus === "إعادة") {
         const repeatPerc = cleanNumber(prev.repeat_discount) / 100 || 0.5;
         base = base * (1 - repeatPerc);
       }
@@ -3448,21 +3335,13 @@ const autoDivideInstallments = () => {
   };
 
   // دالة جلب الرسوم العامة 
-<<<<<<< HEAD
-const loadDefaultFeesForLevel = async () => {
-=======
  const loadDefaultFeesForLevel = async () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   try {
     const params = new URLSearchParams({
       academic_year: academicYear,
       level_name: levelName,
       program_type: programType,
-<<<<<<< HEAD
-      // إضافة الكلية والقسم للرابط
-=======
       term_name: feesData.term_name || "",
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
       faculty_id: facultyId || "", 
       department_id: departmentId || "",
       ...(postgradProgram.trim() && { postgraduate_program: postgradProgram.trim() }),
@@ -3496,17 +3375,10 @@ const loadDefaultFeesForLevel = async () => {
     console.error("خطأ جلب رسوم عامة:", err);
     showToast("تعذر جلب الرسوم العامة", "error");
   }
-<<<<<<< HEAD
-};
-
-//  دالة جلب رسوم الطالب
-const loadFees = async () => {
-=======
  };
 
  //  دالة جلب رسوم الطالب
  const loadFees = async () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   setPaidInstallments({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false });
   setLoadingStudentFees(true);
   try {
@@ -3554,15 +3426,20 @@ const loadFees = async () => {
       fillFeesData(feesToUse); 
       setFeesSource(source);
 
-      if (calculatedData) {
-        setFeesData(prev => ({
-          ...prev,
-          registration_fee: calculatedData.registration_fee?.toString() || prev.registration_fee,
-          tuition_fee: calculatedData.tuition_fee?.toString() || prev.tuition_fee,
-          freeze_fee: calculatedData.total_extra && calculatedData.notes?.includes("تجميد") 
-                      ? calculatedData.total_extra.toString() : "0",
-        }));
-      }
+if (calculatedData) {
+  setFeesData(prev => ({
+    ...prev,
+    registration_fee: calculatedData.registration_fee?.toString() || prev.registration_fee,
+    tuition_fee: calculatedData.tuition_fee?.toString() || prev.tuition_fee,
+    freeze_fee: calculatedData.total_extra && calculatedData.notes?.includes("تجميد") 
+                ? calculatedData.total_extra.toString() : "0",
+
+    // مهم: نحافظ على بيانات المنحة من calculated
+    scholarship_type: calculatedData.scholarship_type || prev.scholarship_type || "لا منحة",
+    scholarship_percentage: Number(calculatedData.scholarship_percentage) || 0,
+    scholarship_granted_by: calculatedData.scholarship_granted_by || prev.scholarship_granted_by || "",
+  }));
+}
     }
 
     const statusRes = await fetch(`${API_BASE}/student-installments-status?${params}`);
@@ -3587,17 +3464,10 @@ const loadFees = async () => {
   } finally {
     setLoadingStudentFees(false);
   }
-<<<<<<< HEAD
-};
-
-  // تحميل الكليات
-useEffect(() => {
-=======
  };
 
   // تحميل الكليات
  useEffect(() => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   fetch(`${API_BASE}/faculties-list`)
     .then(res => res.json())
     .then(allFaculties => {
@@ -3624,11 +3494,7 @@ useEffect(() => {
       console.error("Error loading faculties", err);
       showToast("خطأ في تحميل الكليات", "error");
     });
-<<<<<<< HEAD
-}, []);
-=======
  }, []);
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // تحميل الأقسام
   useEffect(() => {
@@ -3644,17 +3510,6 @@ useEffect(() => {
   }, [facultyId]);
 
   // تحميل الفترات
-<<<<<<< HEAD
-  useEffect(() => {
-    if (departmentId || (programType === "postgraduate" && postgradProgram.trim())) {
-      smart.fetchAcademicPeriods();
-    }
-  }, [departmentId, programType, postgradProgram]);
-
-  useEffect(() => {
-    smart.rebuildOptions(academicYear, levelName);
-  }, [academicYear, levelName, smart.periods]);
-=======
 const fetchPeriodsRef = React.useRef(smart.fetchAcademicPeriods);
 React.useEffect(() => {
   fetchPeriodsRef.current = smart.fetchAcademicPeriods;
@@ -3675,7 +3530,6 @@ useEffect(() => {
 useEffect(() => {
   smart.rebuildOptions(academicYear, levelName);
 }, [academicYear, levelName]);
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   // بحث الطالب
   useEffect(() => {
@@ -3727,11 +3581,7 @@ useEffect(() => {
   };
 
   // جلب الرسوم + الموقف الأكاديمي
-<<<<<<< HEAD
-useEffect(() => {
-=======
  useEffect(() => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   if (!academicYear || !levelName) {
     setFeesData(defaultFeesData);
     setInstallmentCount(0);
@@ -3751,17 +3601,10 @@ useEffect(() => {
   setIsDefaultMode(true);
   loadDefaultFeesForLevel();
 
-<<<<<<< HEAD
-}, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
-
-
-useEffect(() => {
-=======
  }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
 
 
- useEffect(() => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
+useEffect(() => {
   if (!selectedStudent || !academicYear || !levelName) {
     setCalculatedFees(null);
     setAcademicStatus("");
@@ -3779,10 +3622,7 @@ useEffect(() => {
       });
 
       const res = await fetch(`${API_BASE}/student-fees-calculated?${params}`);
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "فشل في حساب الرسوم");
-      }
+      if (!res.ok) throw new Error((await res.json()).error || "فشل في حساب الرسوم");
 
       const data = await res.json();
 
@@ -3790,57 +3630,58 @@ useEffect(() => {
       setAcademicStatus(data.academic_status || "نظامي");
       setFacultyType(data.faculty_type || "غير محدد");
 
-      let original = data.tuition_fee?.toString() || "";
-      let afterRepeat = original;
+      // ==================== حساب بعد المنحة ====================
+      let baseTuition = cleanNumber(data.tuition_fee);
+      let tuitionAfterDiscount = baseTuition;
 
-      if (data.academic_status === "إعاده" && data.repeat_discount) {
-        const repeatPerc = cleanNumber(data.repeat_discount) / 100 || 0.5;
-        original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
+      if (data.scholarship_type && data.scholarship_type !== "لا منحة" && Number(data.scholarship_percentage) > 0) {
+        const perc = Number(data.scholarship_percentage);
+        tuitionAfterDiscount = Math.round(baseTuition * (1 - perc / 100) * 100) / 100;
       }
 
       setFeesData(prev => ({
         ...prev,
-        tuition_fee: data.tuition_fee?.toString() || prev.tuition_fee,
-        tuition_fee_original: original,
-        tuition_after_repeat: afterRepeat,
-        freeze_fee: data.total_extra && data.notes?.includes("تجميد") ? data.total_extra.toString() : "0",
+        tuition_fee: tuitionAfterDiscount.toFixed(2),
+        tuition_fee_original: baseTuition.toFixed(2),
+        tuition_after_repeat: tuitionAfterDiscount.toFixed(2),
+
+        scholarship_type: data.scholarship_type || "لا منحة",
+        scholarship_percentage: Number(data.scholarship_percentage) || 0,
+        scholarship_granted_by: data.scholarship_granted_by || "",
+
+        freeze_fee: data.total_extra && data.notes?.includes("تجميد") 
+                    ? data.total_extra.toString() : "0",
         unfreeze_fee: "0",
       }));
 
+      if (data.scholarship_type && data.scholarship_type !== "لا منحة") {
+        showToast(`تم تطبيق منحة "${data.scholarship_type}" بنسبة ${data.scholarship_percentage}%`, "success");
+      }
+
     } catch (err) {
+      console.error(err);
       showToast("خطأ أثناء حساب الرسوم: " + err.message, "error");
-      setCalculatedFees(null);
     } finally {
       setCalculating(false);
     }
-<<<<<<< HEAD
   };
 
   fetchCalculatedFees();
-}, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
-=======
-   };
-
-  fetchCalculatedFees();
- }, [selectedStudent, academicYear, levelName, programType, postgradProgram]);
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
+}, [selectedStudent, academicYear, levelName]);
 
   const fillFeesData = (fees) => {
     const tuition = fees.tuition_fee?.toString() || "";
     let original = tuition;
     let afterRepeat = tuition;
 
-    if (academicStatus === "إعاده" && fees.repeat_discount) {
+    if (academicStatus === "إعادة" && fees.repeat_discount) {
       const repeatPerc = cleanNumber(fees.repeat_discount) / 100 || 0.5;
       original = (cleanNumber(tuition) / (1 - repeatPerc)).toFixed(2);
     }
 
     setFeesData(prev => ({
       ...prev,
-<<<<<<< HEAD
-=======
       term_name: fees.term_name || "",
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
       registration_fee: fees.registration_fee?.toString() || "",
       tuition_fee: tuition,
       tuition_fee_original: original,
@@ -3849,9 +3690,9 @@ useEffect(() => {
       freeze_fee: fees.freeze_fee?.toString() || "0",
       unfreeze_fee: fees.unfreeze_fee?.toString() || "0",
       repeat_discount: fees.repeat_discount?.toString() || "50",
-      scholarship_type: fees.scholarship_type || "لا منحة",
-      scholarship_percentage: fees.scholarship_percentage || 0,
-      scholarship_granted_by: fees.scholarship_granted_by || "",
+scholarship_type: fees.scholarship_type || "لا منحة",
+scholarship_percentage: Number(fees.scholarship_percentage) || 0,
+scholarship_granted_by: fees.scholarship_granted_by || "",
       currency: fees.currency || "SDG",
       installment_1: fees.installment_1?.toString() || "",
       installment_1_start: fees.installment_1_start || "",
@@ -3910,7 +3751,7 @@ useEffect(() => {
       let original = data.tuition_fee?.toString() || "";
       let afterRepeat = original;
 
-      if (data.academic_status === "إعاده" && data.repeat_discount) {
+      if (data.academic_status === "إعادة" && data.repeat_discount) {
         const repeatPerc = cleanNumber(data.repeat_discount) / 100 || 0.5;
         original = (cleanNumber(afterRepeat) / (1 - repeatPerc)).toFixed(2);
       }
@@ -3931,11 +3772,7 @@ useEffect(() => {
       setCalculating(false);
     }
   };
-<<<<<<< HEAD
-const resetAllForm = () => {
-=======
  const resetAllForm = () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   setFeesData({ ...defaultFeesData });   
 
   setInstallmentCount(0);
@@ -3952,28 +3789,19 @@ const resetAllForm = () => {
   setFacultyType("");
   setFeesSource("");
 
-<<<<<<< HEAD
-};
-
-const saveFees = async () => {
-=======
  };
 
  const saveFees = async () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   if (!academicYear || !levelName) {
     showToast("يرجى اختيار السنة والمستوى", "error");
     return;
   }
 
-<<<<<<< HEAD
-=======
 if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.trim()) {
     showToast("يجب اختيار الفصل الدراسي عند حفظ رسوم طالب في الدراسات العليا", "error");
     return;
   }
 
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   const totalDue = cleanNumber(mainTotal);
   const totalInstallments = cleanNumber(installmentsTotal);
 
@@ -4028,10 +3856,7 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
     const body = {
       academic_year: academicYear,
       level_name: levelName,
-<<<<<<< HEAD
-=======
       term_name: programType === "postgraduate" ? feesData.term_name : null,
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
       program_type: programType,
       postgraduate_program: programType === "postgraduate" ? postgradProgram || null : null,
       department_id: departmentId ? Number(departmentId) : null,
@@ -4080,6 +3905,14 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
       body: JSON.stringify(body),
     });
 
+        if (res.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      showToast("انتهت الجلسة، يرجى تسجيل الدخول", "error");
+      navigate("/login");
+      return;
+    }
+
     if (!res.ok) {
       const errData = await res.json();
       throw new Error(errData.error || `فشل الحفظ (كود: ${res.status})`);
@@ -4106,15 +3939,9 @@ if (programType === "postgraduate" && selectedStudent && !feesData.term_name?.tr
   } catch (err) {
     showToast("خطأ أثناء الحفظ: " + err.message, "error");
   }
-<<<<<<< HEAD
-};
-
-const printFeesReport = async () => {
-=======
  };
 
- const printFeesReport = async () => {
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
+const printFeesReport = async () => {
   if (!selectedStudent || !academicYear || !levelName) {
     showToast("اختر طالب وحدد السنة والمستوى أولاً", "error");
     return;
@@ -4136,10 +3963,9 @@ const printFeesReport = async () => {
 
     const data = await response.json();
 
-
-    let totalPaid = 0;    
-    let totalRemaining = 0; 
-    let totalDue = 0;      
+    let totalPaid = 0;
+    let totalRemaining = 0;
+    let totalDue = 0;
 
     const installmentsRows = [];
 
@@ -4151,7 +3977,9 @@ const printFeesReport = async () => {
       const paidDateRaw = data[`installment_${i}_paid_at`];
       const paidDate = (isPaid && paidDateRaw && paidDateRaw !== '0000-00-00') ? paidDateRaw : "—";
 
-      // الحسابات
+      const startDate = feesData[`installment_${i}_start`] || data[`installment_${i}_start`] || "—";
+      const endDate   = feesData[`installment_${i}_end`]   || data[`installment_${i}_end`]   || "—";
+
       totalDue += amount;
       if (isPaid) {
         totalPaid += amount;
@@ -4162,7 +3990,9 @@ const printFeesReport = async () => {
       installmentsRows.push(`
         <tr style="background: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">قسط ${i}</td>
-          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: right;">${formatCurrency(amount)}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${formatCurrency(amount)}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${startDate}</td>
+          <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">${endDate}</td>
           <td style="padding: 12px; border: 1px solid #d1d5db; text-align: center; color: ${isPaid ? '#059669' : '#dc2626'}; font-weight: bold;">
             ${isPaid ? 'مدفوع' : 'غير مدفوع'}
           </td>
@@ -4171,7 +4001,6 @@ const printFeesReport = async () => {
       `);
     }
 
-    
     const headerHTML = `
       <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #0a3753; direction: rtl; font-family: 'Cairo', sans-serif;">
         <h1 style="margin: 0; color: #0a3753; font-size: 22px; font-weight: bold;">جامعة بورتسودان الأهلية</h1>
@@ -4186,7 +4015,7 @@ const printFeesReport = async () => {
     const summaryTable = `
       <div style="margin-bottom: 25px; direction: rtl; font-family: 'Cairo', sans-serif;">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; direction: rtl; font-family: 'Cairo', sans-serif; font-size: 13px;">
-           <tr style="background: #6e6e6e; color: white;">
+          <tr style="background: #6e6e6e; color: white;">
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المستحق</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتحصل</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">إجمالي المتبقي</th>
@@ -4206,12 +4035,17 @@ const printFeesReport = async () => {
           <tr style="background: #6e6e6e; color: white;">
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">بيان القسط</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">المبلغ</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">بداية الدفع</th>
+            <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">نهاية الدفع</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">الحالة</th>
             <th style="padding: 10px; border: 1px solid #9ca3af; text-align: center;">تاريخ السداد</th>
           </tr>
         </thead>
         <tbody>
-          ${installmentsRows.length > 0 ? installmentsRows.join('') : '<tr><td colspan="4" style="padding: 15px; text-align: center;">لا توجد أقساط مجدولة</td></tr>'}
+          ${installmentsRows.length > 0
+            ? installmentsRows.join('')
+            : '<tr><td colspan="6" style="padding: 15px; text-align: center;">لا توجد أقساط مجدولة</td></tr>'
+          }
         </tbody>
       </table>
     `;
@@ -4219,8 +4053,7 @@ const printFeesReport = async () => {
     const footerHTML = `
       <div style="margin-top: 40px; direction: rtl; font-family: 'Cairo', sans-serif;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
-          <div style="text-align: center; width: 40%;">
-          </div>
+          <div style="text-align: center; width: 40%;"></div>
           <div style="text-align: center; width: 40%;">
             <p style="font-weight: bold; margin-bottom: 30px;">توقيع المسجل :</p>
             <p>........................................</p>
@@ -4241,7 +4074,7 @@ const printFeesReport = async () => {
         ${footerHTML}
       </div>
     `;
-    
+
     const element = document.createElement('div');
     element.innerHTML = fullContent;
 
@@ -4259,11 +4092,7 @@ const printFeesReport = async () => {
     console.error("خطأ التقرير:", err);
     showToast("حدث خطأ أثناء استخراج التقرير", "error");
   }
-<<<<<<< HEAD
 };
-=======
- };
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
   return (
     <div>
@@ -4330,11 +4159,7 @@ const printFeesReport = async () => {
       </div>
 
       {/* نوع البرنامج */}
-<<<<<<< HEAD
-<div style={ui.card}>
-=======
  <div style={ui.card}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <h3 style={ui.sectionTitle}>نوع البرنامج</h3>
   <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
     {getAllowedProgramTypes().map(type => (
@@ -4351,24 +4176,6 @@ const printFeesReport = async () => {
       </label>
     ))}
   </div>
-<<<<<<< HEAD
-</div>
-
-      {programType === "postgraduate" && (
-        <div style={ui.card}>
-          <h3 style={ui.sectionTitle}>برنامج الدراسات العليا</h3>
-          <input
-            type="text"
-            list="fees_pg_list"
-            value={postgradProgram}
-            onChange={e => setPostgradProgram(e.target.value)}
-            placeholder="مثال: ماجستير إدارة أعمال"
-            style={ui.input}
-          />
-          <datalist id="fees_pg_list" />
-        </div>
-      )}
-=======
  </div>
 
 {programType === "postgraduate" && (
@@ -4389,7 +4196,6 @@ const printFeesReport = async () => {
     </datalist>
   </div>
 )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
       {/* الفترة الدراسية */}
       <div style={ui.card}>
@@ -4414,11 +4220,7 @@ const printFeesReport = async () => {
               {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
             </select>
           </div>
-<<<<<<< HEAD
-<div style={ui.field}>
-=======
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>السنة الدراسية</label>
   <input 
     list="fees_years" 
@@ -4433,25 +4235,6 @@ const printFeesReport = async () => {
   <datalist id="fees_years">
     {smart.yearOptions.map(y => <option key={y} value={y} />)}
   </datalist>
-<<<<<<< HEAD
-</div>
-
-<div style={ui.field}>
-  <label>المستوى</label>
-  <input 
-    list="fees_levels" 
-    value={levelName} 
-    onChange={e => setLevelName(e.target.value)} 
-    placeholder="مثال: المستوى الثاني" 
-    disabled={!academicYear} 
-    style={ui.input} 
-  />
-  <datalist id="fees_levels">
-    {smart.levelOptions.map(l => <option key={l} value={l} />)}
-  </datalist>
-</div>
-        </div>
-=======
  </div>
 
  <div style={ui.inputGroup}>
@@ -4487,17 +4270,12 @@ const printFeesReport = async () => {
         </select>
       </div>
     )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
       </div>
 
       {academicYear && levelName && (
         <div style={ui.card}>
           <h3 style={ui.sectionTitle}>
-<<<<<<< HEAD
-            {selectedStudent ? `رسوم الطالب: ${selectedStudent.full_name}` : "الرسوم المبدئية للمستوى"}
-=======
             {selectedStudent ? `رسوم الطالب: ${selectedStudent.full_name}` : "الرسوم المبدئية "}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
           </h3>
 
           {academicStatus && (
@@ -4589,6 +4367,13 @@ const printFeesReport = async () => {
                 {calculatedFees.total_extra > 0 && (
                   <div><strong>إضافي (تجميد/فك):</strong> {formatCurrency(calculatedFees.total_extra)}</div>
                 )}
+                {calculatedFees.scholarship_type && calculatedFees.scholarship_type !== "لا منحة" && (
+        <>
+          <div><strong>نوع المنحة:</strong> {calculatedFees.scholarship_type}</div>
+          <div><strong>نسبة الخصم:</strong> {calculatedFees.scholarship_percentage}%</div>
+          <div><strong>الجهة المانحة:</strong> {calculatedFees.scholarship_granted_by || "غير محدد"}</div>
+        </>
+      )}
                 <div><strong>سنة الدخول الأولى:</strong> {calculatedFees.first_enrollment_year || "غير محددة"}</div>
                 <div><strong>آخر سنة نشطة:</strong> {calculatedFees.last_active_year || "غير محددة"}</div>
                 <div><strong>سنوات الغياب:</strong> {Math.max(0, calculatedFees.years_absent || 0)}</div>
@@ -4603,11 +4388,7 @@ const printFeesReport = async () => {
             <p style={{ color: "#0a3753", textAlign: "center", fontWeight: 600 }}>جاري التحميل...</p>
           ) : (
             <div style={ui.grid}>
-<<<<<<< HEAD
-<div style={ui.field}>
-=======
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>رسوم التسجيل</label>
   <input 
     type="text" 
@@ -4616,15 +4397,9 @@ const printFeesReport = async () => {
     onChange={e => handleNumericInput("registration_fee", e.target.value)} 
     style={ui.input} 
   />
-<<<<<<< HEAD
-</div>
-
-<div style={ui.field}>
-=======
  </div>
 
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>رسوم الدراسة</label>
   <input 
     type="text" 
@@ -4641,15 +4416,9 @@ const printFeesReport = async () => {
     }}
     style={ui.input} 
   />
-<<<<<<< HEAD
-</div>
-
-<div style={ui.field}>
-=======
  </div>
 
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>رسوم المتأخرات</label>
   <input 
     type="text" 
@@ -4658,15 +4427,9 @@ const printFeesReport = async () => {
     onChange={e => handleNumericInput("late_fee", e.target.value)} 
     style={ui.input} 
   />
-<<<<<<< HEAD
-</div>
-
-{academicStatus === "مجمّد" && (
-=======
  </div>
 
  {academicStatus === "مجمّد" && (
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <>
     <div style={ui.field}>
       <label>رسوم التجميد</label>
@@ -4690,24 +4453,16 @@ const printFeesReport = async () => {
       />
     </div>
   </>
-<<<<<<< HEAD
-)}
-=======
  )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
-              {academicStatus === "إعاده" && (
+              {academicStatus === "إعادة" && (
                 <div style={ui.field}>
                   <label>نسبة خصم الإعادة (%)</label>
                   <input type="number" value={feesData.repeat_discount} onChange={e => setFeesData({...feesData, repeat_discount: e.target.value})} style={ui.input} placeholder="50" />
                 </div>
               )}
 
-<<<<<<< HEAD
-<div style={ui.field}>
-=======
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>نوع المنحة</label>
   <select 
     value={feesData.scholarship_type} 
@@ -4722,16 +4477,6 @@ const printFeesReport = async () => {
       </option>
     ))}
   </select>
-<<<<<<< HEAD
-</div>
-
-{/* الحقل ده يظهر لكل المنح ما عدا "لا منحة" */}
-{feesData.scholarship_type !== "لا منحة" && (
-  <>
-    {/* نسبة الخصم – تظهر بس للمنح اليدوية */}
-    {["منحة أشقاء", "تخفيضات المدير", "أخرى"].includes(feesData.scholarship_type) && (
-<div style={ui.field}>
-=======
  </div>
 
  {/* الحقل ده يظهر لكل المنح ما عدا "لا منحة" */}
@@ -4740,7 +4485,6 @@ const printFeesReport = async () => {
     {/* نسبة الخصم – تظهر بس للمنح اليدوية */}
     {["منحة أشقاء", "تخفيضات المدير", "أخرى"].includes(feesData.scholarship_type) && (
  <div style={ui.field}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label>نسبة الخصم (%)</label>
   <input 
     type="text" 
@@ -4763,11 +4507,7 @@ const printFeesReport = async () => {
     style={ui.input} 
     placeholder="مثال: 35" 
   />
-<<<<<<< HEAD
-</div>
-=======
  </div>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
     )}
 
     {/* حقل مانح المنحة – يظهر لكل أنواع المنح */}
@@ -4789,11 +4529,7 @@ const printFeesReport = async () => {
       </small>
     </div>
   </>
-<<<<<<< HEAD
-)}
-=======
  )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
               {feesData.scholarship_percentage > 0 && (
                 <div style={{
@@ -4813,11 +4549,7 @@ const printFeesReport = async () => {
                 </div>
               )}
 
-<<<<<<< HEAD
-<div style={{ gridColumn: "1 / -1", marginBottom: 16 }}>
-=======
  <div style={{ gridColumn: "1 / -1", marginBottom: 16 }}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label style={ui.label}>نوع العملة</label>
   <div style={{ display: "flex", gap: 30, marginTop: 8 }}>
     <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -4842,15 +4574,9 @@ const printFeesReport = async () => {
       دولار أمريكي (USD)
     </label>
   </div>
-<<<<<<< HEAD
-</div>
-{selectedStudent && (
-<div style={{ gridColumn: "1 / -1" }}>
-=======
  </div>
  {selectedStudent && (
  <div style={{ gridColumn: "1 / -1" }}>
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <label style={ui.label}>عدد الأقساط</label>
 
   {/* رسالة توضيحية مهمة جدًا */}
@@ -4945,17 +4671,10 @@ const printFeesReport = async () => {
       تقسيم الأقساط تلقائيًا
     </button>
   )}
-<<<<<<< HEAD
-</div>
-)}
-
-{installmentCount > 0 && (
-=======
  </div>
  )}
 
  {installmentCount > 0 && (
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
   <div style={{ gridColumn: "1 / -1" }}>
     {/* عنوان القسم */}
     <h4 
@@ -5179,11 +4898,7 @@ const printFeesReport = async () => {
       })}
     </div>
   </div>
-<<<<<<< HEAD
-)}
-=======
  )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
 
             </div>
           )}
@@ -5203,14 +4918,11 @@ const printFeesReport = async () => {
   >
     طباعة تقرير الرسوم
   </button>
-<<<<<<< HEAD
-)}
-=======
  )}
->>>>>>> 0a60090fe67dd653127b4db2189aea4906b32ed3
         </div>
       )}
     </div>
   );
 }
+
 export default RegistrationTabs;
