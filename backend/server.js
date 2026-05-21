@@ -66,9 +66,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-function buildFileUrl(req, filename) {
-  return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
-}
 
 async function syncPendingFees() {
     try {
@@ -180,11 +177,11 @@ function comparePeriods(a, b) {
 }
 
 
-function parseAcademicYear(y) {
-  const m = (y || "").toString().match(/(\d{4})\s*\/\s*(\d{4})/);
-  if (!m) return [0, 0];
-  return [Number(m[1]), Number(m[2])];
-}
+// function parseAcademicYear(y) {
+//   const m = (y || "").toString().match(/(\d{4})\s*\/\s*(\d{4})/);
+//   if (!m) return [0, 0];
+//   return [Number(m[1]), Number(m[2])];
+// }
 
 function parseLevelNumber(levelName) {
   const m = (levelName || "").toString().match(/(\d+)/);
