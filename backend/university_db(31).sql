@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 20, 2026 at 10:29 AM
+-- Generation Time: Jun 21, 2026 at 03:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -592,7 +592,14 @@ INSERT INTO `academic_periods` (`id`, `academic_year`, `level_name`, `term_name`
 (591, '2026/2027', 'المستوى الثاني', 'الفصل الثاني', 'bachelor', NULL, '2026-05-18 09:50:24'),
 (592, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'bachelor', NULL, '2026-05-18 09:50:48'),
 (593, '2027/2028', 'المستوى الثالث', 'الفصل الثاني', 'bachelor', NULL, '2026-05-18 09:51:24'),
-(594, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', NULL, '2026-05-18 09:51:55');
+(594, '2028/2029', 'المستوى الرابع', 'الفصل الثاني', 'bachelor', NULL, '2026-05-18 09:51:55'),
+(598, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 08:59:38'),
+(599, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 08:59:38'),
+(600, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 09:01:16'),
+(601, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 09:01:16'),
+(602, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 09:02:13'),
+(603, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 09:02:31'),
+(604, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'bachelor', NULL, '2026-05-21 09:02:31');
 
 -- --------------------------------------------------------
 
@@ -1255,7 +1262,10 @@ INSERT INTO `students` (`id`, `first_name`, `second_name`, `third_name`, `fourth
 (6, 'هاله', 'خالد', 'حسن', 'احمد', 'هاله خالد حسن احمد', 'سوداني', 'female', 'inactive', '25001/24', '0114785963', NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-17 09:18:30'),
 (7, 'انسام', 'صديق', 'علي', 'هاشم', 'انسام صديق علي هاشم', NULL, NULL, 'active', '240001/241', '0115889966', NULL, 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-18 07:51:51'),
 (8, 'اسماء', 'خالد', 'حسن', 'همد', 'اسماء خالد  حسن همد', 'سوداني', 'female', 'active', '240002/241', '0114785963', NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-18 08:00:47'),
-(9, 'عبق', 'خالد', 'حسن', 'ابراهيم', 'عبق خالد حسن ابراهيم', 'سوداني', 'female', 'active', '2400032/24', '0115896633', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-18 08:06:04');
+(9, 'عبق', 'خالد', 'حسن', 'ابراهيم', 'عبق خالد حسن ابراهيم', 'سوداني', 'female', 'active', '2400032/24', '0115896633', NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-18 08:06:04'),
+(10, 'غفران', 'محمد', 'علي', 'محمد', 'غفران محمد علي محمد', 'سوداني', 'female', 'active', '250001/25', '0114859666', NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-21 08:59:38'),
+(11, 'نغم', 'محمد', 'خالد', 'ادريس', 'نغم محمد خالد ادريس', 'سوري', 'female', 'active', '25002/25', '0147899999', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-21 09:01:16'),
+(12, 'عبد العزيز', 'عبدالله', 'خالد', 'ليث', 'عبد العزيز عبدالله خالد ليث', 'سعودي', 'male', 'active', '250003/25', '0114588888', NULL, 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-21 09:02:31');
 
 -- --------------------------------------------------------
 
@@ -1309,7 +1319,10 @@ INSERT INTO `student_registrations` (`id`, `student_id`, `academic_year`, `level
 (21, 7, '2025/2026', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-18 07:54:16', NULL, 'diploma', NULL, NULL, 0),
 (22, 8, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-18 08:00:47', NULL, 'diploma', NULL, NULL, 0),
 (23, 9, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-18 08:06:04', NULL, 'bachelor', NULL, NULL, 0),
-(26, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-18 08:21:07', 1, 'bachelor', NULL, NULL, 0);
+(26, 2, '2025/2026', 'المستوى الأول', 'الفصل الثاني', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-18 08:21:07', 1, 'bachelor', NULL, NULL, 0),
+(27, 10, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'mohmmed', '2026-05-21 08:59:38', NULL, 'bachelor', NULL, NULL, 0),
+(28, 11, '2026/2027', 'المستوى الأول', 'الفصل الأول', 'منتظم', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-21 09:01:16', NULL, 'bachelor', NULL, NULL, 0),
+(29, 12, '2026/2027', 'المستوى الثاني', 'الفصل الأول', 'محول خارجي', 'غير مسجّل', NULL, NULL, NULL, 'kian', '2026-05-21 09:02:31', NULL, 'bachelor', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1546,10 +1559,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `department`, `role`, `is_active`, `allowed_pages`, `allowed_program_types`, `allowed_faculties`, `created_at`, `updated_at`, `last_login`, `registration_tab_permissions`) VALUES
-(9, 'kian', '$2b$10$i5t0EynzIA5dqbyDCabISe0qh4CNQi6yWQsxUzrItLwjFri/GQ/wq', NULL, NULL, NULL, 'admin', 1, '[]', '[]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
-(18, 'mohmmed', '$2b$10$MfHtzSGDW858s71GNGRhnOTW3nRxZhJjIKIr0wj58mo.Bd0e5nGCe', NULL, NULL, 'شؤون الطلاب', 'user', 1, '[\"القبول والتسجيل\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3]', '2026-04-05 10:13:13', '0000-00-00 00:00:00', NULL, '{\"single\":true,\"fees\":true,\"promotion\":true,\"failed-courses\":true}'),
-(19, 'سهام محمد', '$2b$10$dvtk4OHpPOj7/lNqQHgx.u5bnVkNT4Y4BofG.9ruCVOkRv/22.FlS', NULL, NULL, NULL, 'user', 1, '[\"المكتبة\",\"الجداول الدراسية\",\"القبول والتسجيل\",\"الشهادات\",\"إعدادات النظام الأكاديمي\",\"إدخال الدرجات\",\"حساب النتائج\",\"قوائم الطلاب\",\"أعضاء هيئة التدريس\",\"السجل الأكاديمي\",\"التقارير\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3,6,7,5,2,4,1]', '2026-04-14 07:57:49', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"failed-courses\":true,\"fees\":true}'),
-(20, 'بلقيس محمد', '$2b$10$lyiMZBBWsXBafi5lFWtjAeaziGEB0YOO402/q0JKO0lwjaH.sGdwO', NULL, NULL, 'الدراسات العليا والبحث العلمى', 'user', 1, '[\"المكتبة\",\"القبول والتسجيل\",\"إعدادات النظام الأكاديمي\",\"إدخال الدرجات\",\"قوائم الطلاب\",\"حساب النتائج\",\"أعضاء هيئة التدريس\",\"المستخدمين والصلاحيات\",\"التقارير\",\"السجل الأكاديمي\",\"الشهادات\",\"الجداول الدراسية\"]', '[\"postgraduate\"]', '[3,1,6,5,2,7,4,9]', '2026-04-23 12:29:08', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"fees\":true}');
+(9, 'kian', '$2b$10$p6ZrtuqBx9KpN5U/9Z91Wu66KnR9CkJaKkfQa0CofCGsY/cvGwGKu', NULL, NULL, NULL, 'admin', 1, '[]', '[]', '[]', '2026-03-04 08:25:53', '0000-00-00 00:00:00', NULL, '{}'),
+(18, 'mohmmed', '$2b$10$0vZL6eRh/E6so.I.CryEg.WSxthC5cEsrMcvIOPjEGJk1S8hER.Ae', NULL, NULL, 'شؤون الطلاب', 'user', 1, '[\"القبول والتسجيل\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3]', '2026-04-05 10:13:13', '0000-00-00 00:00:00', NULL, '{\"single\":true,\"fees\":true,\"promotion\":true,\"failed-courses\":true}'),
+(19, 'سهام محمد', '$2b$10$JENO03cZ./BBoIILc1lmq.fhx9WgIOyFvy9xCvwUbgnmq.ZPkCB6K', NULL, NULL, NULL, 'user', 1, '[\"المكتبة\",\"الجداول الدراسية\",\"القبول والتسجيل\",\"الشهادات\",\"إعدادات النظام الأكاديمي\",\"إدخال الدرجات\",\"حساب النتائج\",\"قوائم الطلاب\",\"أعضاء هيئة التدريس\",\"السجل الأكاديمي\",\"التقارير\"]', '[\"bachelor\",\"diploma\",\"postgraduate\"]', '[3,6,7,5,2,4,1]', '2026-04-14 07:57:49', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"failed-courses\":true,\"fees\":true}'),
+(20, 'بلقيس محمد', '$2b$10$lyiMZBBWsXBafi5lFWtjAeaziGEB0YOO402/q0JKO0lwjaH.sGdwO', NULL, NULL, 'الدراسات العليا والبحث العلمى', 'user', 1, '[\"المكتبة\",\"القبول والتسجيل\",\"إعدادات النظام الأكاديمي\",\"إدخال الدرجات\",\"قوائم الطلاب\",\"حساب النتائج\",\"أعضاء هيئة التدريس\",\"المستخدمين والصلاحيات\",\"التقارير\",\"السجل الأكاديمي\",\"الشهادات\",\"الجداول الدراسية\"]', '[\"postgraduate\"]', '[3,1,6,5,2,7,4,9]', '2026-04-23 12:29:08', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"fees\":true}'),
+(23, 'سارة محمد', '$2b$10$sj/3QHIA8vSuLbSHxEN7q..1Y9Adfi1sYIhAbweiE0t2SkPWcmLSa', NULL, NULL, NULL, 'user', 1, '[\"القبول والتسجيل\"]', '[\"bachelor\"]', '[1]', '2026-05-21 13:47:58', '0000-00-00 00:00:00', NULL, '{\"promotion\":true,\"single\":true,\"failed-courses\":true,\"fees\":true}');
 
 --
 -- Indexes for dumped tables
@@ -1796,7 +1810,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `academic_periods`
 --
 ALTER TABLE `academic_periods`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=598;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=605;
 
 --
 -- AUTO_INCREMENT for table `books`
@@ -1868,13 +1882,13 @@ ALTER TABLE `staff_members`
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `student_registrations`
 --
 ALTER TABLE `student_registrations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `term_results`
@@ -1892,7 +1906,7 @@ ALTER TABLE `timetable_sessions`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- Constraints for dumped tables
