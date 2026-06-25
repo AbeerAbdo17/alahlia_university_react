@@ -38,8 +38,8 @@ const ALLOWED_LEVELS = [
   "المستوى الثاني",
   "المستوى الثالث",
   "المستوى الرابع",
-  "المستوى الخامس",
-  "المستوى السادس"
+  "المستوى الخامس"
+  // "المستوى السادس"
 ];
 
 const ui = {
@@ -259,6 +259,215 @@ const ACADEMIC_STATUS_OPTIONS = [
 const ACADEMIC_STATUS_PG = ["منتظم", "فصل"];
 
 const REGISTRATION_STATUS_OPTIONS = [" مسجّل", " غير مسجّل"];
+
+/* =========================================================
+   أدوات حساب "السمستر" (عرض فقط - لا تؤثر على القيم الفعلية)
+   ========================================================= */
+
+// خرائط تحويل الأرقام العربية المكتوبة (المستوى/الدفعة) إلى رقم
+const ORDINAL_WORD_TO_NUM = {
+  "الأول": 1, "اول": 1, "أول": 1,
+  "الثاني": 2, "ثاني": 2,
+  "الثالث": 3, "ثالث": 3,
+  "الرابع": 4, "رابع": 4,
+  "الخامس": 5, "خامس": 5,
+  "السادس": 6, "سادس": 6,
+  "السابع": 7, "سابع": 7,
+  "الثامن": 8, "ثامن": 8,
+  "التاسع": 9, "تاسع": 9,
+  "العاشر": 10, "عاشر": 10,
+};
+
+const NUM_TO_ORDINAL_WORD = {
+  1: "الأولى",
+  2: "الثانية",
+  3: "الثالثة",
+  4: "الرابعة",
+  5: "الخامسة",
+  6: "السادسة",
+  7: "السابعة",
+  8: "الثامنة",
+  9: "التاسعة",
+  10: "العاشرة",
+};
+
+// تحويل رقم السمستر إلى صيغة كلامية للعرض في القائمة
+// (السمستر 1 -> "السمستر الأول"، السمستر 2 -> "السمستر الثاني"...)
+// ملاحظة: هذه خريطة مستقلة عن NUM_TO_ORDINAL_WORD لأن صيغة السمستر مذكّرة
+// ("الأول") وليست مؤنثة ("الأولى") كما في الدفعة.
+const SEMESTER_NUM_TO_WORD = {
+  1: "الأول",
+  2: "الثاني",
+  3: "الثالث",
+  4: "الرابع",
+  5: "الخامس",
+  6: "السادس",
+  7: "السابع",
+  8: "الثامن",
+  9: "التاسع",
+  10: "العاشر",
+};
+
+const NUM_TO_LEVEL_LABEL = {
+  1: "المستوى الأول",
+  2: "المستوى الثاني",
+  3: "المستوى الثالث",
+  4: "المستوى الرابع",
+  5: "المستوى الخامس",
+};
+
+// يحاول استخراج رقم المستوى/الدفعة من نص عربي (يدعم كلمات وأرقام مكتوبة بالأرقام)
+const extractOrdinalNumber = (text) => {
+  if (!text) return null;
+  const t = String(text).trim();
+
+  // أولاً: لو في رقم صريح في النص (مثلاً "دفعة 3")
+  const digitMatch = t.match(/\d+/);
+  if (digitMatch) {
+    const n = parseInt(digitMatch[0], 10);
+    if (!isNaN(n) && n > 0) return n;
+  }
+
+  // ثانياً: نبحث عن كلمة ترتيبية معروفة في النص
+  for (const [word, num] of Object.entries(ORDINAL_WORD_TO_NUM)) {
+    if (t.includes(word)) return num;
+  }
+
+  return null;
+};
+
+// يحاول استخراج رقم الفصل (1 أو 2 أو 3) من term_name
+const extractTermNumber = (termName) => {
+  if (!termName) return null;
+  const t = String(termName).trim();
+  if (t.includes("أول")) return 1;
+  if (t.includes("ثان")) return 2;
+  if (t.includes("ثالث")) return 3;
+  return null;
+};
+
+// يحسب رقم السمستر من (المستوى/الدفعة + الفصل). يرجع null لو تعذر الاستخراج
+const computeSemesterNumber = (levelOrBatch, termName) => {
+  const levelNum = extractOrdinalNumber(levelOrBatch);
+  const termNum = extractTermNumber(termName);
+  if (!levelNum || !termNum) return null;
+  return (levelNum - 1) * 2 + termNum;
+};
+
+// يبني Label نصي للسمستر بصيغة كلامية ("السمستر الأول") للعرض فقط، أو null لو تعذر الحساب
+const getSemesterLabel = (levelOrBatch, termName) => {
+  const sem = computeSemesterNumber(levelOrBatch, termName);
+  if (!sem) return null;
+  const word = SEMESTER_NUM_TO_WORD[sem] || sem; // fallback للرقم لو تجاوز القائمة
+  return `السمستر ${word}`;
+};
+
+// يحول رقم السمستر إلى { levelNum, termNum } بناءً على عدد الفصول لكل مستوى/دفعة
+const semesterToLevelTerm = (semesterNumber, termsPerLevel = 2) => {
+  const semNum = parseInt(semesterNumber, 10);
+  if (!semNum || semNum < 1) return null;
+  const levelNum = Math.floor((semNum - 1) / termsPerLevel) + 1;
+  const termNum = ((semNum - 1) % termsPerLevel) + 1;
+  return { levelNum, termNum };
+};
+
+// يبني قائمة خيارات السمستر (1..N) لاستخدامها في dropdown، N = 6 مستويات * فصلين (أو ما يحدده البرنامج)
+const buildSemesterList = (programType, termsPerLevel) => {
+  const tpl = termsPerLevel || (programType === "postgraduate" ? 2 : 2);
+  const maxLevel = 5;
+  const list = [];
+  for (let lvl = 1; lvl <= maxLevel; lvl++) {
+    for (let term = 1; term <= tpl; term++) {
+      const semNum = (lvl - 1) * tpl + term;
+      list.push({ value: semNum, levelNum: lvl, termNum: term });
+    }
+  }
+  return list;
+};
+
+// يرجع اسم الفصل النصي (الفصل الأول/الثاني/الثالث) من رقم الفصل
+const termNumToName = (termNum) => {
+  if (termNum === 1) return "الفصل الأول";
+  if (termNum === 2) return "الفصل الثاني";
+  if (termNum === 3) return "الفصل الثالث";
+  return "";
+};
+
+// يرجع اسم المستوى (للبكالوريوس/الدبلوم) من رقم المستوى
+const levelNumToName = (levelNum) => {
+  return NUM_TO_LEVEL_LABEL[levelNum] || "";
+};
+
+// يرجع اسم الدفعة (للدراسات العليا) من رقمها، بصيغة "الدفعة <ترتيب>"
+const batchNumToName = (batchNum) => {
+  const word = NUM_TO_ORDINAL_WORD[batchNum];
+  return word ? `الدفعة ${word}` : "";
+};
+
+/**
+ * SemesterPicker: حقل عرض/اختيار "السمستر" - للعرض ولإعادة تعبئة المستوى/الفصل تلقائياً.
+ * لا يغيّر أي شيء غير level/term من خلال onPick (لا يُرسل أي قيمة "سمستر" منفصلة للباك إند).
+ * الليبل المعروض دايماً بصيغة كلامية: "السمستر الأول" وليس "السمستر 1".
+ *
+ * props:
+ *  - levelOrBatch: القيمة الحالية للمستوى أو الدفعة (نص)
+ *  - termName: القيمة الحالية للفصل (نص)
+ *  - programType: "bachelor" | "diploma" | "postgraduate"
+ *  - onPick(levelOrBatchName, termName): يُستدعى عند اختيار سمستر من القائمة
+ *  - disabled: تعطيل الحقل
+ */
+function SemesterPicker({ levelOrBatch, termName, programType, onPick, disabled }) {
+  const isPostgrad = programType === "postgraduate";
+  const termsPerLevel = isPostgrad ? 3 : 2;
+
+  const currentSemester = computeSemesterNumber(levelOrBatch, termName);
+  const currentSemesterWord = currentSemester ? (SEMESTER_NUM_TO_WORD[currentSemester] || currentSemester) : null;
+
+  const semesterList = useMemo(
+    () => buildSemesterList(programType, termsPerLevel),
+    [programType, termsPerLevel]
+  );
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    if (!val) return;
+    const semNum = parseInt(val, 10);
+    const parsed = semesterToLevelTerm(semNum, termsPerLevel);
+    if (!parsed) return;
+
+    const newTermName = termNumToName(parsed.termNum);
+    const newLevelOrBatch = isPostgrad
+      ? batchNumToName(parsed.levelNum)
+      : levelNumToName(parsed.levelNum);
+
+    onPick(newLevelOrBatch, newTermName);
+  };
+
+  return (
+    <div style={ui.field}>
+      <label style={ui.label}>السمستر</label>
+      <select
+        value={currentSemester || ""}
+        onChange={handleChange}
+        style={ui.select}
+        disabled={disabled}
+      >
+        <option value="">
+          {currentSemesterWord ? `السمستر ${currentSemesterWord}` : "— غير محدد —"}
+        </option>
+        {semesterList.map((opt) => {
+          const word = SEMESTER_NUM_TO_WORD[opt.value] || opt.value;
+          return (
+            <option key={opt.value} value={opt.value}>
+              السمستر {word}
+            </option>
+          );
+        })}
+      </select>
+
+    </div>
+  );
+}
 
 function useAcademicPeriodsSmartList({ programType, postgraduateProgram }) {
   const [periods, setPeriods] = useState([]);
@@ -1200,6 +1409,19 @@ const getNextAcademicYear = (year) => {
   </select>
 </div>
 
+<SemesterPicker
+  levelOrBatch={fromLevel}
+  termName={fromTerm}
+  programType={programType}
+  onPick={(newLevel, newTerm) => {
+    setFromLevel(newLevel);
+    setFromTerm(newTerm);
+    setToYear("");
+    setToLevel("");
+    setTermName("");
+  }}
+/>
+
           <div style={ui.field}>
             <label style={ui.label}>السنة الدراسية الجديدة</label>
             <input
@@ -1260,6 +1482,16 @@ const getNextAcademicYear = (year) => {
     ))}
   </select>
 </div>
+
+<SemesterPicker
+  levelOrBatch={toLevel}
+  termName={termName}
+  programType={programType}
+  onPick={(newLevel, newTerm) => {
+    setToLevel(newLevel);
+    setTermName(newTerm);
+  }}
+/>
         </div>
 
         <button onClick={loadCandidates} disabled={loading} style={ui.primaryBtn}>
@@ -2517,6 +2749,15 @@ if (
   </select>
 </div>
 
+<SemesterPicker
+  levelOrBatch={form.level_name}
+  termName={form.term_name}
+  programType={programType}
+  onPick={(newLevel, newTerm) => {
+    setForm((p) => ({ ...p, level_name: newLevel, term_name: newTerm }));
+  }}
+/>
+
     {/* حقل الموقف الأكاديمي - يتغير حسب البرنامج */}
     <div style={ui.field}>
       <label style={ui.label}>الموقف الأكاديمي</label>
@@ -3006,6 +3247,21 @@ useEffect(() => {
       <option value="الفصل الثاني">الفصل الثاني</option>
     </select>
   </div>
+
+  <SemesterPicker
+    levelOrBatch={levelName}
+    termName={termName}
+    programType={programType}
+    disabled={!academicYear}
+    onPick={(newLevel, newTerm) => {
+      setLevelName(newLevel);
+      setTermName(newTerm);
+      setRegisteredInCurrentPeriod([]);
+      if (academicYear && newLevel && newTerm) {
+        smart.ensurePeriodSaved(academicYear, newLevel, newTerm);
+      }
+    }}
+  />
 </div>
           </div>
 
